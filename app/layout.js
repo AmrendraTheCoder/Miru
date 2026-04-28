@@ -9,10 +9,14 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "Miru",
+  title: "Miru — Startup Intelligence Platform",
   description:
     "Deep research on funded startups from YC, Harvard & Techstars. Founder profiles, funding timelines, competitor landscapes, and market analysis. Powered by Exa + Gemini.",
   keywords: "Y Combinator, startup research, founder profiles, venture capital, competitor analysis, startup funding, miru",
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/apple-icon.svg", type: "image/svg+xml" }],
+  },
   openGraph: {
     title: "Miru — Startup Intelligence",
     description: "Research funded startups like a senior analyst. 見る · To see · To examine.",
@@ -25,6 +29,8 @@ export default function RootLayout({ children }) {
     <html lang="en" className={inter.variable}>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-icon.svg" />
       </head>
       <body>{children}</body>
     </html>

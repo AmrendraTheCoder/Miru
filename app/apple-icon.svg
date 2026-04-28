@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
+  <!-- Orange background, rounded for Apple -->
+  <rect width="180" height="180" rx="40" fill="#ff6600"/>
+  <!-- Outer ring -->
+  <circle cx="90" cy="90" r="65" fill="none" stroke="white" stroke-width="6" opacity="0.4"/>
+  <!-- Mid ring -->
+  <circle cx="90" cy="90" r="42" fill="none" stroke="white" stroke-width="6" opacity="0.65"/>
+  <!-- Inner ring -->
+  <circle cx="90" cy="90" r="21" fill="none" stroke="white" stroke-width="6" opacity="0.85"/>
+  <!-- Sweep line -->
+  <line x1="90" y1="90" x2="148" y2="38" stroke="white" stroke-width="8" stroke-linecap="round" opacity="0.95"/>
+  <!-- Center dot -->
+  <circle cx="90" cy="90" r="12" fill="white"/>
+</svg>
