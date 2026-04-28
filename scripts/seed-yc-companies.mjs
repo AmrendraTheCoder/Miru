@@ -1,15 +1,16 @@
 /**
- * MIRU — YC Companies Seeder
+ * MIRU — YC Companies Seeder (yc-oss GitHub API)
  * ═══════════════════════════════════════════════════════
- * Fetches the latest 1000 YC companies from the official
- * YC public API and stores them in Supabase.
+ * Source: https://github.com/yc-oss/api
+ *   → https://yc-oss.github.io/api/companies/all.json
+ *   → 5,690 companies, free, no auth, no rate-limit
  *
  * Usage:
- *   npm run seed:yc
+ *   npm run seed:yc              → seed 1000 newest companies
+ *   npm run seed:yc -- --all    → seed all 5690 companies
  *
  * Requirements:
- *   NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY
- *   must be set in .env or .env.local
+ *   NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env
  * ═══════════════════════════════════════════════════════
  */
 
@@ -19,6 +20,8 @@ import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dir = dirname(fileURLToPath(import.meta.url));
+const ALL_FLAG = process.argv.includes("--all");
+const TARGET   = ALL_FLAG ? Infinity : 1000;
 
 // ── Load .env ─────────────────────────────────────────────
 function loadEnv() {
@@ -46,159 +49,179 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ── YC Official Public API ────────────────────────────────
-const YC_API      = "https://api.ycombinator.com/v0.1/companies";
-const PAGE_SIZE   = 100;   // max per page
-const TARGET      = 1000;
+// ── yc-oss API (community mirror, full dataset) ───────────
+// Single JSON file, ~5MB, all companies since 2005
+const YC_OSS_ALL = "https://yc-oss.github.io/api/companies/all.json";
 
-// ── Helpers ───────────────────────────────────────────────
+// ── Batch normalisation ───────────────────────────────────
+// yc-oss format: "Winter 2024", "Summer 2023", "Fall 2024", "Spring 2025"
+const SEASON_ORDER = { Spring: 1, Summer: 2, Fall: 3, Winter: 4 };
+const SEASON_SHORT = { Winter: "W", Summer: "S", Fall: "F", Spring: "P" };
 
-function parseBatch(batchStr) {
-  if (!batchStr) return { batch: batchStr || null, batch_year: null, batch_season: null };
-  const m = batchStr.match(/^([A-Z]+)(\d{2,4})$/i);
-  if (!m) return { batch: batchStr, batch_year: null, batch_season: null };
-  const seasonMap = { W: "Winter", S: "Summer", F: "Fall", P: "Spring" };
-  const season = seasonMap[m[1].toUpperCase()] || m[1];
-  const yr = parseInt(m[2]);
-  const year = yr < 100 ? 2000 + yr : yr;
-  return { batch: batchStr, batch_year: year, batch_season: season };
+function parseBatch(raw) {
+  if (!raw || raw === "Unspecified") return { batch: raw || null, batch_year: null, batch_season: null };
+
+  // "Winter 2024" → season="Winter", year=2024
+  const full = raw.match(/^(Winter|Summer|Fall|Spring)\s+(\d{4})$/i);
+  if (full) {
+    const season = full[1].charAt(0).toUpperCase() + full[1].slice(1).toLowerCase();
+    const year   = parseInt(full[2]);
+    const short  = (SEASON_SHORT[season] || season[0]) + String(year).slice(2);
+    return { batch: short, batch_year: year, batch_season: season };
+  }
+
+  // Short codes already: "W24", "S23" etc.
+  const short = raw.match(/^([WSFP])(\d{2,4})$/i);
+  if (short) {
+    const seasonMap = { W: "Winter", S: "Summer", F: "Fall", P: "Spring" };
+    const season = seasonMap[short[1].toUpperCase()] || short[1];
+    const yr = parseInt(short[2]);
+    const year = yr < 100 ? 2000 + yr : yr;
+    return { batch: raw, batch_year: year, batch_season: season };
+  }
+
+  return { batch: raw, batch_year: null, batch_season: null };
 }
 
-function parseLocation(company) {
-  const locs = company.locations || [];
-  if (!locs.length) return { location: null, country: null };
-  const first = locs[0];
-  const parts = first.split(",").map(s => s.trim());
-  const city = parts[0] || null;
-  // Extract country from regions
-  const regions = company.regions || [];
-  const country = regions.find(r =>
-    !r.toLowerCase().includes("remote") &&
-    !r.toLowerCase().includes("america / canada") &&
-    !r.toLowerCase().includes("europe")
-  ) || null;
-  return { location: city, country };
+// Sort key: newest first. Spring < Summer < Fall < Winter within same year.
+function batchSortKey(raw) {
+  const { batch_year, batch_season } = parseBatch(raw);
+  const seasonOrd = SEASON_ORDER[batch_season] || 0;
+  return (batch_year || 0) * 10 + seasonOrd;
 }
 
-function normaliseCompany(c) {
+
+// ── Normalise one company row ─────────────────────────────
+function normalise(c) {
   const batchInfo = parseBatch(c.batch);
-  const locInfo   = parseLocation(c);
+  const sectors   = [...new Set([...(c.tags || []), ...(c.industries || [])])];
+  // all_locations is a comma-separated string e.g. "San Francisco, CA, USA"
+  const location  = c.all_locations?.split(",")[0]?.trim() || null;
+  const country   = c.regions?.[0] || null;
+  const founders  = (c.founders || []).map(f => ({
+    name:     f.first_name ? `${f.first_name} ${f.last_name || ""}`.trim() : f.name || "",
+    title:    f.title || "",
+    linkedin: f.linkedin_url || f.linkedin || "",
+  }));
+
   return {
-    slug:         c.slug || String(c.id),
-    name:         c.name || "",
-    tagline:      c.oneLiner || "",
-    description:  c.longDescription || "",
-    website:      c.website || "",
+    slug:         c.slug       || String(c.id),
+    name:         c.name       || "",
+    tagline:      c.one_liner  || "",
+    description:  c.long_description || "",
+    website:      c.website    || "",
     ...batchInfo,
-    status:       c.status || "Active",
-    stage:        null, // not in this API
-    team_size:    c.teamSize ? parseInt(c.teamSize) : null,
-    ...locInfo,
-    sectors:      [
-      ...(c.tags || []),
-      ...(c.industries || []),
-    ].filter((v, i, a) => a.indexOf(v) === i), // dedupe
-    founders:     [],   // founders not in list API; enriched separately
-    logo_url:     c.smallLogoUrl || null,
-    yc_url:       c.url || `https://www.ycombinator.com/companies/${c.slug}`,
-    launched_at:  null,
+    status:       c.status     || "Active",
+    stage:        c.stage      || null,
+    team_size:    c.team_size  ? parseInt(c.team_size) : null,
+    location,
+    country,
+    sectors,
+    founders,
+    logo_url:     c.small_logo_thumb_url || null,
+    yc_url:       c.url || (c.slug ? `https://www.ycombinator.com/companies/${c.slug}` : null),
+    launched_at:  c.launched_at ? new Date(c.launched_at * 1000).toISOString() : null,
     updated_at:   new Date().toISOString(),
   };
 }
 
-async function fetchPage(page) {
-  const url = `${YC_API}?page=${page}&limit=${PAGE_SIZE}`;
-  const res = await fetch(url, {
-    headers: { "Accept": "application/json", "User-Agent": "Miru/1.0" },
-  });
-  if (!res.ok) throw new Error(`YC API HTTP ${res.status}: ${await res.text()}`);
-  return res.json();
-}
 
-async function upsertBatch(companies) {
+// ── Upsert in chunks of 100 ───────────────────────────────
+async function upsertChunk(rows) {
   const { error } = await db
     .from("yc_companies")
-    .upsert(companies, { onConflict: "slug", ignoreDuplicates: false });
+    .upsert(rows, { onConflict: "slug", ignoreDuplicates: false });
   if (error) {
-    if (error.message?.includes("relation") || error.message?.includes("does not exist")) {
-      console.error("\n❌ Table not found. Run this SQL in your Supabase SQL editor first:");
-      console.error("   → supabase-yc-companies.sql\n");
+    if (error.message?.includes("does not exist") || error.message?.includes("relation")) {
+      console.error("\n❌ Table 'yc_companies' not found.");
+      console.error("   Run the SQL migration first:");
+      console.error("   https://supabase.com/dashboard/project/asmqgjvpnzqxkdfgnout/sql/new\n");
+      process.exit(1);
     }
     throw error;
   }
 }
 
 // ── Main ──────────────────────────────────────────────────
-
 async function main() {
-  console.log("🔍 Miru — YC Companies Seeder");
-  console.log(`📡 Source: api.ycombinator.com (official public API)`);
-  console.log(`🎯 Target: ${TARGET} companies\n`);
+  console.log("🔍 Miru — YC Companies Seeder (yc-oss GitHub API)");
+  console.log(`📡 Source : yc-oss.github.io/api/companies/all.json`);
+  console.log(`🎯 Target : ${ALL_FLAG ? "ALL" : TARGET} companies\n`);
 
-  // Check existing count
+  // Check existing
   const { count: existing } = await db
     .from("yc_companies")
     .select("*", { count: "exact", head: true });
-  console.log(`📦 Existing rows in DB: ${existing ?? 0}\n`);
+  console.log(`📦 Existing rows: ${existing ?? 0}\n`);
 
-  let total = 0;
-  let page  = 1;
-  let hasMore = true;
+  // Fetch full dataset
+  process.stdout.write("⬇  Fetching full YC dataset... ");
+  let raw;
+  try {
+    const res = await fetch(YC_OSS_ALL, { headers: { "Accept": "application/json" } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    raw = await res.json();
+  } catch (e) {
+    console.error(`\n❌ Fetch failed: ${e.message}`);
+    process.exit(1);
+  }
 
-  while (hasMore && total < TARGET) {
-    process.stdout.write(`  Page ${page} — fetching... `);
+  if (!Array.isArray(raw)) {
+    console.error("❌ Unexpected response format (expected array).");
+    process.exit(1);
+  }
 
-    let data;
+  console.log(`${raw.length} companies received.`);
+
+  // Sort newest batch first, take TARGET
+  const sorted = raw
+    .filter(c => c.slug && c.name)
+    .sort((a, b) => batchSortKey(b.batch) - batchSortKey(a.batch));
+
+  const toSeed = ALL_FLAG ? sorted : sorted.slice(0, TARGET);
+  console.log(`📋 Seeding ${toSeed.length} companies (newest first)...\n`);
+
+  // Upsert in chunks of 100
+  const CHUNK = 100;
+  let done = 0;
+  for (let i = 0; i < toSeed.length; i += CHUNK) {
+    const chunk = toSeed.slice(i, i + CHUNK).map(normalise);
+    process.stdout.write(`  Chunk ${Math.floor(i / CHUNK) + 1}/${Math.ceil(toSeed.length / CHUNK)} [${done + 1}–${done + chunk.length}]... `);
     try {
-      data = await fetchPage(page);
-    } catch (e) {
-      console.error(`\n❌ Fetch failed: ${e.message}`);
-      process.exit(1);
-    }
-
-    const companies = (data.companies || []).map(normaliseCompany).filter(c => c.slug && c.name);
-
-    if (!companies.length) { console.log("no more results."); break; }
-
-    try {
-      await upsertBatch(companies);
+      await upsertChunk(chunk);
+      done += chunk.length;
+      console.log(`✓ (${done} total)`);
     } catch (e) {
       console.error(`\n❌ Supabase error: ${e.message}`);
       process.exit(1);
     }
-
-    total += companies.length;
-    hasMore = companies.length === PAGE_SIZE && total < TARGET;
-    console.log(`✓ ${companies.length} saved (${total} total)`);
-
-    // Polite pacing — 100ms between pages
-    if (hasMore) await new Promise(r => setTimeout(r, 100));
-    page++;
+    // 50ms between chunks — polite
+    await new Promise(r => setTimeout(r, 50));
   }
 
-  // ── Summary ──────────────────────────────────────────────
-
+  // Summary
   const { count: finalCount } = await db
     .from("yc_companies")
     .select("*", { count: "exact", head: true });
 
   console.log(`\n✅ Seeder complete`);
-  console.log(`   This run : ${total} companies upserted`);
+  console.log(`   This run : ${done} companies upserted`);
   console.log(`   Total DB : ${finalCount} companies\n`);
 
   // Batch breakdown
   const { data: rows } = await db
     .from("yc_companies")
-    .select("batch, batch_year, batch_season")
+    .select("batch")
     .not("batch", "is", null)
-    .order("batch_year", { ascending: false });
+    .order("batch", { ascending: false })
+    .limit(2000);
 
   if (rows?.length) {
     const counts = {};
     for (const { batch } of rows) counts[batch] = (counts[batch] || 0) + 1;
-    const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 15);
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 20);
     console.log("Top batches in database:");
-    for (const [b, n] of top) console.log(`  ${b.padEnd(6)} → ${n} companies`);
+    for (const [b, n] of top) console.log(`  ${b.padEnd(8)} → ${n} companies`);
   }
 }
 
