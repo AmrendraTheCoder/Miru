@@ -63,18 +63,14 @@ function SettingsModal({ open, onClose, keys, setKeys, serverStatus }) {
 function RadarLoader({ message, score, strategy }) {
   return (
     <div className="loading-wrap">
-      <div className="radar-container">
-        <div className="radar-scan" />
-        <div className="radar-core" />
-        <div className="radar-ring" />
-        <div className="radar-ring" />
-        <div className="radar-ring" />
-        <div className="radar-ring" />
+      {/* Thin animated stripe */}
+      <div className="loading-stripe">
+        <div className="loading-stripe-fill" style={{ width: score > 0 ? `${Math.round(score * 100)}%` : "40%" }} />
       </div>
-      <div className="data-nodes">
-        {[0,1,2,3,4].map(i => <div key={i} className="data-node" />)}
-      </div>
+
       <div className="loading-text">{message || "Researching..."}</div>
+
+      {/* RL score bar — user said this was the good one */}
       {score > 0 && (
         <div className="rl-progress-wrap">
           <div className="rl-progress-header">
@@ -92,12 +88,12 @@ function RadarLoader({ message, score, strategy }) {
           )}
         </div>
       )}
-      <div className="loading-steps" style={{ marginTop: 12 }}>
-        Adaptive engine — stops at 75% confidence
-      </div>
+
+      <div className="loading-steps">Adaptive engine — stops at 75% confidence</div>
     </div>
   );
 }
+
 
 function StartupCard({ s, onResearch }) {
   const sector = s.sectors?.[0] || "";

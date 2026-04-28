@@ -206,102 +206,60 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ══════════════════════════════════════════════════
-   MIRU — ANIMATION SYSTEM
-   All animations are product-themed:
-   • Radar pulse  → intelligence scanning
-   • Data nodes   → knowledge graph building
-   • Scan line    → web crawling in progress
-   • Progress bar → RL knowledge score filling
-   • News stagger → live feed arriving
-   • Card hover   → interactive depth
+   MIRU — ANIMATIONS (clean, minimal)
 ══════════════════════════════════════════════════ */
 
 /* ── Keyframes ── */
-@keyframes spin        { to { transform: rotate(360deg); } }
-@keyframes radar-ring  { 0% { transform: scale(0.3); opacity: 0.8; } 100% { transform: scale(2.2); opacity: 0; } }
-@keyframes scan-line   { 0% { top: 0%; opacity: 1; } 80% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
-@keyframes node-pulse  { 0%,100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.5); opacity: 1; } }
-@keyframes data-flow   { 0% { stroke-dashoffset: 40; } 100% { stroke-dashoffset: 0; } }
-@keyframes fadeInUp    { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes shimmer     { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
-@keyframes bar-fill    { from { width: 0%; } to { width: var(--bar-width, 0%); } }
-@keyframes blink-dot   { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
+@keyframes spin     { to { transform: rotate(360deg); } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes shimmer  { 0% { background-position: -600px 0; } 100% { background-position: 600px 0; } }
+@keyframes blink-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+@keyframes stripe-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(400%); } }
 
-/* ── Radar loading animation ── */
-.loading-wrap { text-align: center; padding: 48px 20px 32px; position: relative; }
-
-.radar-container {
-  position: relative;
-  width: 64px;
-  height: 64px;
-  margin: 0 auto 20px;
-}
-.radar-core {
-  position: absolute;
-  inset: 50%;
-  transform: translate(-50%, -50%);
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--orange);
-  z-index: 2;
-}
-.radar-ring {
-  position: absolute;
-  inset: 50%;
-  transform: translate(-50%, -50%) scale(0.3);
-  border-radius: 50%;
-  border: 1.5px solid var(--orange);
-  width: 64px;
-  height: 64px;
-  opacity: 0;
-  animation: radar-ring 2s ease-out infinite;
-}
-.radar-ring:nth-child(2) { animation-delay: 0.5s; }
-.radar-ring:nth-child(3) { animation-delay: 1s; }
-.radar-ring:nth-child(4) { animation-delay: 1.5s; }
-
-/* Scan-line inside the radar */
-.radar-scan {
-  position: absolute;
-  left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--orange), transparent);
-  top: 0%;
-  animation: scan-line 1.8s linear infinite;
-  opacity: 0.6;
-  z-index: 1;
-}
-
-/* Data nodes — appear beside radar to show "collecting data" */
-.data-nodes {
+/* ── Main research loader ── */
+.loading-wrap {
+  padding: 60px 24px 40px;
+  text-align: center;
   display: flex;
-  justify-content: center;
-  gap: 6px;
-  margin-bottom: 12px;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
-.data-node {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--orange);
-  animation: node-pulse 1.4s ease-in-out infinite;
-  opacity: 0.6;
-}
-.data-node:nth-child(1) { animation-delay: 0s; }
-.data-node:nth-child(2) { animation-delay: 0.2s; }
-.data-node:nth-child(3) { animation-delay: 0.4s; }
-.data-node:nth-child(4) { animation-delay: 0.6s; }
-.data-node:nth-child(5) { animation-delay: 0.8s; }
 
-.loading-text  { font-size: 13px; color: var(--text); font-weight: 500; margin-bottom: 4px; }
+/* Top progress stripe — thin orange line animating across */
+.loading-stripe {
+  width: 200px;
+  height: 2px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.loading-stripe-fill {
+  height: 100%;
+  background: var(--orange);
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+}
+/* Bright sheen running across the bar */
+.loading-stripe-fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%);
+  animation: stripe-slide 1.4s ease-in-out infinite;
+}
+
+.loading-text  { font-size: 13px; color: var(--text); font-weight: 500; }
 .loading-steps { font-size: 11px; color: var(--muted); }
 
-/* ── RL Knowledge Progress Bar ── */
+/* ── RL Knowledge Progress Bar (the one user said was fine — keep it) ── */
 .rl-progress-wrap {
-  margin: 14px auto 0;
-  max-width: 300px;
+  width: 100%;
+  max-width: 320px;
   text-align: left;
+  margin-top: 4px;
 }
 .rl-progress-header {
   display: flex;
@@ -310,17 +268,12 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   color: var(--muted);
   margin-bottom: 5px;
 }
-.rl-progress-score {
-  font-weight: 700;
-  color: var(--orange);
-  font-size: 12px;
-}
+.rl-progress-score { font-weight: 700; color: var(--orange); font-size: 12px; }
 .rl-bar-track {
   height: 5px;
   background: var(--border);
   border-radius: 3px;
   overflow: hidden;
-  position: relative;
 }
 .rl-bar-fill {
   height: 100%;
@@ -330,11 +283,10 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   position: relative;
   overflow: hidden;
 }
-/* Shimmer on the bar fill */
 .rl-bar-fill::after {
   content: "";
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
+  inset: 0;
   background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
   background-size: 200% 100%;
   animation: shimmer 1.2s linear infinite;
@@ -345,7 +297,7 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   margin-top: 5px;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
 }
 .rl-live-dot {
   width: 5px;
@@ -356,7 +308,18 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   flex-shrink: 0;
 }
 
-/* ── News item entrance animation ── */
+/* ── Spinner (small inline use) ── */
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--orange);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+/* ── News item entrance ── */
 .news-item {
   padding: 10px 12px;
   border-bottom: 1px solid var(--border);
@@ -364,31 +327,29 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   grid-template-columns: 1fr auto;
   gap: 8px;
   align-items: start;
-  animation: fadeInUp 0.3s ease both;
+  animation: fadeInUp 0.25s ease both;
 }
 .news-item:nth-child(1)  { animation-delay: 0.00s; }
-.news-item:nth-child(2)  { animation-delay: 0.04s; }
-.news-item:nth-child(3)  { animation-delay: 0.08s; }
-.news-item:nth-child(4)  { animation-delay: 0.12s; }
-.news-item:nth-child(5)  { animation-delay: 0.16s; }
-.news-item:nth-child(6)  { animation-delay: 0.20s; }
-.news-item:nth-child(7)  { animation-delay: 0.24s; }
-.news-item:nth-child(8)  { animation-delay: 0.28s; }
-.news-item:nth-child(9)  { animation-delay: 0.32s; }
-.news-item:nth-child(10) { animation-delay: 0.36s; }
+.news-item:nth-child(2)  { animation-delay: 0.03s; }
+.news-item:nth-child(3)  { animation-delay: 0.06s; }
+.news-item:nth-child(4)  { animation-delay: 0.09s; }
+.news-item:nth-child(5)  { animation-delay: 0.12s; }
+.news-item:nth-child(6)  { animation-delay: 0.15s; }
+.news-item:nth-child(7)  { animation-delay: 0.18s; }
+.news-item:nth-child(8)  { animation-delay: 0.21s; }
 .news-item:last-child    { border-bottom: none; }
 .news-item:hover         { background: #fffaf5; }
 
-/* ── Discover card hover lift ── */
+/* ── Discover card hover ── */
 .discover-card {
   background: var(--surface);
   padding: 14px;
   cursor: pointer;
-  transition: background 0.15s, box-shadow 0.15s, transform 0.15s;
+  transition: background 0.12s, box-shadow 0.12s, transform 0.12s;
 }
 .discover-card:hover {
   background: #fffaf5;
-  box-shadow: 0 2px 8px rgba(255,102,0,0.08);
+  box-shadow: 0 2px 10px rgba(255,102,0,0.07);
   transform: translateY(-1px);
 }
 
@@ -399,7 +360,7 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   border-radius: var(--radius);
   padding: 16px;
   margin-bottom: 2px;
-  animation: fadeInUp 0.25s ease both;
+  animation: fadeInUp 0.2s ease both;
 }
 
 /* ── Stale news badge ── */
@@ -415,8 +376,16 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   border-radius: 2px;
 }
 
-/* Spinner kept as fallback for small contexts */
-.spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--orange); border-radius: 50%; animation: spin 0.7s linear infinite; }
+
+
+
+
+
+
+
+
+
+
 
 /* ── Empty / Error ── */
 .empty-wrap { text-align: center; padding: 60px 20px; color: var(--muted); }
