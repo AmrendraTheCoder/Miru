@@ -74,6 +74,9 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 .news-action { flex-shrink: 0; }
 .btn-research { background: none; border: none; color: var(--orange); font-size: 11px; cursor: pointer; font-family: var(--font); padding: 2px 0; white-space: nowrap; }
 .btn-research:hover { text-decoration: underline; }
+/* Date group labels in news feed */
+.news-group-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); padding: 6px 12px 4px; background: var(--bg); border-bottom: 1px solid var(--border); }
+
 
 /* ── Discovery Grid ── */
 .discover-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }

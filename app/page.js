@@ -179,11 +179,28 @@ export default function Home() {
 
   /* ── Init ── */
   useEffect(() => {
+    let localExa = "";
+    let localGemini = "";
     try {
-      setUserKeys({ exa: localStorage.getItem("user_exa_key") || "", gemini: localStorage.getItem("user_gemini_key") || "" });
+      localExa    = localStorage.getItem("user_exa_key")    || "";
+      localGemini = localStorage.getItem("user_gemini_key") || "";
+      setUserKeys({ exa: localExa, gemini: localGemini });
     } catch {}
-    fetch("/api/settings").then(r => r.json()).then(setServerStatus).catch(() => {});
-    loadNews();
+
+    // Fetch server keys, then try news with whatever key we have
+    fetch("/api/settings")
+      .then(r => r.json())
+      .then(status => {
+        setServerStatus(status);
+        // Use server key if local key not available
+        const exa    = localExa    || status.exaKey    || "";
+        const gemini = localGemini || status.geminiKey || "";
+        loadNews(exa, gemini);
+      })
+      .catch(() => {
+        // Fallback: try with local keys if settings endpoint fails
+        if (localExa) loadNews(localExa, localGemini);
+      });
   }, []);
 
   /* ── Load DB companies when Discover tab opens ── */
@@ -192,37 +209,72 @@ export default function Home() {
   }, [tab]);
 
   /* ── News ── */
-  const loadNews = async () => {
+  // loadNews accepts explicit keys to avoid closure-stale-state race
+  const loadNews = async (ek = exaKey, gk = geminiKey) => {
     setNewsLoading(true);
     try {
+      // 1. Always check Supabase cache first (no key needed)
       const res = await fetch("/api/news").then(r => r.json());
       if (res.news?.length) {
-        setNews(res.news);
+        setNews(sortNewsByDate(res.news));
         setNewsCacheInfo(res);
         setNewsLoading(false);
-        // If stale, refresh in background
-        if (!res.fresh && exaKey) refreshNewsBackground();
+        if (!res.fresh && ek) fetchFreshNews(ek, gk).catch(() => {});
         return;
       }
-      if (exaKey) await fetchFreshNews();
-    } catch (e) { console.warn("News error:", e.message); }
+      // 2. No cache — fetch fresh
+      if (ek) await fetchFreshNews(ek, gk);
+      else console.warn("[News] No Exa key available — add one in Settings.");
+    } catch (e) { console.warn("News load error:", e.message); }
     setNewsLoading(false);
   };
 
-  const fetchFreshNews = async () => {
-    if (!exaKey) return;
-    const raw = await exaDailyStartupNews(exaKey);
-    if (!raw.length) return;
-    if (geminiKey) {
-      const parsed = await analyseNewsItems(geminiKey, raw);
-      setNews(parsed);
-      fetch("/api/news", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: parsed }) }).catch(() => {});
-    }
+  const fetchFreshNews = async (ek = exaKey, gk = geminiKey) => {
+    if (!ek) return;
+    setNewsLoading(true);
+    try {
+      const raw = await exaDailyStartupNews(ek);
+      if (!raw.length) { setNewsLoading(false); return; }
+
+      let items;
+      if (gk) {
+        // Full AI parse with Gemini
+        items = await analyseNewsItems(gk, raw);
+      } else {
+        // Fallback: use raw Exa results directly (no Gemini needed)
+        items = raw.map(r => ({
+          id:        r.id || r.url,
+          title:     r.title,
+          url:       r.url,
+          source:    r.url ? new URL(r.url).hostname.replace(/^www\./, "") : "unknown",
+          summary:   r.summary || r.text?.slice(0, 200) || "",
+          category:  "Funding",
+          date:      r.publishedDate || new Date().toISOString(),
+          relevance: 7,
+        }));
+      }
+
+      const sorted = sortNewsByDate(items);
+      setNews(sorted);
+      // Save to Supabase cache
+      fetch("/api/news", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: sorted }),
+      }).catch(() => {});
+    } catch (e) { console.warn("fetchFreshNews error:", e.message); }
+    setNewsLoading(false);
   };
 
-  const refreshNewsBackground = () => {
-    fetchFreshNews().catch(() => {});
-  };
+  // Sort news newest-first, then group by week for display
+  const sortNewsByDate = (items) =>
+    [...items].sort((a, b) => {
+      const da = a.date || a.publishedDate || "";
+      const db = b.date || b.publishedDate || "";
+      return new Date(db) - new Date(da);
+    });
+
+  const refreshNewsBackground = () => { fetchFreshNews().catch(() => {}); };
 
   /* ── Load YC companies from DB ── */
   const loadCompanies = useCallback(async (page = 1, sector = "All", batch = "All", search = "") => {
@@ -410,43 +462,72 @@ export default function Home() {
                         <button key={f} className={`filter-btn ${newsFilter === f ? "active" : ""}`} onClick={() => setNewsFilter(f)}>{f}</button>
                       ))}
                     </div>
-                    {exaKey && <button className="btn btn-sm" onClick={fetchFreshNews} style={{ whiteSpace: "nowrap" }}>↻ Refresh</button>}
-                  </div>
+                  {exaKey && <button className="btn btn-sm" onClick={() => fetchFreshNews(exaKey, geminiKey)} style={{ whiteSpace: "nowrap" }}>↻ Refresh</button>}
                 </div>
+              </div>
 
-                {filteredNews.length > 0 && (
-                  <div className="news-list">
-                    {filteredNews.map((item, i) => (
-                      <div className="news-item" key={i}>
-                        <div style={{ display: "flex", gap: 8 }}>
-                          <span className="news-rank">{i + 1}.</span>
-                          <div className="news-main">
-                            <div className="news-headline" onClick={() => research(item.researchQuery || item.startup)}>{item.headline}</div>
-                            <div className="news-meta">
-                              {item.stage && <span className={`news-stage ${item.stage?.toLowerCase().includes("seed") ? "stage-seed" : item.stage?.toLowerCase().includes("series") ? "stage-series" : item.stage?.toLowerCase().includes("acquired") ? "stage-acquired" : "stage-ipo"}`}>{item.stage}</span>}
-                              {item.amount && <span style={{ color: "var(--green)", fontWeight: 600 }}>{item.amount}</span>}
-                              {item.source && <span>{item.source}</span>}
-                              {item.date && <span>{item.date}</span>}
-                            </div>
-                            {item.summary && <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>{item.summary}</div>}
+                {filteredNews.length > 0 && (() => {
+                  // Group news by week
+                  const now = new Date();
+                  const oneWeekAgo = new Date(now - 7 * 86400000);
+                  const thisWeek = filteredNews.filter(n => new Date(n.date || n.publishedDate || 0) >= oneWeekAgo);
+                  const earlier  = filteredNews.filter(n => new Date(n.date || n.publishedDate || 0) <  oneWeekAgo);
+
+                  const formatDate = (d) => {
+                    if (!d) return "";
+                    const dt = new Date(d);
+                    if (isNaN(dt)) return d;
+                    return dt.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                  };
+
+                  const renderItems = (items, offset = 0) => items.map((item, i) => (
+                    <div className="news-item" key={`${offset}-${i}`}>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <span className="news-rank">{offset + i + 1}.</span>
+                        <div className="news-main">
+                          <div className="news-headline" onClick={() => research(item.researchQuery || item.startup)}>{item.headline || item.title}</div>
+                          <div className="news-meta">
+                            {item.stage && <span className={`news-stage ${item.stage?.toLowerCase().includes("seed") ? "stage-seed" : item.stage?.toLowerCase().includes("series") ? "stage-series" : item.stage?.toLowerCase().includes("acquired") ? "stage-acquired" : "stage-ipo"}`}>{item.stage}</span>}
+                            {item.amount && <span style={{ color: "var(--green)", fontWeight: 600 }}>{item.amount}</span>}
+                            {item.source && <span>{item.source}</span>}
+                            {(item.date || item.publishedDate) && <span style={{ color: "var(--muted2)" }}>{formatDate(item.date || item.publishedDate)}</span>}
                           </div>
+                          {item.summary && <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>{item.summary}</div>}
                         </div>
-                        <button className="btn-research" onClick={() => research(item.researchQuery || item.startup)}>Research →</button>
                       </div>
-                    ))}
-                  </div>
-                )}
+                      <button className="btn-research" onClick={() => research(item.researchQuery || item.startup || item.title)}>Research →</button>
+                    </div>
+                  ));
+
+                  return (
+                    <div className="news-list">
+                      {thisWeek.length > 0 && (
+                        <>
+                          <div className="news-group-label">This Week</div>
+                          {renderItems(thisWeek, 0)}
+                        </>
+                      )}
+                      {earlier.length > 0 && (
+                        <>
+                          <div className="news-group-label">Earlier This Month</div>
+                          {renderItems(earlier, thisWeek.length)}
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {!filteredNews.length && (
                   <div className="empty-wrap">
                     <div className="empty-title">No news loaded</div>
                     <div className="empty-desc">
                       {!exaKey
-                        ? "Add an Exa API key in Settings to load today's startup news."
-                        : <button className="btn btn-primary" onClick={loadNews}>Load Today's News</button>}
+                        ? "Add an Exa API key in Settings to load startup news."
+                        : <button className="btn btn-primary" onClick={() => fetchFreshNews(exaKey, geminiKey)}>Load News</button>}
                     </div>
                   </div>
                 )}
+
 
                 {/* Featured from DB below news */}
                 <div className="section-head" style={{ marginTop: 28 }}>
