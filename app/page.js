@@ -5,16 +5,16 @@ import { exaStartupResearch, exaDailyStartupNews } from "@/lib/exa";
 import { analyseCompetitor, analyseNewsItems } from "@/lib/analyzer";
 import { SearchEngine, getMemoryStats } from "@/lib/searchEngine";
 
-/* ── Fallback static list shown before DB loads ── */
+/* ── Fallback static list — logos via Clearbit free API ── */
 const STATIC_STARTUPS = [
-  { name: "Airbnb", batch: "W09", sectors: ["Travel"], tagline: "Marketplace for short-term home rentals.", slug: "airbnb" },
-  { name: "Stripe", batch: "S09", sectors: ["FinTech"], tagline: "Payment infrastructure for the internet.", slug: "stripe" },
-  { name: "Dropbox", batch: "S07", sectors: ["SaaS"], tagline: "Cloud file storage and collaboration.", slug: "dropbox" },
-  { name: "DoorDash", batch: "S13", sectors: ["Logistics"], tagline: "On-demand food delivery.", slug: "doordash" },
-  { name: "Coinbase", batch: "S12", sectors: ["Crypto"], tagline: "Cryptocurrency exchange.", slug: "coinbase" },
-  { name: "Brex", batch: "W17", sectors: ["FinTech"], tagline: "Corporate cards and financial software.", slug: "brex" },
-  { name: "Scale AI", batch: "S16", sectors: ["AI/ML"], tagline: "Data labeling and AI infrastructure.", slug: "scale-ai" },
-  { name: "Gusto", batch: "W12", sectors: ["HR Tech"], tagline: "Payroll and HR for small businesses.", slug: "gusto" },
+  { name: "Airbnb",    batch: "W09", sectors: ["Travel"],    tagline: "Marketplace for short-term home rentals.",    slug: "airbnb",    logo_url: "https://logo.clearbit.com/airbnb.com",    website: "airbnb.com" },
+  { name: "Stripe",   batch: "S09", sectors: ["FinTech"],   tagline: "Payment infrastructure for the internet.",     slug: "stripe",    logo_url: "https://logo.clearbit.com/stripe.com",    website: "stripe.com" },
+  { name: "Dropbox",  batch: "S07", sectors: ["SaaS"],      tagline: "Cloud file storage and collaboration.",        slug: "dropbox",   logo_url: "https://logo.clearbit.com/dropbox.com",   website: "dropbox.com" },
+  { name: "DoorDash", batch: "S13", sectors: ["Logistics"], tagline: "On-demand food delivery platform.",            slug: "doordash",  logo_url: "https://logo.clearbit.com/doordash.com",  website: "doordash.com" },
+  { name: "Coinbase", batch: "S12", sectors: ["Crypto"],    tagline: "Cryptocurrency exchange. First major crypto IPO.", slug: "coinbase", logo_url: "https://logo.clearbit.com/coinbase.com",  website: "coinbase.com" },
+  { name: "Brex",     batch: "W17", sectors: ["FinTech"],   tagline: "Corporate cards and financial software.",      slug: "brex",      logo_url: "https://logo.clearbit.com/brex.com",      website: "brex.com" },
+  { name: "Scale AI", batch: "S16", sectors: ["AI/ML"],     tagline: "Data labeling and AI infrastructure for ML.",  slug: "scale-ai",  logo_url: "https://logo.clearbit.com/scale.com",     website: "scale.com" },
+  { name: "Gusto",    batch: "W12", sectors: ["HR Tech"],   tagline: "Payroll and HR for small businesses.",         slug: "gusto",     logo_url: "https://logo.clearbit.com/gusto.com",     website: "gusto.com" },
 ];
 
 function StatusDot({ active }) {
@@ -90,13 +90,39 @@ function RadarLoader({ message, score, strategy }) {
 
 
 
+function CompanyLogo({ name, logoUrl, website }) {
+  const [failed, setFailed] = useState(false);
+  // Priority: DB logo → Clearbit from website domain → Clearbit from name guess
+  const clearbitUrl = website
+    ? `https://logo.clearbit.com/${website.replace(/^https?:\/\//, "").split("/")[0]}`
+    : `https://logo.clearbit.com/${name.toLowerCase().replace(/\s+/g, "")}.com`;
+  const src = logoUrl || clearbitUrl;
+
+  if (failed || !src) {
+    return (
+      <div className="startup-logo-letter">
+        {(name || "?")[0].toUpperCase()}
+      </div>
+    );
+  }
+  return (
+    <img
+      className="startup-logo-img"
+      src={src}
+      alt={`${name} logo`}
+      onError={() => setFailed(true)}
+      loading="lazy"
+    />
+  );
+}
+
 function StartupCard({ s, onResearch }) {
   const sector = s.sectors?.[0] || "";
   return (
     <div className="discover-card" onClick={() => onResearch(s.name)}>
       <div className="discover-card-top">
-        <div className="startup-logo">{(s.name || "?")[0].toUpperCase()}</div>
-        <div>
+        <CompanyLogo name={s.name} logoUrl={s.logo_url} website={s.website} />
+        <div style={{ minWidth: 0 }}>
           <div className="startup-name">{s.name}</div>
           <div className="startup-batch">{s.batch}{sector ? ` · ${sector}` : ""}</div>
         </div>
