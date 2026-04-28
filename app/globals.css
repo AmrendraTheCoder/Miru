@@ -12,12 +12,13 @@
   --muted2: #b8b8b8;
   --green: #008000;
   --red: #c0392b;
-  --font: var(--font-inter), -apple-system, system-ui, sans-serif;
+  --font: var(--font-sans), "Helvetica Neue", Helvetica, Arial, sans-serif;
   --radius: 3px;
   --max: 900px;
 }
 
-html, body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; line-height: 1.5; min-height: 100vh; }
+html, body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; line-height: 1.5; letter-spacing: -0.01em; min-height: 100vh; }
+
 
 /* ── Layout Shell ── */
 .shell { max-width: var(--max); margin: 0 auto; padding: 0 16px 80px; }

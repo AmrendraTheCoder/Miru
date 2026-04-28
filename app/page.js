@@ -63,14 +63,8 @@ function SettingsModal({ open, onClose, keys, setKeys, serverStatus }) {
 function RadarLoader({ message, score, strategy }) {
   return (
     <div className="loading-wrap">
-      {/* Thin animated stripe */}
-      <div className="loading-stripe">
-        <div className="loading-stripe-fill" style={{ width: score > 0 ? `${Math.round(score * 100)}%` : "40%" }} />
-      </div>
-
       <div className="loading-text">{message || "Researching..."}</div>
 
-      {/* RL score bar — user said this was the good one */}
       {score > 0 && (
         <div className="rl-progress-wrap">
           <div className="rl-progress-header">
@@ -93,6 +87,7 @@ function RadarLoader({ message, score, strategy }) {
     </div>
   );
 }
+
 
 
 function StartupCard({ s, onResearch }) {
@@ -241,7 +236,7 @@ export default function Home() {
     loadCompanies(1, sector, batch, search);
   };
 
-  /* ── Research ── */
+  /* ── Research (with 7-day cache) ── */
   const research = useCallback(async (startupName) => {
     const name = (startupName || query).trim();
     if (!name) return setError("Enter a startup name.");
@@ -249,16 +244,37 @@ export default function Home() {
     if (!geminiKey) return setError("No Gemini key — add one in Settings.");
 
     setError(""); setLoading(true); setReport(null); setCompetitors([]);
-    setRlProgress({ message: `Initialising research for "${name}"...`, score: 0, strategy: null });
+    setRlProgress({ message: `Checking cache for "${name}"...`, score: 0, strategy: null });
     setQuery(name);
     setTab("research");
 
     try {
+      // ── 1. Check Supabase cache first ──────────────────────────────
+      const cached = await fetch(`/api/reports?name=${encodeURIComponent(name)}`).then(r => r.json()).catch(() => ({ report: null }));
+      if (cached.report) {
+        setRlProgress({ message: `Loaded from cache (${cached.ageHours}h old)`, score: 1, strategy: "CACHE" });
+        await new Promise(r => setTimeout(r, 600)); // brief flash so user sees it
+        setReport(cached.report);
+        setLoading(false);
+        if (cached.report.competitorNames?.length) loadCompetitorProfiles(cached.report.competitorNames, cached.report.domain);
+        return;
+      }
+
+      // ── 2. No cache — run full RL research engine ──────────────────
+      setRlProgress({ message: `Starting adaptive research for "${name}"...`, score: 0, strategy: null });
       const engine = new SearchEngine(exaKey, geminiKey, { maxRounds: 4, stopThreshold: 0.75 });
       const { report: result } = await engine.research(name, setRlProgress);
-      if (!result) { setError("No data found. Try a more specific company name."); }
-      else {
+
+      if (!result) {
+        setError("No data found. Try a more specific company name.");
+      } else {
         setReport(result);
+        // ── 3. Save to cache for next time ────────────────────────────
+        fetch("/api/reports", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, domain: result.domain, report: result }),
+        }).catch(() => {});
         if (result.competitorNames?.length) loadCompetitorProfiles(result.competitorNames, result.domain);
       }
     } catch (e) {
@@ -266,6 +282,7 @@ export default function Home() {
     }
     setLoading(false);
   }, [query, exaKey, geminiKey]);
+
 
   const loadCompetitorProfiles = async (names, domain) => {
     setLoadingComps(true);
