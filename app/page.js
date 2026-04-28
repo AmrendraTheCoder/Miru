@@ -102,10 +102,27 @@ const NEWS_FACTS = [
 
 function NewsLoader() {
   const [factIdx, setFactIdx] = useState(0);
+  // Only show full animation on first-ever load
+  const [firstTime] = useState(() => {
+    try { return !localStorage.getItem("miru_news_seen"); }
+    catch { return true; }
+  });
+
   useEffect(() => {
+    if (!firstTime) return;
     const t = setInterval(() => setFactIdx(i => (i + 1) % NEWS_FACTS.length), 2500);
     return () => clearInterval(t);
-  }, []);
+  }, [firstTime]);
+
+  // Returning users — just show a tiny inline loading bar
+  if (!firstTime) {
+    return (
+      <div style={{ padding: "24px 0", textAlign: "center" }}>
+        <div className="spinner" style={{ display: "inline-block", marginBottom: 8 }} />
+        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6 }}>Refreshing news…</div>
+      </div>
+    );
+  }
 
   return (
     <div className="news-loader-wrap">
@@ -241,18 +258,15 @@ export default function Home() {
       setUserKeys({ exa: localExa, gemini: localGemini });
     } catch {}
 
-    // Fetch server keys, then try news with whatever key we have
     fetch("/api/settings")
       .then(r => r.json())
       .then(status => {
         setServerStatus(status);
-        // Use server key if local key not available
         const exa    = localExa    || status.exaKey    || "";
         const gemini = localGemini || status.geminiKey || "";
         loadNews(exa, gemini);
       })
       .catch(() => {
-        // Fallback: try with local keys if settings endpoint fails
         if (localExa) loadNews(localExa, localGemini);
       });
   }, []);
@@ -263,61 +277,83 @@ export default function Home() {
   }, [tab]);
 
   /* ── News ── */
-  // loadNews accepts explicit keys to avoid closure-stale-state race
   const loadNews = async (ek = exaKey, gk = geminiKey) => {
     setNewsLoading(true);
     try {
-      // 1. Always check Supabase cache first (no key needed)
+      // 1. Check Supabase cache first
       const res = await fetch("/api/news").then(r => r.json());
       if (res.news?.length) {
         setNews(sortNewsByDate(res.news));
         setNewsCacheInfo(res);
         setNewsLoading(false);
-        if (!res.fresh && ek) fetchFreshNews(ek, gk).catch(() => {});
+        // Mark as seen so animation won't show again this session
+        try { localStorage.setItem("miru_news_seen", "1"); } catch {}
+        // Silently refresh in background if stale
+        if (!res.fresh && ek) fetchFreshNews(ek, gk, true).catch(() => {});
         return;
       }
-      // 2. No cache — fetch fresh
-      if (ek) await fetchFreshNews(ek, gk);
-      else console.warn("[News] No Exa key available — add one in Settings.");
+      // 2. No cache — fetch fresh Exa results
+      if (ek) await fetchFreshNews(ek, gk, false);
+      else console.warn("[News] No Exa key — add one in Settings.");
     } catch (e) { console.warn("News load error:", e.message); }
     setNewsLoading(false);
   };
 
-  const fetchFreshNews = async (ek = exaKey, gk = geminiKey) => {
+  // silent=true → background refresh, don't set loading state
+  const fetchFreshNews = async (ek = exaKey, gk = geminiKey, silent = false) => {
     if (!ek) return;
-    setNewsLoading(true);
+    if (!silent) setNewsLoading(true);
     try {
       const raw = await exaDailyStartupNews(ek);
-      if (!raw.length) { setNewsLoading(false); return; }
+      if (!raw.length) { if (!silent) setNewsLoading(false); return; }
 
-      let items;
-      if (gk) {
-        // Full AI parse with Gemini
-        items = await analyseNewsItems(gk, raw);
-      } else {
-        // Fallback: use raw Exa results directly (no Gemini needed)
-        items = raw.map(r => ({
-          id:        r.id || r.url,
-          title:     r.title,
-          url:       r.url,
-          source:    r.url ? new URL(r.url).hostname.replace(/^www\./, "") : "unknown",
-          summary:   r.summary || r.text?.slice(0, 200) || "",
-          category:  "Funding",
-          date:      r.publishedDate || new Date().toISOString(),
-          relevance: 7,
-        }));
+      // ── Step 1: Show raw Exa results IMMEDIATELY (no Gemini needed) ──
+      const rawItems = raw.map(r => ({
+        id:        r.id || r.url,
+        headline:  r.title,             // UI reads .headline || .title
+        title:     r.title,
+        url:       r.url,
+        source:    (() => { try { return new URL(r.url).hostname.replace(/^www\./, ""); } catch { return "unknown"; } })(),
+        summary:   r.highlights?.[0] || r.summary || r.text?.slice(0, 200) || "",
+        stage:     null,
+        amount:    null,
+        date:      r.publishedDate || new Date().toISOString(),
+        publishedDate: r.publishedDate,
+        researchQuery: r.title?.split(" ").slice(0, 3).join(" "),
+      }));
+
+      const rawSorted = sortNewsByDate(rawItems);
+      if (!silent) {
+        setNews(rawSorted);      // ← Show immediately while Gemini enriches
+        setNewsLoading(false);
+        try { localStorage.setItem("miru_news_seen", "1"); } catch {}
       }
 
-      const sorted = sortNewsByDate(items);
-      setNews(sorted);
-      // Save to Supabase cache
+      // ── Step 2: Enrich with Gemini in background (if key available) ──
+      if (gk) {
+        const enriched = await analyseNewsItems(gk, raw);
+        if (enriched?.length) {
+          const enrichedSorted = sortNewsByDate(enriched);
+          setNews(enrichedSorted);   // upgrade displayed news silently
+          // Save enriched version to cache
+          fetch("/api/news", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ items: enrichedSorted }),
+          }).catch(() => {});
+          return;
+        }
+      }
+
+      // No Gemini / enrichment failed — save raw version to cache
       fetch("/api/news", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: sorted }),
+        body: JSON.stringify({ items: rawSorted }),
       }).catch(() => {});
+
     } catch (e) { console.warn("fetchFreshNews error:", e.message); }
-    setNewsLoading(false);
+    if (!silent) setNewsLoading(false);
   };
 
   // Sort news newest-first, then group by week for display
@@ -491,7 +527,7 @@ export default function Home() {
         {/* ── FEED TAB ── */}
         {tab === "feed" && (
           <div>
-            {/* News loading — animated Miru eye */}
+            {/* News loading — animated Miru eye (full animation first time only) */}
             {newsLoading && <NewsLoader />}
 
 
