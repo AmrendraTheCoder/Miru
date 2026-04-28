@@ -1,12 +1,11 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import ResearchReport from "./components/ResearchReport";
-import FounderCard from "./components/FounderCard";
 import {
-  exaStartupResearch, exaPressArticles, exaFindCompetitors,
-  exaYCBatchSearch, exaHarvardStartups, exaDailyStartupNews
+  exaFindCompetitors, exaDailyStartupNews
 } from "@/lib/exa";
-import { analyseStartup, analyseCompetitor, analyseNewsItems, analyseYCBatch } from "@/lib/analyzer";
+import { analyseCompetitor, analyseNewsItems } from "@/lib/analyzer";
+import { SearchEngine, scoreState, getMemoryStats, clearMemory } from "@/lib/searchEngine";
 
 const DISCOVER_STARTUPS = [
   { name: "Airbnb", batch: "W09", sector: "Travel", description: "Marketplace for short-term home rentals. Disrupted the hotel industry.", domain: "airbnb.com" },
@@ -23,12 +22,7 @@ const DISCOVER_STARTUPS = [
   { name: "Scale AI", batch: "S16", sector: "AI/ML", description: "Data labeling and AI infrastructure for ML teams.", domain: "scale.com" },
 ];
 
-const STEPS = [
-  "Searching web for startup data...",
-  "Pulling press articles...",
-  "Running AI analysis...",
-  "Building report...",
-];
+// RL progress state replaces static steps
 
 function StatusDot({ active }) {
   return <span className={`status-dot ${active ? "on" : "off"}`} />;
@@ -77,7 +71,7 @@ export default function Home() {
   const [tab, setTab] = useState("feed");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(0);
+  const [rlProgress, setRlProgress] = useState({ message: "", score: 0, strategy: null });
   const [report, setReport] = useState(null);
   const [competitors, setCompetitors] = useState([]);
   const [loadingComps, setLoadingComps] = useState(false);
@@ -87,6 +81,7 @@ export default function Home() {
   const [discoverList, setDiscoverList] = useState(DISCOVER_STARTUPS);
   const [discoverSector, setDiscoverSector] = useState("All");
   const [error, setError] = useState("");
+  const [memoryStats, setMemoryStats] = useState({});
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [userKeys, setUserKeys] = useState({ exa: "", gemini: "" });
   const [serverStatus, setServerStatus] = useState({ hasExaKey: false, hasGeminiKey: false, hasSupabase: false, exaKey: null, geminiKey: null });
@@ -99,6 +94,7 @@ export default function Home() {
       setUserKeys({ exa: localStorage.getItem("user_exa_key") || "", gemini: localStorage.getItem("user_gemini_key") || "" });
     } catch {}
     fetch("/api/settings").then(r => r.json()).then(setServerStatus).catch(() => {});
+    setMemoryStats(getMemoryStats());
   }, []);
 
   // Load news on mount
@@ -126,25 +122,22 @@ export default function Home() {
     const name = startupName || query.trim();
     if (!name) return setError("Enter a startup name or domain.");
     if (!exaKey) return setError("No Exa API key. Add one in Settings.");
-    setError(""); setLoading(true); setReport(null); setCompetitors([]); setStep(0);
+    if (!geminiKey) return setError("No Gemini key. Add one in Settings.");
+    setError(""); setLoading(true); setReport(null); setCompetitors([]);
+    setRlProgress({ message: "Initialising adaptive research engine...", score: 0, strategy: null });
     setQuery(name); setTab("research");
 
     try {
-      setStep(0);
-      const [mainPages, pressPages] = await Promise.all([
-        exaStartupResearch(exaKey, name),
-        exaPressArticles(exaKey, name),
-      ]);
-      setStep(2);
-      const allPages = [...mainPages, ...pressPages];
-      if (!allPages.length) { setError("No data found for this startup."); setLoading(false); return; }
-      if (!geminiKey) { setError("No Gemini key — AI analysis unavailable. Add one in Settings."); setLoading(false); return; }
-      setStep(3);
-      const result = await analyseStartup(geminiKey, name, allPages);
-      setReport(result);
-      setStep(4);
+      const engine = new SearchEngine(exaKey, geminiKey, { maxRounds: 4, stopThreshold: 0.75 });
+      const { report: result, score, log } = await engine.research(name, (progress) => {
+        setRlProgress(progress);
+      });
 
-      // Load competitors in background
+      if (!result) { setError("Research returned no data. Try a more specific name."); setLoading(false); return; }
+      setReport(result);
+      setMemoryStats(getMemoryStats()); // Refresh memory stats after learning
+
+      // Load competitors in background after report is shown
       if (result.competitorNames?.length) {
         loadCompetitors(result.competitorNames, result.domain);
       }
@@ -217,18 +210,31 @@ export default function Home() {
 
       {/* Settings */}
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} keys={userKeys} setKeys={setUserKeys} serverStatus={serverStatus} />
+      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} keys={userKeys} setKeys={setUserKeys} serverStatus={serverStatus} memoryStats={memoryStats} />
 
       {/* Content */}
       <div className="shell content">
         {error && <div className="error-bar">{error}</div>}
 
-        {loading && (
-          <div className="loading-wrap">
-            <div className="spinner" />
-            <div className="loading-text">{STEPS[step] || "Working..."}</div>
-            <div className="loading-steps">Multi-model AI cascade — Gemini 2.5 Flash → fallback chain</div>
-          </div>
-        )}
+          {loading && (
+            <div className="loading-wrap">
+              <div className="spinner" />
+              <div className="loading-text">{rlProgress.message || "Working..."}</div>
+              {rlProgress.score > 0 && (
+                <div style={{ margin: "10px auto", maxWidth: 280 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>
+                    <span>Knowledge score</span>
+                    <span style={{ fontWeight: 600, color: "var(--orange)" }}>{Math.round(rlProgress.score * 100)}%</span>
+                  </div>
+                  <div style={{ height: 4, background: "var(--border)", borderRadius: 2 }}>
+                    <div style={{ height: "100%", width: `${Math.round(rlProgress.score * 100)}%`, background: "var(--orange)", borderRadius: 2, transition: "width 0.4s ease" }} />
+                  </div>
+                  {rlProgress.strategy && <div style={{ fontSize: 11, color: "var(--muted2)", marginTop: 4 }}>Strategy: {rlProgress.strategy}</div>}
+                </div>
+              )}
+              <div className="loading-steps">Adaptive RL engine — stops when knowledge score ≥ 75%</div>
+            </div>
+          )}
 
         {/* ── FEED TAB ── */}
         {tab === "feed" && !loading && (
