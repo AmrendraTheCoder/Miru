@@ -1,12 +1,13 @@
 {
-  "name": "basic-search",
+  "name": "miru",
   "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "seed:yc": "node scripts/seed-yc-companies.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.104.0",
