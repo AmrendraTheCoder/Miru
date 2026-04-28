@@ -469,3 +469,102 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   .header-nav { overflow-x: auto; }
   .nav-tab { padding: 6px 8px; font-size: 12px; }
 }
+
+/* ═══════════════════════════════════════════════
+   NEWS LOADER — Miru eye animation
+═══════════════════════════════════════════════ */
+.news-loader-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 20px 40px;
+  gap: 14px;
+}
+
+/* SVG container */
+.news-loader-icon { width: 64px; height: 64px; }
+.miru-eye-svg { width: 100%; height: 100%; overflow: visible; }
+
+/* Outer dashed ring spins slowly */
+.eye-ring-spin {
+  transform-origin: 24px 24px;
+  animation: ring-spin 4s linear infinite;
+}
+
+/* Iris pulses in and out */
+.eye-iris-pulse {
+  transform-origin: 24px 24px;
+  animation: iris-pulse 2s ease-in-out infinite;
+}
+
+/* Horizontal scan line sweeps left to right */
+.eye-scan-line {
+  transform-origin: 24px 24px;
+  animation: scan-sweep 2s ease-in-out infinite;
+}
+
+/* Status text */
+.news-loader-status {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+/* Rotating fact — fades in when key changes */
+.news-loader-fact {
+  font-size: 12px;
+  color: var(--muted);
+  max-width: 320px;
+  text-align: center;
+  line-height: 1.5;
+  animation: fact-fade 0.4s ease both;
+  min-height: 36px;
+}
+
+/* Source abbreviation dots */
+.news-loader-sources {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+.news-source-dot {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: var(--muted);
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  animation: dot-pulse 1.4s ease-in-out infinite;
+  background: var(--surface);
+}
+
+/* ── Keyframes ── */
+@keyframes ring-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes iris-pulse {
+  0%, 100% { transform: scale(1);    opacity: 1; }
+  50%       { transform: scale(1.2); opacity: 0.85; }
+}
+@keyframes scan-sweep {
+  0%   { transform: scaleX(0.2); opacity: 0; }
+  30%  { transform: scaleX(1);   opacity: 0.4; }
+  70%  { transform: scaleX(1);   opacity: 0.4; }
+  100% { transform: scaleX(0.2); opacity: 0; }
+}
+@keyframes fact-fade {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes dot-pulse {
+  0%, 100% { opacity: 0.35; }
+  50%       { opacity: 1; }
+}
+@keyframes spin        { to { transform: rotate(360deg); } }
+@keyframes fadeInUp    { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes shimmer     { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+@keyframes blink-dot   { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
+

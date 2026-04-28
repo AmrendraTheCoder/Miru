@@ -88,6 +88,60 @@ function RadarLoader({ message, score, strategy }) {
   );
 }
 
+const NEWS_FACTS = [
+  "Scanning TechCrunch, Bloomberg, Reuters and 10 more sources",
+  "Fetching the last 30 days of startup activity",
+  "2,000+ YC companies are in your local database",
+  "Results sorted newest → oldest by publish date",
+  "Weekly cache — news refreshes automatically every 7 days",
+  "YC has funded 5,690+ companies since 2005",
+  "AI + Fintech account for 50%+ of recent YC batches",
+  "Once loaded, news is cached in Supabase — instant next time",
+  "Click any headline to trigger deep research on that startup",
+];
+
+function NewsLoader() {
+  const [factIdx, setFactIdx] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setFactIdx(i => (i + 1) % NEWS_FACTS.length), 2500);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <div className="news-loader-wrap">
+      {/* Animated Miru favicon — pulsing eye SVG */}
+      <div className="news-loader-icon">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="miru-eye-svg">
+          {/* Outer scanning ring */}
+          <circle cx="24" cy="24" r="22" stroke="var(--orange)" strokeWidth="1.5" strokeDasharray="4 4" className="eye-ring-spin" />
+          {/* Eye whites */}
+          <ellipse cx="24" cy="24" rx="16" ry="11" fill="#fff" stroke="var(--border)" strokeWidth="1" />
+          {/* Iris */}
+          <circle cx="24" cy="24" r="7" fill="var(--orange)" className="eye-iris-pulse" />
+          {/* Pupil */}
+          <circle cx="24" cy="24" r="3.5" fill="#fff" />
+          {/* Scan line */}
+          <line x1="8" y1="24" x2="40" y2="24" stroke="var(--orange)" strokeWidth="0.8" strokeOpacity="0.3" className="eye-scan-line" />
+        </svg>
+      </div>
+
+      <div className="news-loader-status">Fetching startup news…</div>
+
+      {/* Rotating facts */}
+      <div className="news-loader-fact" key={factIdx}>
+        {NEWS_FACTS[factIdx]}
+      </div>
+
+      {/* Source dots */}
+      <div className="news-loader-sources">
+        {["TC", "BBG", "REU", "AXS", "FT", "VB"].map((s, i) => (
+          <span key={s} className="news-source-dot" style={{ animationDelay: `${i * 0.2}s` }}>{s}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 
 
 function CompanyLogo({ name, logoUrl, website }) {
@@ -437,13 +491,10 @@ export default function Home() {
         {/* ── FEED TAB ── */}
         {tab === "feed" && (
           <div>
-            {/* Loading overlay only for news */}
-            {newsLoading && (
-              <div className="loading-wrap" style={{ padding: "32px 0" }}>
-                <div className="spinner" style={{ marginBottom: 8 }} />
-                <div className="loading-text">Loading today's startup news...</div>
-              </div>
-            )}
+            {/* News loading — animated Miru eye */}
+            {newsLoading && <NewsLoader />}
+
+
 
             {!newsLoading && (
               <>
