@@ -173,8 +173,8 @@ export default function Home() {
       <div className="header">
         <div className="header-inner">
           <a className="header-logo" href="/">
-            <span className="header-logo-box">SI</span>
-            Startup Intel
+            <span className="header-logo-box">M</span>
+            Miru
           </a>
           <nav className="header-nav">
             {[["feed","Feed"],["discover","Discover"],["research","Research"],["competitors","Competitors"]].map(([id, label]) => (
@@ -216,23 +216,50 @@ export default function Home() {
       <div className="shell content">
         {error && <div className="error-bar">{error}</div>}
 
-          {loading && (
+        {loading && (
             <div className="loading-wrap">
-              <div className="spinner" />
-              <div className="loading-text">{rlProgress.message || "Working..."}</div>
+              {/* Radar animation */}
+              <div className="radar-container">
+                <div className="radar-scan" />
+                <div className="radar-core" />
+                <div className="radar-ring" />
+                <div className="radar-ring" />
+                <div className="radar-ring" />
+                <div className="radar-ring" />
+              </div>
+
+              {/* Data nodes */}
+              <div className="data-nodes">
+                {[0,1,2,3,4].map(i => <div key={i} className="data-node" />)}
+              </div>
+
+              <div className="loading-text">{rlProgress.message || "Initialising Miru..."}</div>
+
+              {/* RL Knowledge score bar */}
               {rlProgress.score > 0 && (
-                <div style={{ margin: "10px auto", maxWidth: 280 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>
+                <div className="rl-progress-wrap">
+                  <div className="rl-progress-header">
                     <span>Knowledge score</span>
-                    <span style={{ fontWeight: 600, color: "var(--orange)" }}>{Math.round(rlProgress.score * 100)}%</span>
+                    <span className="rl-progress-score">{Math.round(rlProgress.score * 100)}%</span>
                   </div>
-                  <div style={{ height: 4, background: "var(--border)", borderRadius: 2 }}>
-                    <div style={{ height: "100%", width: `${Math.round(rlProgress.score * 100)}%`, background: "var(--orange)", borderRadius: 2, transition: "width 0.4s ease" }} />
+                  <div className="rl-bar-track">
+                    <div
+                      className="rl-bar-fill"
+                      style={{ width: `${Math.round(rlProgress.score * 100)}%` }}
+                    />
                   </div>
-                  {rlProgress.strategy && <div style={{ fontSize: 11, color: "var(--muted2)", marginTop: 4 }}>Strategy: {rlProgress.strategy}</div>}
+                  {rlProgress.strategy && (
+                    <div className="rl-strategy-tag">
+                      <div className="rl-live-dot" />
+                      Strategy: {rlProgress.strategy}
+                    </div>
+                  )}
                 </div>
               )}
-              <div className="loading-steps">Adaptive RL engine — stops when knowledge score ≥ 75%</div>
+
+              <div className="loading-steps" style={{ marginTop: 12 }}>
+                Adaptive engine — stops at 75% confidence
+              </div>
             </div>
           )}
 
