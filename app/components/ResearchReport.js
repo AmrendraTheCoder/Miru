@@ -1,6 +1,10 @@
 "use client";
 import FounderCard from "./FounderCard";
 
+function toSlug(name = "") {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
 function stageClass(stage) {
   if (!stage) return "";
   const s = stage.toLowerCase();
@@ -22,7 +26,14 @@ export default function ResearchReport({ report, apiKey }) {
         <div className="report-hero-top">
           <div className="report-logo">{(d.name || "?")[0].toUpperCase()}</div>
           <div>
-            <div className="report-name">{d.name}</div>
+            <a
+              href={`/startup/${toSlug(d.name || "")}`}
+              className="report-name report-name-link"
+              title={`Open full intelligence page for ${d.name}`}
+            >
+              {d.name}
+              <span className="report-name-arrow">↗</span>
+            </a>
             <div className="report-tagline">{d.tagline}</div>
             {d.stage && (
               <span className={`news-stage ${stageClass(d.stage)}`} style={{ marginTop: 6, display: "inline-block" }}>
@@ -207,7 +218,14 @@ export default function ResearchReport({ report, apiKey }) {
           <div className="report-section-title">Known Competitors</div>
           <div className="startup-tags">
             {d.competitorNames.map((c, i) => (
-              <span key={i} className="startup-tag" style={{ fontSize: 12, padding: "3px 10px" }}>{c}</span>
+              <a
+                key={i}
+                href={`/startup/${toSlug(c)}`}
+                className="startup-tag startup-tag-link"
+                style={{ fontSize: 12, padding: "3px 10px" }}
+              >
+                {c} ↗
+              </a>
             ))}
           </div>
         </div>

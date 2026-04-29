@@ -203,14 +203,26 @@ function CompanyLogo({ name, logoUrl, website }) {
   );
 }
 
+function toSlug(name = "") {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
 function StartupCard({ s, onResearch }) {
   const sector = s.sectors?.[0] || "";
+  const slug = s.slug || toSlug(s.name || "");
   return (
     <div className="discover-card" onClick={() => onResearch(s.name)}>
       <div className="discover-card-top">
         <CompanyLogo name={s.name} logoUrl={s.logo_url} website={s.website} />
         <div style={{ minWidth: 0 }}>
-          <div className="startup-name">{s.name}</div>
+          <a
+            href={`/startup/${slug}`}
+            className="startup-name startup-name-link"
+            onClick={e => e.stopPropagation()} /* prevent card research trigger */
+            title={`Open ${s.name} intelligence page`}
+          >
+            {s.name}
+          </a>
           <div className="startup-batch">{s.batch}{sector ? ` · ${sector}` : ""}</div>
         </div>
       </div>
@@ -226,6 +238,7 @@ function StartupCard({ s, onResearch }) {
     </div>
   );
 }
+
 
 export default function Home() {
   const [tab, setTab] = useState("feed");

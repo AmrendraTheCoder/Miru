@@ -129,6 +129,10 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 .report-hero-top { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 12px; }
 .report-logo { width: 48px; height: 48px; border-radius: var(--radius); background: var(--orange); color: #fff; font-weight: 800; font-size: 22px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .report-name { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1.2; }
+.report-name-link { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: var(--text); transition: color 0.15s; }
+.report-name-link:hover { color: var(--orange); }
+.report-name-arrow { font-size: 14px; opacity: 0; transition: opacity 0.15s; }
+.report-name-link:hover .report-name-arrow { opacity: 1; }
 .report-tagline { font-size: 13px; color: var(--muted); margin-top: 2px; }
 .report-meta-row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
 .report-meta-item { font-size: 11px; color: var(--muted); }
@@ -723,6 +727,11 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 .sp-employee-card:hover { border-color: #0077b5; }
 .sp-emp-avatar { width: 32px; height: 32px; border-radius: 50%; color: #fff; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .sp-emp-info { flex: 1; min-width: 0; }
+.startup-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.startup-name-link { display: block; text-decoration: none; color: var(--text); transition: color 0.12s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.startup-name-link:hover { color: var(--orange); }
+.startup-tag-link { text-decoration: none; cursor: pointer; transition: background 0.1s, border-color 0.1s, color 0.1s; }
+.startup-tag-link:hover { background: var(--orange); border-color: var(--orange); color: #fff !important; }
 .sp-emp-name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sp-emp-role { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sp-li-icon { flex-shrink: 0; opacity: 0.7; }

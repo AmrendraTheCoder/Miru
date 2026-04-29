@@ -13,7 +13,7 @@ const dmSans = DM_Sans({
 export const metadata = {
   metadataBase: new URL("https://miru-1.vercel.app"),
   title: {
-    default: "Miru — Startup Intelligence Platform",
+    default: "Miru",
     template: "%s | Miru",
   },
   description:
