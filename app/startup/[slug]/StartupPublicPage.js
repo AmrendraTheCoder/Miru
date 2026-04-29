@@ -243,7 +243,7 @@ function EmployeeFinder({ companyName, domain }) {
 export default function StartupPublicPage({ data, slug }) {
   const name = data.name || slug;
   const domain = data.domain;
-  const isStub = data._source === "stub" || (!data.overview && !data.tagline && !data.founders?.length);
+  const isStub = !data.whyFunded && !data.problem && !data.fundingTimeline?.length;
   const publishDate = data._updatedAt
     ? new Date(data._updatedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
     : null;
