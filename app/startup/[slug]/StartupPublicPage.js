@@ -871,8 +871,8 @@ export default function StartupPublicPage({ data, slug }) {
                 <span>By <strong>Miru Intelligence</strong></span>
                 {publishDate && <span>· Updated {publishDate}</span>}
                 {data.overview && <span>· {readTime(data)}</span>}
-                {/* Refresh cached data */}
-                {data._source === "report" && researchState === "done" && (
+                {/* Refresh cached data — show for any company once not actively loading */}
+                {researchState !== "loading" && researchState !== "pending" && (
                   <button
                     className="sp-refresh-btn"
                     onClick={refreshData}
