@@ -12,15 +12,15 @@ import { getSupabaseServer } from "@/lib/supabase";
 const EXA_BASE    = "https://api.exa.ai";
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
-// Models ordered by actual free-tier availability — Gemma has 30 RPM + 14.4K RPD (abundant)
-// Gemini 2.5 Flash has only 20 RPD — keep as late fallback
-// jsonMode=false for Gemma — those models don't support responseMimeType
+// Models ordered by speed & availability on free tier
+// Gemma models have 30 RPM + 14.4K RPD — abundant
+// Gemini 2.5 Flash has only 20 RPD — use sparingly
 const GEMINI_MODELS = [
-  { id: "gemma-3-27b-it",                 jsonMode: false }, // 30 RPM, 14.4K RPD — highest quality Gemma
-  { id: "gemma-3-12b-it",                 jsonMode: false }, // 30 RPM, 14.4K RPD
-  { id: "gemma-3-4b-it",                  jsonMode: false }, // 30 RPM, 14.4K RPD — fast
-  { id: "gemini-2.5-flash-preview-04-17", jsonMode: true  }, // 5 RPM, 20 RPD — use sparingly
-  { id: "gemini-2.5-flash",               jsonMode: true  }, // 5 RPM, 20 RPD — last resort
+  { id: "gemma-3-4b-it",                  jsonMode: false }, // Fast ~5s, 30 RPM, 14.4K RPD
+  { id: "gemma-3-12b-it",                 jsonMode: false }, // Good quality, 30 RPM
+  { id: "gemma-3-1b-it",                  jsonMode: false }, // Tiny but quick fallback
+  { id: "gemini-2.5-flash",               jsonMode: true  }, // Only 20 RPD — last resort
+  { id: "gemini-2.5-flash-preview-04-17", jsonMode: true  }, // alternate ID
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────
@@ -62,14 +62,14 @@ async function exaSearch(query, opts = {}) {
   }
 }
 
-// Try one Gemini/Gemma model with a hard 25s timeout
+// Try one Gemini/Gemma model with a hard 30s timeout
 async function tryGemini(model, apiKey, prompt) {
   const { id, jsonMode } = model;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 25000);
+  const timeout = setTimeout(() => controller.abort(), 30000);
 
   try {
-    const genConfig = { temperature: 0.15, maxOutputTokens: 3500 };
+    const genConfig = { temperature: 0.2, maxOutputTokens: 3500 };
     if (jsonMode) genConfig.responseMimeType = "application/json";
 
     const res = await fetch(`${GEMINI_BASE}/${id}:generateContent?key=${apiKey}`, {
@@ -88,14 +88,18 @@ async function tryGemini(model, apiKey, prompt) {
     const data = await res.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
 
-    // Strip markdown fences and extract JSON object
-    const cleaned = text.replace(/```json[\s\S]*?```|```[\s\S]*?```/g, "").trim();
+    // --- FIXED: extract JSON FROM code blocks, don't remove them ---
+    // Try fenced code block first: ```json ... ``` or ``` ... ```
+    const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+    const candidate = fenced ? fenced[1].trim() : text.trim();
+
     const parsed = (() => {
-      try { return JSON.parse(cleaned); }
-      catch {
-        const m = cleaned.match(/\{[\s\S]*\}/);
-        return m ? JSON.parse(m[0]) : null;
-      }
+      // Attempt 1: parse the extracted candidate directly
+      try { return JSON.parse(candidate); } catch {}
+      // Attempt 2: find a bare JSON object anywhere in the full text
+      const m = text.match(/\{[\s\S]*\}/);
+      if (m) { try { return JSON.parse(m[0]); } catch {} }
+      return null;
     })();
 
     if (!parsed || typeof parsed !== "object") throw new Error("json_parse");

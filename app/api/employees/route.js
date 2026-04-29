@@ -84,10 +84,10 @@ export async function POST(request) {
       method: "POST",
       headers: { "x-api-key": EXA_KEY, "Content-Type": "application/json" },
       body: JSON.stringify({
-        // Search for LinkedIn profiles of people at this company
-        query: `${companyName} employee engineer manager director currently working ${domainStr}`,
-        type: "neural",
-        numResults: 20,
+        // Target individual LinkedIn profile pages directly
+        query: `site:linkedin.com/in Software Engineer SDE "${companyName}" current employee`,
+        type: "keyword",
+        numResults: 25,
         includeDomains: ["linkedin.com"],
         contents: {
           text: { maxCharacters: 0 }, // Title only — saves credits
