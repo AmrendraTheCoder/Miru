@@ -13,7 +13,7 @@ const dmSans = DM_Sans({
 export const metadata = {
   metadataBase: new URL("https://miru-1.vercel.app"),
   title: {
-    default: "Miru",
+    default: "Miru — Startup Intelligence Platform",
     template: "%s | Miru",
   },
   description:
@@ -22,6 +22,9 @@ export const metadata = {
     "Y Combinator, startup research, founder profiles, venture capital, competitor analysis, startup funding, LeetCode interview prep, startup jobs",
   authors: [{ name: "Miru", url: "https://miru-1.vercel.app" }],
   creator: "Miru Intelligence",
+  verification: {
+    google: "Wx-xYzI1Rkr_z2OmDweNyGWTC2IX8si2ugVoTn-PIew",
+  },
   openGraph: {
     type: "website",
     locale: "en_US",

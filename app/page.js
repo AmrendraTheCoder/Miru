@@ -596,24 +596,48 @@ export default function Home() {
                     return dt.toLocaleDateString("en-US", { month: "short", day: "numeric" });
                   };
 
-                  const renderItems = (items, offset = 0) => items.map((item, i) => (
-                    <div className="news-item" key={`${offset}-${i}`}>
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <span className="news-rank">{offset + i + 1}.</span>
-                        <div className="news-main">
-                          <div className="news-headline" onClick={() => research(item.researchQuery || item.startup)}>{item.headline || item.title}</div>
-                          <div className="news-meta">
-                            {item.stage && <span className={`news-stage ${item.stage?.toLowerCase().includes("seed") ? "stage-seed" : item.stage?.toLowerCase().includes("series") ? "stage-series" : item.stage?.toLowerCase().includes("acquired") ? "stage-acquired" : "stage-ipo"}`}>{item.stage}</span>}
-                            {item.amount && <span style={{ color: "var(--green)", fontWeight: 600 }}>{item.amount}</span>}
-                            {item.source && <span>{item.source}</span>}
-                            {(item.date || item.publishedDate) && <span style={{ color: "var(--muted2)" }}>{formatDate(item.date || item.publishedDate)}</span>}
+                  const renderItems = (items, offset = 0) => items.map((item, i) => {
+                    const companyName = item.startup || item.researchQuery || item.title || "";
+                    const companySlug = toSlug(companyName);
+                    return (
+                      <div className="news-item" key={`${offset}-${i}`}>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <span className="news-rank">{offset + i + 1}.</span>
+                          <div className="news-main">
+                            {/* Company name chip → /startup/[slug] */}
+                            {companyName && (
+                              <a
+                                href={`/startup/${companySlug}`}
+                                className="news-company-chip"
+                                title={`Open ${companyName} intelligence page`}
+                              >
+                                {companyName} ↗
+                              </a>
+                            )}
+                            {/* Headline → inline research */}
+                            <div
+                              className="news-headline"
+                              onClick={() => research(item.researchQuery || item.startup)}
+                            >
+                              {item.headline || item.title}
+                            </div>
+                            <div className="news-meta">
+                              {item.stage && <span className={`news-stage ${item.stage?.toLowerCase().includes("seed") ? "stage-seed" : item.stage?.toLowerCase().includes("series") ? "stage-series" : item.stage?.toLowerCase().includes("acquired") ? "stage-acquired" : "stage-ipo"}`}>{item.stage}</span>}
+                              {item.amount && <span style={{ color: "var(--green)", fontWeight: 600 }}>{item.amount}</span>}
+                              {item.source && <span>{item.source}</span>}
+                              {(item.date || item.publishedDate) && <span style={{ color: "var(--muted2)" }}>{formatDate(item.date || item.publishedDate)}</span>}
+                            </div>
+                            {item.summary && <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>{item.summary}</div>}
                           </div>
-                          {item.summary && <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>{item.summary}</div>}
+                        </div>
+                        <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 6 }}>
+                          <button className="btn-research" onClick={() => research(item.researchQuery || item.startup || item.title)}>Research →</button>
+                          <a href={`/startup/${companySlug}`} className="btn-view-page">View page ↗</a>
                         </div>
                       </div>
-                      <button className="btn-research" onClick={() => research(item.researchQuery || item.startup || item.title)}>Research →</button>
-                    </div>
-                  ));
+                    );
+                  });
+
 
                   return (
                     <div className="news-list">

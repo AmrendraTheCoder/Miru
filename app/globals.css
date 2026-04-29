@@ -74,8 +74,13 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 .news-action { flex-shrink: 0; }
 .btn-research { background: none; border: none; color: var(--orange); font-size: 11px; cursor: pointer; font-family: var(--font); padding: 2px 0; white-space: nowrap; }
 .btn-research:hover { text-decoration: underline; }
+.btn-view-page { font-size: 11px; color: var(--muted); text-decoration: none; padding: 2px 0; white-space: nowrap; font-family: var(--font); }
+.btn-view-page:hover { color: var(--text); text-decoration: underline; }
+.news-company-chip { display: inline-block; font-size: 10px; font-weight: 700; color: var(--orange); text-decoration: none; letter-spacing: 0.2px; margin-bottom: 2px; }
+.news-company-chip:hover { text-decoration: underline; }
 /* Date group labels in news feed */
 .news-group-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); padding: 6px 12px 4px; background: var(--bg); border-bottom: 1px solid var(--border); }
+
 
 
 /* ── Discovery Grid ── */
