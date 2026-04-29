@@ -273,6 +273,7 @@ export default function Home() {
   const [sectorFilter, setSectorFilter] = useState("All");
   const [batchFilter, setBatchFilter] = useState("All");
   const [discoverSearch, setDiscoverSearch] = useState("");
+  const [discoverTab, setDiscoverTab] = useState("yc"); // yc | unicorn | fortune500 | tech | all
   const [allSectors, setAllSectors] = useState([]);
   const discoverSearchRef = useRef(null);
 
@@ -309,8 +310,17 @@ export default function Home() {
 
   /* ── Load DB companies when Discover tab opens ── */
   useEffect(() => {
-    if (tab === "discover") loadCompanies(1, sectorFilter, batchFilter, discoverSearch);
+    if (tab === "discover") loadCompanies(1, sectorFilter, batchFilter, discoverSearch, discoverTab);
   }, [tab]);
+
+  // Reload when discoverTab changes
+  useEffect(() => {
+    if (tab === "discover") {
+      setDiscoverPage(1);
+      setCompanies([]);
+      loadCompanies(1, sectorFilter, batchFilter, discoverSearch, discoverTab);
+    }
+  }, [discoverTab]);
 
   /* ── News ── */
   const loadNews = async (ek = exaKey, gk = geminiKey) => {
@@ -402,27 +412,26 @@ export default function Home() {
 
   const refreshNewsBackground = () => { fetchFreshNews().catch(() => {}); };
 
-  /* ── Load YC companies from DB ── */
-  const loadCompanies = useCallback(async (page = 1, sector = "All", batch = "All", search = "") => {
+  /* ── Load companies from unified DB ── */
+  const loadCompanies = useCallback(async (page = 1, sector = "All", batch = "All", search = "", dtab = "yc") => {
     setDiscoverLoading(true);
     try {
-      const params = new URLSearchParams({ page, limit: 60 });
+      const params = new URLSearchParams({ page, limit: 60, tab: dtab });
       if (sector !== "All") params.set("sector", sector);
-      if (batch  !== "All") params.set("batch",  batch);
-      if (search.trim())    params.set("q",      search.trim());
+      if (batch  !== "All" && dtab === "yc") params.set("batch", batch);
+      if (search.trim()) params.set("q", search.trim());
 
       const res = await fetch(`/api/yc-companies?${params}`).then(r => r.json());
       if (res.companies?.length) {
         setCompanies(page === 1 ? res.companies : prev => [...prev, ...res.companies]);
         setDiscoverTotal(res.total || 0);
-        // Extract unique sectors for filter
         if (page === 1) {
           const sectorSet = new Set();
-          for (const c of res.companies) for (const s of (c.sectors || [])) sectorSet.add(s);
-          setAllSectors(Array.from(sectorSet).sort());
+          for (const c of res.companies)
+            for (const s of (c.sector || c.sectors || [])) sectorSet.add(s);
+          setAllSectors(Array.from(sectorSet).filter(Boolean).sort());
         }
       } else if (page === 1) {
-        // DB empty or error — keep static list
         setCompanies(STATIC_STARTUPS);
       }
     } catch (e) {
@@ -437,7 +446,7 @@ export default function Home() {
     setBatchFilter(batch);
     setDiscoverSearch(search);
     setDiscoverPage(1);
-    loadCompanies(1, sector, batch, search);
+    loadCompanies(1, sector, batch, search, discoverTab);
   };
 
   /* ── Research (with 7-day cache) ── */
@@ -699,39 +708,71 @@ export default function Home() {
           </div>
         )}
 
-        {/* ── DISCOVER TAB ── */}
         {tab === "discover" && (
           <div>
-            <div className="feed-header" style={{ flexWrap: "wrap", gap: 8 }}>
-              <div>
-                <div className="feed-title">YC Company Database</div>
-                {discoverTotal > 0 && <div style={{ fontSize: 11, color: "var(--muted)" }}>{discoverTotal.toLocaleString()} companies</div>}
+            {/* Discover tab bar */}
+            <div className="feed-header" style={{ flexDirection: "column", gap: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8 }}>
+                <div>
+                  <div className="feed-title">
+                    {discoverTab === "yc"        && "YC Company Database"}
+                    {discoverTab === "unicorn"    && "🦄 Unicorn Companies ($1B+)"}
+                    {discoverTab === "fortune500" && "🏆 Fortune 500 & Forbes Global"}
+                    {discoverTab === "tech"       && "🏢 Big Tech & MNCs"}
+                    {discoverTab === "all"        && "All Companies"}
+                  </div>
+                  {discoverTotal > 0 && <div style={{ fontSize: 11, color: "var(--muted)" }}>{discoverTotal.toLocaleString()} companies</div>}
+                </div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                  <input
+                    ref={discoverSearchRef}
+                    style={{ padding: "4px 8px", border: "1px solid var(--border)", borderRadius: "var(--radius)", fontFamily: "var(--font)", fontSize: 12, width: 150 }}
+                    placeholder="Filter companies..."
+                    defaultValue={discoverSearch}
+                    onKeyDown={e => { if (e.key === "Enter") handleDiscoverFilter(sectorFilter, batchFilter, e.target.value); }}
+                  />
+                  {discoverTab === "yc" && (
+                    <select
+                      style={{ padding: "4px 6px", border: "1px solid var(--border)", borderRadius: "var(--radius)", fontFamily: "var(--font)", fontSize: 12 }}
+                      value={batchFilter}
+                      onChange={e => handleDiscoverFilter(sectorFilter, e.target.value, discoverSearch)}
+                    >
+                      {BATCH_OPTIONS.map(b => <option key={b}>{b}</option>)}
+                    </select>
+                  )}
+                  <select
+                    style={{ padding: "4px 6px", border: "1px solid var(--border)", borderRadius: "var(--radius)", fontFamily: "var(--font)", fontSize: 12 }}
+                    value={sectorFilter}
+                    onChange={e => handleDiscoverFilter(e.target.value, batchFilter, discoverSearch)}
+                  >
+                    {["All", ...allSectors.slice(0, 30)].map(s => <option key={s}>{s}</option>)}
+                  </select>
+                </div>
               </div>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-                {/* Search within discover */}
-                <input
-                  ref={discoverSearchRef}
-                  style={{ padding: "4px 8px", border: "1px solid var(--border)", borderRadius: "var(--radius)", fontFamily: "var(--font)", fontSize: 12, width: 160 }}
-                  placeholder="Filter companies..."
-                  defaultValue={discoverSearch}
-                  onKeyDown={e => {
-                    if (e.key === "Enter") handleDiscoverFilter(sectorFilter, batchFilter, e.target.value);
-                  }}
-                />
-                <select
-                  style={{ padding: "4px 6px", border: "1px solid var(--border)", borderRadius: "var(--radius)", fontFamily: "var(--font)", fontSize: 12 }}
-                  value={batchFilter}
-                  onChange={e => handleDiscoverFilter(sectorFilter, e.target.value, discoverSearch)}
-                >
-                  {BATCH_OPTIONS.map(b => <option key={b}>{b}</option>)}
-                </select>
-                <select
-                  style={{ padding: "4px 6px", border: "1px solid var(--border)", borderRadius: "var(--radius)", fontFamily: "var(--font)", fontSize: 12 }}
-                  value={sectorFilter}
-                  onChange={e => handleDiscoverFilter(e.target.value, batchFilter, discoverSearch)}
-                >
-                  {["All", ...allSectors.slice(0, 30)].map(s => <option key={s}>{s}</option>)}
-                </select>
+
+              {/* Category tab switcher */}
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {[
+                  { id: "yc",        label: "YC Startups",    emoji: "🚀" },
+                  { id: "unicorn",   label: "Unicorns",        emoji: "🦄" },
+                  { id: "fortune500",label: "Fortune 500",     emoji: "🏆" },
+                  { id: "tech",      label: "Big Tech & MNCs", emoji: "🏢" },
+                  { id: "all",       label: "All",             emoji: "🌐" },
+                ].map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => setDiscoverTab(t.id)}
+                    style={{
+                      padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                      border: discoverTab === t.id ? "none" : "1px solid var(--border)",
+                      background: discoverTab === t.id ? "var(--orange)" : "transparent",
+                      color: discoverTab === t.id ? "#fff" : "var(--muted)",
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    {t.emoji} {t.label}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -749,17 +790,16 @@ export default function Home() {
             {!discoverLoading && companies.length === 0 && (
               <div className="empty-wrap">
                 <div className="empty-title">No companies found</div>
-                <div className="empty-desc">Run <code>npm run seed:yc</code> to populate the database, then run the SQL migration first.</div>
+                <div className="empty-desc">Try a different tab or clear the search filter.</div>
               </div>
             )}
 
-            {/* Load more */}
             {companies.length > 0 && companies.length < discoverTotal && (
               <div style={{ textAlign: "center", marginTop: 20 }}>
                 <button className="btn" disabled={discoverLoading} onClick={() => {
                   const next = discoverPage + 1;
                   setDiscoverPage(next);
-                  loadCompanies(next, sectorFilter, batchFilter, discoverSearch);
+                  loadCompanies(next, sectorFilter, batchFilter, discoverSearch, discoverTab);
                 }}>
                   {discoverLoading ? "Loading..." : `Load more (${discoverTotal - companies.length} remaining)`}
                 </button>
