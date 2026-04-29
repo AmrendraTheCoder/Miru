@@ -242,79 +242,152 @@ function EmployeeFinder({ companyName, domain }) {
 /* ── Life at Company ─────────────────────────────────────────── */
 const LIFE_TABS = ["Salary", "Perks", "Office", "Culture & FAQ"];
 
-function LifeAtCompany({ companyName }) {
-  const [life, setLife]         = useState(null);
-  const [loading, setLoading]   = useState(false);
-  const [loaded, setLoaded]     = useState(false);
+// Loading steps shown in sequence so the user knows what's happening
+const LOAD_STEPS = [
+  "Checking cache...",
+  "Fetching salary benchmarks from Levels.fyi...",
+  "Loading perks & benefits data...",
+  "Reading employee culture reviews...",
+  "Finding office & workspace photos...",
+  "Structuring insights...",
+];
+
+function LifeSkeleton() {
+  return (
+    <div className="la-skeleton-wrap" aria-busy="true" aria-label="Loading data">
+      {[80, 60, 90, 70].map((w, i) => (
+        <div key={i} className="la-skel-row" style={{ width: `${w}%`, animationDelay: `${i * 0.12}s` }} />
+      ))}
+    </div>
+  );
+}
+
+function LifeAtCompany({ companyName, companyData }) {
+  const [life, setLife]           = useState(null);
+  const [loading, setLoading]     = useState(false);
+  const [loaded, setLoaded]       = useState(false);
+  const [loadStep, setLoadStep]   = useState(0);
   const [activeTab, setActiveTab] = useState("Salary");
   const [imgErrors, setImgErrors] = useState({});
+
+  // Only show for significant companies (MNCs, unicorns, Fortune500, tech giants, or fully researched)
+  const isSignificant =
+    companyData?._dbSource === "fortune500"  ||
+    companyData?._dbSource === "forbes2000"  ||
+    companyData?._dbSource === "tech_list"   ||
+    companyData?._dbSource === "unicorn"     ||
+    companyData?._source   === "report"      ||
+    (companyData?.employeeCount && companyData.employeeCount > 200) ||
+    (companyData?.valuationUsd  && companyData.valuationUsd  > 0)   ||
+    (companyData?.marketCapUsd  && companyData.marketCapUsd  > 0);
+
+  if (!isSignificant) return null;
 
   const fetchLife = async () => {
     setLoading(true);
     gaEvent("event", "life_section_opened", { company: companyName });
+
+    // Animate through steps
+    let step = 0;
+    const ticker = setInterval(() => {
+      step = Math.min(step + 1, LOAD_STEPS.length - 1);
+      setLoadStep(step);
+    }, 1800);
+
     try {
       const res  = await fetch(`/api/life?company=${encodeURIComponent(companyName)}`);
       const json = await res.json();
+      clearInterval(ticker);
       if (json.life) setLife(json.life);
-    } catch { /* show empty state */ }
+    } catch {
+      clearInterval(ticker);
+    }
     setLoaded(true);
     setLoading(false);
+    setLoadStep(0);
   };
 
-  const fmtRating = (r) => r ? `${r.toFixed(1)} / 5.0` : null;
-  const fmtReviews = (n) => n ? `${n.toLocaleString()} reviews` : null;
+  const fmtRating  = (r) => r ? `${Number(r).toFixed(1)} / 5.0` : null;
+  const fmtReviews = (n) => n ? `${Number(n).toLocaleString()} reviews` : null;
+  const rating     = life?.glassdoorRating || life?.rating;
+  const reviews    = life?.glassdoorReviews || life?.reviews;
+  const snippets   = life?.cultureSnippets || life?.highlights || [];
 
   return (
-    <section className="sp-section" id="life-at-company" aria-label={`Life at ${companyName}`}>
-      <div className="sp-section-head">
-        <h2 className="sp-section-title">Life at {companyName}</h2>
-        <span className="sp-badge la-badge">Salary · Perks · Culture</span>
+    <section className="la-section" id="life-at-company" aria-label={`Life at ${companyName}`}>
+      {/* ── Section header ── */}
+      <div className="la-section-head">
+        <div className="la-head-left">
+          <h2 className="la-title">Life at {companyName}</h2>
+          <div className="la-head-pills">
+            <span className="la-pill">Salary</span>
+            <span className="la-pill">Perks</span>
+            <span className="la-pill">Culture</span>
+          </div>
+        </div>
+        {loaded && life && rating && (
+          <div className="la-rating-compact">
+            <div className="la-stars-sm">
+              {[1,2,3,4,5].map(n => (
+                <span key={n} style={{ color: n <= Math.round(rating) ? "#f5a623" : "var(--border)" }}>★</span>
+              ))}
+            </div>
+            <span className="la-rating-num-sm">{fmtRating(rating)}</span>
+            {fmtReviews(reviews) && <span className="la-review-sm">· {fmtReviews(reviews)}</span>}
+          </div>
+        )}
       </div>
-      <p className="sp-muted">
-        Salary benchmarks, benefits, office culture, and employee insights —
-        aggregated from Levels.fyi, Glassdoor, and Blind.
+
+      <p className="sp-muted" style={{ marginBottom: 14 }}>
+        Salary benchmarks, perks, culture and office insights — sourced from Levels.fyi, Glassdoor, and Blind.
       </p>
 
-      {/* Lazy-load trigger */}
-      {!loaded && (
-        <button className="sp-find-btn" onClick={fetchLife} disabled={loading} id="life-load-btn">
-          {loading
-            ? <span className="sp-loading-dots"><span /><span /><span /></span>
-            : `Explore life at ${companyName} →`}
+      {/* ── Lazy-load trigger ── */}
+      {!loaded && !loading && (
+        <button className="la-cta-btn" onClick={fetchLife} id="life-load-btn">
+          Explore life at {companyName}
+          <span className="la-cta-arrow">→</span>
         </button>
       )}
 
-      {loaded && !life && (
-        <p className="sp-muted" style={{ marginTop: 12 }}>
-          No data found.{" "}
-          <a href={`https://www.glassdoor.com/Reviews/${companyName.replace(/\s+/g, "-")}-Reviews-E.htm`}
-             target="_blank" rel="noopener noreferrer" className="sp-link">
-            View on Glassdoor ↗
-          </a>
-        </p>
+      {/* ── Step-by-step loading ── */}
+      {loading && (
+        <div className="la-loading-wrap" role="status" aria-live="polite">
+          <div className="la-loading-bar">
+            <div className="la-loading-fill" />
+          </div>
+          <div className="la-loading-steps">
+            {LOAD_STEPS.map((msg, i) => (
+              <div
+                key={i}
+                className={`la-step ${i < loadStep ? "la-step-done" : i === loadStep ? "la-step-active" : "la-step-pending"}`}
+              >
+                <span className="la-step-dot" />
+                <span className="la-step-msg">{msg}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
+      {/* ── No data state ── */}
+      {loaded && !life && (
+        <div className="la-no-data">
+          <p>No data found for {companyName}.</p>
+          <a
+            href={`https://www.glassdoor.com/Reviews/${companyName.replace(/\s+/g, "-")}-Reviews-E.htm`}
+            target="_blank" rel="noopener noreferrer" className="sp-link"
+          >
+            View on Glassdoor ↗
+          </a>
+        </div>
+      )}
+
+      {/* ── Main content ── */}
       {loaded && life && (
         <div className="la-wrap">
 
-          {/* Glassdoor rating strip */}
-          {(life.glassdoorRating || life.rating) && (
-            <div className="la-rating-bar" aria-label={`Glassdoor rating for ${companyName}`}>
-              <div className="la-stars">
-                {[1,2,3,4,5].map((n) => (
-                  <span key={n} className="la-star" style={{
-                    color: n <= Math.round(life.glassdoorRating || life.rating) ? "#f5a623" : "var(--border)"
-                  }}>★</span>
-                ))}
-              </div>
-              <strong className="la-rating-num">{fmtRating(life.glassdoorRating || life.rating)}</strong>
-              {fmtReviews(life.glassdoorReviews || life.reviews) && (
-                <span className="la-review-count">{fmtReviews(life.glassdoorReviews || life.reviews)} on Glassdoor</span>
-              )}
-            </div>
-          )}
-
-          {/* Tab bar */}
+          {/* Tab bar — no emojis */}
           <div className="la-tabs" role="tablist">
             {LIFE_TABS.map((t) => (
               <button
@@ -324,188 +397,206 @@ function LifeAtCompany({ companyName }) {
                 className={`la-tab${activeTab === t ? " la-tab-active" : ""}`}
                 onClick={() => setActiveTab(t)}
               >
-                {t === "Salary"       && "💰 "}
-                {t === "Perks"        && "🎁 "}
-                {t === "Office"       && "🏢 "}
-                {t === "Culture & FAQ"&& "⭐ "}
                 {t}
               </button>
             ))}
           </div>
 
-          {/* ── SALARY ── */}
-          {activeTab === "Salary" && (
-            <div className="la-panel" role="tabpanel" aria-label="Salary data">
-              {life.salaries?.length > 0 ? (
-                <>
-                  <div className="la-table-wrap">
-                    <table className="la-salary-table">
-                      <thead>
-                        <tr>
-                          <th>Role</th>
-                          <th>Base</th>
-                          <th>Equity / yr</th>
-                          <th>Total Comp</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {life.salaries.map((s, i) => (
-                          <tr key={i}>
-                            <td className="la-role">{s.role}</td>
-                            <td className="la-num">{s.base ?? "—"}</td>
-                            <td className="la-num">{s.equity ?? "—"}</td>
-                            <td className="la-num la-total">{s.total ?? "—"}</td>
+          <div className="la-panel-wrap">
+            {/* ── SALARY ── */}
+            {activeTab === "Salary" && (
+              <div className="la-panel" role="tabpanel">
+                {life.salaries?.length > 0 ? (
+                  <>
+                    <div className="la-table-wrap">
+                      <table className="la-salary-table">
+                        <thead>
+                          <tr>
+                            <th>Role / Level</th>
+                            <th>Base</th>
+                            <th>Equity / yr</th>
+                            <th>Total Comp</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {life.salaries.map((s, i) => (
+                            <tr key={i}>
+                              <td className="la-role">{s.role}</td>
+                              <td className="la-num">{s.base ?? "—"}</td>
+                              <td className="la-num">{s.equity ?? "—"}</td>
+                              <td className="la-num la-total">{s.total ?? "—"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className="la-disclaimer">
+                      Approximate medians from Levels.fyi & Glassdoor. Always verify before negotiating.
+                    </p>
+                    <a
+                      href={`https://www.levels.fyi/companies/${companyName.toLowerCase().replace(/\s+/g,"-")}/salaries/`}
+                      target="_blank" rel="noopener noreferrer" className="la-ext-link"
+                    >
+                      Full salary data on Levels.fyi ↗
+                    </a>
+                  </>
+                ) : (
+                  <div className="la-empty-panel">
+                    <p className="la-empty-title">Salary data not available</p>
+                    <p className="la-empty-sub">Check directly on Levels.fyi for the most up-to-date compensation data.</p>
+                    <a
+                      href={`https://www.levels.fyi/companies/${companyName.toLowerCase().replace(/\s+/g,"-")}/salaries/`}
+                      target="_blank" rel="noopener noreferrer" className="la-ext-link"
+                    >
+                      View on Levels.fyi ↗
+                    </a>
                   </div>
-                  <p className="la-disclaimer">
-                    Figures are approximate medians from Levels.fyi & Glassdoor. Verify before negotiating.
-                  </p>
-                </>
-              ) : (
-                <div className="la-empty">
-                  <p>No salary data found yet.</p>
-                  <a href={`https://www.levels.fyi/companies/${companyName.toLowerCase().replace(/\s+/g,"-")}/salaries/`}
-                     target="_blank" rel="noopener noreferrer" className="sp-link">
-                    Check Levels.fyi directly ↗
-                  </a>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
 
-          {/* ── PERKS ── */}
-          {activeTab === "Perks" && (
-            <div className="la-panel" role="tabpanel" aria-label="Benefits and perks">
-              {life.perks?.length > 0 ? (
-                <ul className="la-perks-grid" aria-label={`${companyName} employee benefits`}>
-                  {life.perks.map((perk, i) => (
-                    <li key={i} className="la-perk-item">
-                      <span className="la-perk-check" aria-hidden>✓</span>
-                      <span>{perk}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="la-empty">
-                  <p>No perks data found.</p>
-                  <a href={`https://www.glassdoor.com/Benefits/${companyName.replace(/\s+/g,"-")}-Benefits-E.htm`}
-                     target="_blank" rel="noopener noreferrer" className="sp-link">
-                    View on Glassdoor ↗
-                  </a>
-                </div>
-              )}
-              {/* Source links */}
-              {life.sources?.length > 0 && (
-                <div className="la-sources">
-                  {life.sources.map((s, i) => (
+            {/* ── PERKS ── */}
+            {activeTab === "Perks" && (
+              <div className="la-panel" role="tabpanel">
+                {life.perks?.length > 0 ? (
+                  <>
+                    <ul className="la-perks-grid" aria-label={`${companyName} benefits`}>
+                      {life.perks.map((perk, i) => (
+                        <li key={i} className="la-perk-item">
+                          <span className="la-perk-check">✓</span>
+                          <span>{perk}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="la-sources">
+                      {[
+                        { name: "Glassdoor Benefits", url: `https://www.glassdoor.com/Benefits/${companyName.replace(/\s+/g,"-")}-Benefits-E.htm` },
+                        { name: "Comparably", url: `https://www.comparably.com/companies/${companyName.toLowerCase().replace(/\s+/g,"-")}/benefits` },
+                      ].map((s, i) => (
+                        <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" className="la-source-link">{s.name} ↗</a>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="la-empty-panel">
+                    <p className="la-empty-title">Benefits data not available</p>
+                    <a
+                      href={`https://www.glassdoor.com/Benefits/${companyName.replace(/\s+/g,"-")}-Benefits-E.htm`}
+                      target="_blank" rel="noopener noreferrer" className="la-ext-link"
+                    >
+                      View benefits on Glassdoor ↗
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── OFFICE ── */}
+            {activeTab === "Office" && (
+              <div className="la-panel" role="tabpanel">
+                {life.officePhotos?.length > 0 ? (
+                  <>
+                    <div className="la-photo-grid">
+                      {life.officePhotos.slice(0, 6).map((p, i) => (
+                        <a
+                          key={i} href={p.sourceUrl} target="_blank" rel="noopener noreferrer"
+                          className="la-photo-card" title={p.title}
+                        >
+                          {p.imageUrl && !imgErrors[i] ? (
+                            <img
+                              src={p.imageUrl}
+                              alt={p.title || `${companyName} office`}
+                              className="la-photo-img"
+                              loading="lazy"
+                              onError={() => setImgErrors(e => ({ ...e, [i]: true }))}
+                            />
+                          ) : (
+                            <div className="la-photo-placeholder">
+                              <span className="la-photo-icon">&#9632;</span>
+                              <span className="la-photo-icon-label">Article</span>
+                            </div>
+                          )}
+                          <div className="la-photo-caption">{p.title?.slice(0, 55)}{p.title?.length > 55 ? "…" : ""}</div>
+                        </a>
+                      ))}
+                    </div>
+                    <p className="la-disclaimer">Sourced from public articles and blog posts. Click to read source.</p>
+                  </>
+                ) : (
+                  <div className="la-empty-panel">
+                    <p className="la-empty-title">No office content found</p>
+                    <a
+                      href={`https://www.google.com/search?q=${encodeURIComponent(companyName + " office headquarters tour")}`}
+                      target="_blank" rel="noopener noreferrer" className="la-ext-link"
+                    >
+                      Search for office photos ↗
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── CULTURE & FAQ ── */}
+            {activeTab === "Culture & FAQ" && (
+              <div className="la-panel" role="tabpanel">
+                {snippets.length > 0 && (
+                  <div className="la-culture-list">
+                    <p className="la-sub-label">What employees say</p>
+                    {snippets.map((s, i) => (
+                      <blockquote key={i} className="la-culture-quote">
+                        <p>{s}</p>
+                      </blockquote>
+                    ))}
+                  </div>
+                )}
+
+                {life.faq?.length > 0 && (
+                  <div className="la-faq-list" style={{ marginTop: snippets.length ? 20 : 0 }}>
+                    <p className="la-sub-label">Frequently asked</p>
+                    {life.faq.map((item, i) => (
+                      <details key={i} className="la-faq-item">
+                        <summary className="la-faq-q">{item.q}</summary>
+                        <p className="la-faq-a">{item.a}</p>
+                      </details>
+                    ))}
+                  </div>
+                )}
+
+                {!snippets.length && !life.faq?.length && (
+                  <div className="la-empty-panel">
+                    <p className="la-empty-title">Culture data not available</p>
+                    <a
+                      href={`https://www.glassdoor.com/Reviews/${companyName.replace(/\s+/g,"-")}-Reviews-E.htm`}
+                      target="_blank" rel="noopener noreferrer" className="la-ext-link"
+                    >
+                      Read reviews on Glassdoor ↗
+                    </a>
+                  </div>
+                )}
+
+                <div className="la-sources" style={{ marginTop: 16 }}>
+                  {[
+                    { name: "Glassdoor", url: `https://www.glassdoor.com/Reviews/${companyName.replace(/\s+/g,"-")}-Reviews-E.htm` },
+                    { name: "Blind",     url: `https://www.teamblind.com/company/${companyName.replace(/\s+/g,"-")}` },
+                    { name: "Reddit",    url: `https://www.reddit.com/search/?q=${encodeURIComponent(companyName + " work culture")}` },
+                  ].map((s, i) => (
                     <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" className="la-source-link">
                       {s.name} ↗
                     </a>
                   ))}
                 </div>
-              )}
-            </div>
-          )}
-
-          {/* ── OFFICE PHOTOS ── */}
-          {activeTab === "Office" && (
-            <div className="la-panel" role="tabpanel" aria-label="Office photos">
-              {life.officePhotos?.filter(p => p.imageUrl || p.sourceUrl).length > 0 ? (
-                <>
-                  <div className="la-photo-grid">
-                    {life.officePhotos.slice(0, 6).map((p, i) => (
-                      <a key={i} href={p.sourceUrl} target="_blank" rel="noopener noreferrer"
-                         className="la-photo-card" title={p.title}>
-                        {p.imageUrl && !imgErrors[i] ? (
-                          <img
-                            src={p.imageUrl}
-                            alt={p.title || `${companyName} office`}
-                            className="la-photo-img"
-                            loading="lazy"
-                            onError={() => setImgErrors(e => ({ ...e, [i]: true }))}
-                          />
-                        ) : (
-                          <div className="la-photo-placeholder" aria-hidden>🏢</div>
-                        )}
-                        <div className="la-photo-caption">{p.title?.slice(0, 60)}</div>
-                      </a>
-                    ))}
-                  </div>
-                  <p className="la-disclaimer">Photos sourced from public articles. Click to view source.</p>
-                </>
-              ) : (
-                <div className="la-empty">
-                  <p>No office photos found.</p>
-                  <a href={`https://www.google.com/search?q=${encodeURIComponent(companyName + " office photos headquarters")}&tbm=isch`}
-                     target="_blank" rel="noopener noreferrer" className="sp-link">
-                    Search Google Images ↗
-                  </a>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ── CULTURE & FAQ ── */}
-          {activeTab === "Culture & FAQ" && (
-            <div className="la-panel" role="tabpanel" aria-label="Culture and FAQ">
-              {/* Culture snippets */}
-              {(life.cultureSnippets || life.highlights)?.length > 0 && (
-                <div className="la-culture-list">
-                  <h3 className="la-sub-title">What employees say</h3>
-                  {(life.cultureSnippets || life.highlights).map((s, i) => (
-                    <blockquote key={i} className="la-culture-quote">
-                      <p>{s}</p>
-                    </blockquote>
-                  ))}
-                </div>
-              )}
-
-              {/* FAQ */}
-              {life.faq?.length > 0 && (
-                <div className="la-faq-list">
-                  <h3 className="la-sub-title" style={{ marginTop: 20 }}>Frequently asked</h3>
-                  {life.faq.map((item, i) => (
-                    <details key={i} className="la-faq-item">
-                      <summary className="la-faq-q">{item.q}</summary>
-                      <p className="la-faq-a">{item.a}</p>
-                    </details>
-                  ))}
-                </div>
-              )}
-
-              {!life.cultureSnippets?.length && !life.faq?.length && (
-                <div className="la-empty">
-                  <a href={`https://www.glassdoor.com/Reviews/${companyName.replace(/\s+/g,"-")}-Reviews-E.htm`}
-                     target="_blank" rel="noopener noreferrer" className="sp-link">
-                    Read reviews on Glassdoor ↗
-                  </a>
-                </div>
-              )}
-
-              {/* Source attribution */}
-              <div className="la-sources" style={{ marginTop: 16 }}>
-                {[
-                  { name: "Glassdoor", url: `https://www.glassdoor.com/Reviews/${companyName.replace(/\s+/g,"-")}-Reviews-E.htm` },
-                  { name: "Blind", url: `https://www.teamblind.com/company/${companyName.replace(/\s+/g,"-")}` },
-                  { name: "Reddit", url: `https://www.reddit.com/search/?q=${encodeURIComponent(companyName + " work culture")}` },
-                ].map((s, i) => (
-                  <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" className="la-source-link">
-                    {s.name} ↗
-                  </a>
-                ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
     </section>
   );
 }
 
+
 /* ── Main Public Page ────────────────────────────────────────── */
+
 export default function StartupPublicPage({ data, slug }) {
   const name = data.name || slug;
   const domain = data.domain;
@@ -814,7 +905,7 @@ export default function StartupPublicPage({ data, slug }) {
           <EmployeeFinder companyName={name} domain={domain} />
 
           {/* ── Life at Company ──────────────────────────────── */}
-          <LifeAtCompany companyName={name} />
+          <LifeAtCompany companyName={name} companyData={data} />
 
           {/* ── Competitors ──────────────────────────────────── */}
           {data.competitorNames?.length > 0 && (
