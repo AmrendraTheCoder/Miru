@@ -735,5 +735,55 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   .sp-header-inner .sp-research-cta { font-size: 11px; padding: 4px 9px; }
 }
 
+/* ── Breadcrumb ─────────────────────────────────────────────── */
+.sp-breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+.sp-bc-link { color: var(--muted); text-decoration: none; }
+.sp-bc-link:hover { color: var(--orange); }
+.sp-bc-sep { color: var(--muted2); }
+
+/* ── Blog meta line ─────────────────────────────────────────── */
+.sp-blog-meta { font-size: 11px; color: var(--muted); margin: 6px 0 10px; display: flex; flex-wrap: wrap; gap: 4px; }
+
+/* ── Share bar ──────────────────────────────────────────────── */
+.sp-share-bar { display: flex; align-items: center; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+.sp-share-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.sp-share-btn { display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 2px; border: 1px solid var(--border); text-decoration: none; cursor: pointer; font-family: var(--font); transition: background 0.1s, border-color 0.1s; background: var(--surface); color: var(--text); }
+.sp-share-x { color: #000; border-color: #000; }
+.sp-share-x:hover { background: #000; color: #fff; }
+.sp-share-li { color: #0077b5; border-color: #0077b5; }
+.sp-share-li:hover { background: #0077b5; color: #fff; }
+.sp-share-copy { color: var(--muted); }
+.sp-share-copy:hover { border-color: var(--text); color: var(--text); }
+
+/* ── LeetCode Section ───────────────────────────────────────── */
+.sp-lc-section {}
+.sp-lc-badge { background: #FFF3E0; border-color: #FFCC80; color: #E65100; }
+
+.sp-lc-direct-link {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin: 10px 0 14px; padding: 8px 14px;
+  background: #FFF8F0; border: 1px solid #FFCC80;
+  border-radius: 3px; color: #E65100;
+  font-size: 12px; font-weight: 600; text-decoration: none;
+  transition: background 0.1s;
+}
+.sp-lc-direct-link:hover { background: #FFE0B2; }
+
+.sp-lc-list { border: 1px solid var(--border); border-radius: 3px; overflow: hidden; margin-top: 10px; }
+.sp-lc-list-head { display: grid; grid-template-columns: 28px 1fr 60px; gap: 8px; padding: 6px 12px; background: var(--bg); border-bottom: 1px solid var(--border); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
+.sp-lc-row { display: grid; grid-template-columns: 28px 1fr 60px; gap: 8px; padding: 8px 12px; align-items: center; text-decoration: none; color: var(--text); border-bottom: 1px solid var(--border); font-size: 12px; transition: background 0.1s; }
+.sp-lc-row:last-child { border-bottom: none; }
+.sp-lc-row:hover { background: var(--bg); }
+.sp-lc-num { color: var(--muted); font-size: 11px; }
+.sp-lc-title { font-weight: 500; }
+.sp-lc-diff { font-size: 11px; font-weight: 600; text-align: right; }
+
+.sp-lc-res-head { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 6px; }
+.sp-lc-resource { display: block; font-size: 12px; color: var(--orange); text-decoration: none; padding: 4px 0; border-bottom: 1px dashed var(--border); }
+.sp-lc-resource:last-child { border-bottom: none; }
+.sp-lc-resource:hover { text-decoration: underline; }
+
+
+
 
 
