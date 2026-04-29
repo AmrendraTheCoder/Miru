@@ -210,30 +210,40 @@ function toSlug(name = "") {
 function StartupCard({ s, onResearch }) {
   const sector = s.sectors?.[0] || "";
   const slug = s.slug || toSlug(s.name || "");
+
+  const goToPage = (e) => {
+    // Only navigate if not clicking the Research button
+    if (!e.target.closest(".card-research-btn")) {
+      window.location.href = `/startup/${slug}`;
+    }
+  };
+
   return (
-    <div className="discover-card" onClick={() => onResearch(s.name)}>
+    <div className="discover-card" onClick={goToPage} style={{ cursor: "pointer" }}>
       <div className="discover-card-top">
         <CompanyLogo name={s.name} logoUrl={s.logo_url} website={s.website} />
         <div style={{ minWidth: 0 }}>
-          <a
-            href={`/startup/${slug}`}
-            className="startup-name startup-name-link"
-            onClick={e => e.stopPropagation()} /* prevent card research trigger */
-            title={`Open ${s.name} intelligence page`}
-          >
-            {s.name}
-          </a>
+          <div className="startup-name">{s.name}</div>
           <div className="startup-batch">{s.batch}{sector ? ` · ${sector}` : ""}</div>
         </div>
       </div>
       <div className="startup-desc">{s.tagline || s.description}</div>
-      <div className="startup-tags">
-        {(s.sectors || []).slice(0, 3).map((t, i) => (
-          <span key={i} className="startup-tag">{t}</span>
-        ))}
-        {s.status && s.status !== "Active" && (
-          <span className="startup-tag" style={{ color: s.status === "Acquired" ? "var(--red)" : "var(--green)" }}>{s.status}</span>
-        )}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
+        <div className="startup-tags" style={{ margin: 0 }}>
+          {(s.sectors || []).slice(0, 2).map((t, i) => (
+            <span key={i} className="startup-tag">{t}</span>
+          ))}
+          {s.status && s.status !== "Active" && (
+            <span className="startup-tag" style={{ color: s.status === "Acquired" ? "var(--red)" : "var(--green)" }}>{s.status}</span>
+          )}
+        </div>
+        <button
+          className="btn-research card-research-btn"
+          onClick={(e) => { e.stopPropagation(); onResearch(s.name); }}
+          style={{ flexShrink: 0 }}
+        >
+          Research →
+        </button>
       </div>
     </div>
   );
@@ -606,13 +616,15 @@ export default function Home() {
                           <div className="news-main">
                             {/* Company name chip → /startup/[slug] */}
                             {companyName && (
-                              <a
-                                href={`/startup/${companySlug}`}
+                              <span
                                 className="news-company-chip"
+                                onClick={(e) => { e.stopPropagation(); window.location.href = `/startup/${companySlug}`; }}
                                 title={`Open ${companyName} intelligence page`}
+                                role="link"
+                                style={{ cursor: "pointer" }}
                               >
                                 {companyName} ↗
-                              </a>
+                              </span>
                             )}
                             {/* Headline → inline research */}
                             <div
@@ -632,7 +644,13 @@ export default function Home() {
                         </div>
                         <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 6 }}>
                           <button className="btn-research" onClick={() => research(item.researchQuery || item.startup || item.title)}>Research →</button>
-                          <a href={`/startup/${companySlug}`} className="btn-view-page">View page ↗</a>
+                          <span
+                            className="btn-view-page"
+                            onClick={(e) => { e.stopPropagation(); window.location.href = `/startup/${companySlug}`; }}
+                            role="link"
+                            style={{ cursor: "pointer" }}
+                          >View page ↗</span>
+
                         </div>
                       </div>
                     );

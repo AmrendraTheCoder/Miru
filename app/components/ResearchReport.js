@@ -26,14 +26,16 @@ export default function ResearchReport({ report, apiKey }) {
         <div className="report-hero-top">
           <div className="report-logo">{(d.name || "?")[0].toUpperCase()}</div>
           <div>
-            <a
-              href={`/startup/${toSlug(d.name || "")}`}
+            <div
               className="report-name report-name-link"
+              onClick={() => window.location.href = `/startup/${toSlug(d.name || "")}`}
               title={`Open full intelligence page for ${d.name}`}
+              role="link"
+              style={{ cursor: "pointer" }}
             >
               {d.name}
               <span className="report-name-arrow">↗</span>
-            </a>
+            </div>
             <div className="report-tagline">{d.tagline}</div>
             {d.stage && (
               <span className={`news-stage ${stageClass(d.stage)}`} style={{ marginTop: 6, display: "inline-block" }}>
@@ -218,14 +220,15 @@ export default function ResearchReport({ report, apiKey }) {
           <div className="report-section-title">Known Competitors</div>
           <div className="startup-tags">
             {d.competitorNames.map((c, i) => (
-              <a
+              <span
                 key={i}
-                href={`/startup/${toSlug(c)}`}
                 className="startup-tag startup-tag-link"
-                style={{ fontSize: 12, padding: "3px 10px" }}
+                style={{ fontSize: 12, padding: "3px 10px", cursor: "pointer" }}
+                onClick={() => window.location.href = `/startup/${toSlug(c)}`}
+                role="link"
               >
                 {c} ↗
-              </a>
+              </span>
             ))}
           </div>
         </div>
