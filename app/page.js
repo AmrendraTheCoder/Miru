@@ -162,23 +162,32 @@ function NewsLoader() {
 
 
 function CompanyLogo({ name, logoUrl, website }) {
-  const [src, setSrc] = useState(() => {
-    // Priority 1: DB S3 logo (from yc-oss seeder)
-    if (logoUrl) return logoUrl;
-    // Priority 2: icon.horse — free, no-auth, high quality brand logos
-    const domain = website
-      ? website.replace(/^https?:\/\//, "").split("/")[0]
-      : `${name.toLowerCase().replace(/\s+/g, "")}.com`;
-    return `https://icon.horse/icon/${domain}`;
-  });
-  const [failed, setFailed] = useState(false);
+  // Derive a real domain only when we actually have a website
+  const domain = website
+    ? website.replace(/^https?:\/\//, "").replace(/\/$/, "").split("/")[0]
+    : null;
+
+  // Decide starting src: logoUrl → icon.horse (only with a real domain) → null (go straight to initial)
+  const initialSrc = logoUrl
+    ? logoUrl
+    : domain
+      ? `https://icon.horse/icon/${domain}`
+      : null;
+
+  const [src, setSrc]       = useState(initialSrc);
+  const [failed, setFailed] = useState(!initialSrc); // no src → show initial immediately
+
+  // Colored avatar for the initial fallback
+  const COLORS = ["#e8522a","#2a7ae8","#2ae87a","#e8a02a","#7a2ae8","#e82a7a","#0ea5e9","#f59e0b"];
+  const avatarBg = (() => {
+    let h = 0;
+    for (const c of (name || "")) h = c.charCodeAt(0) + ((h << 5) - h);
+    return COLORS[Math.abs(h) % COLORS.length];
+  })();
 
   const handleError = () => {
-    // Fallback chain: icon.horse fails → try Google favicon
-    if (src.includes("icon.horse")) {
-      const domain = website
-        ? website.replace(/^https?:\/\//, "").split("/")[0]
-        : `${name.toLowerCase().replace(/\s+/g, "")}.com`;
+    if (src?.includes("icon.horse") && domain) {
+      // icon.horse failed → try Google favicon
       setSrc(`https://www.google.com/s2/favicons?domain=${domain}&sz=64`);
     } else {
       setFailed(true);
@@ -187,7 +196,7 @@ function CompanyLogo({ name, logoUrl, website }) {
 
   if (failed) {
     return (
-      <div className="startup-logo-letter">
+      <div className="startup-logo-letter" style={{ background: avatarBg }}>
         {(name || "?")[0].toUpperCase()}
       </div>
     );
