@@ -239,6 +239,272 @@ function EmployeeFinder({ companyName, domain }) {
   );
 }
 
+/* ── Life at Company ─────────────────────────────────────────── */
+const LIFE_TABS = ["Salary", "Perks", "Office", "Culture & FAQ"];
+
+function LifeAtCompany({ companyName }) {
+  const [life, setLife]         = useState(null);
+  const [loading, setLoading]   = useState(false);
+  const [loaded, setLoaded]     = useState(false);
+  const [activeTab, setActiveTab] = useState("Salary");
+  const [imgErrors, setImgErrors] = useState({});
+
+  const fetchLife = async () => {
+    setLoading(true);
+    gaEvent("event", "life_section_opened", { company: companyName });
+    try {
+      const res  = await fetch(`/api/life?company=${encodeURIComponent(companyName)}`);
+      const json = await res.json();
+      if (json.life) setLife(json.life);
+    } catch { /* show empty state */ }
+    setLoaded(true);
+    setLoading(false);
+  };
+
+  const fmtRating = (r) => r ? `${r.toFixed(1)} / 5.0` : null;
+  const fmtReviews = (n) => n ? `${n.toLocaleString()} reviews` : null;
+
+  return (
+    <section className="sp-section" id="life-at-company" aria-label={`Life at ${companyName}`}>
+      <div className="sp-section-head">
+        <h2 className="sp-section-title">Life at {companyName}</h2>
+        <span className="sp-badge la-badge">Salary · Perks · Culture</span>
+      </div>
+      <p className="sp-muted">
+        Salary benchmarks, benefits, office culture, and employee insights —
+        aggregated from Levels.fyi, Glassdoor, and Blind.
+      </p>
+
+      {/* Lazy-load trigger */}
+      {!loaded && (
+        <button className="sp-find-btn" onClick={fetchLife} disabled={loading} id="life-load-btn">
+          {loading
+            ? <span className="sp-loading-dots"><span /><span /><span /></span>
+            : `Explore life at ${companyName} →`}
+        </button>
+      )}
+
+      {loaded && !life && (
+        <p className="sp-muted" style={{ marginTop: 12 }}>
+          No data found.{" "}
+          <a href={`https://www.glassdoor.com/Reviews/${companyName.replace(/\s+/g, "-")}-Reviews-E.htm`}
+             target="_blank" rel="noopener noreferrer" className="sp-link">
+            View on Glassdoor ↗
+          </a>
+        </p>
+      )}
+
+      {loaded && life && (
+        <div className="la-wrap">
+
+          {/* Glassdoor rating strip */}
+          {(life.glassdoorRating || life.rating) && (
+            <div className="la-rating-bar" aria-label={`Glassdoor rating for ${companyName}`}>
+              <div className="la-stars">
+                {[1,2,3,4,5].map((n) => (
+                  <span key={n} className="la-star" style={{
+                    color: n <= Math.round(life.glassdoorRating || life.rating) ? "#f5a623" : "var(--border)"
+                  }}>★</span>
+                ))}
+              </div>
+              <strong className="la-rating-num">{fmtRating(life.glassdoorRating || life.rating)}</strong>
+              {fmtReviews(life.glassdoorReviews || life.reviews) && (
+                <span className="la-review-count">{fmtReviews(life.glassdoorReviews || life.reviews)} on Glassdoor</span>
+              )}
+            </div>
+          )}
+
+          {/* Tab bar */}
+          <div className="la-tabs" role="tablist">
+            {LIFE_TABS.map((t) => (
+              <button
+                key={t}
+                role="tab"
+                aria-selected={activeTab === t}
+                className={`la-tab${activeTab === t ? " la-tab-active" : ""}`}
+                onClick={() => setActiveTab(t)}
+              >
+                {t === "Salary"       && "💰 "}
+                {t === "Perks"        && "🎁 "}
+                {t === "Office"       && "🏢 "}
+                {t === "Culture & FAQ"&& "⭐ "}
+                {t}
+              </button>
+            ))}
+          </div>
+
+          {/* ── SALARY ── */}
+          {activeTab === "Salary" && (
+            <div className="la-panel" role="tabpanel" aria-label="Salary data">
+              {life.salaries?.length > 0 ? (
+                <>
+                  <div className="la-table-wrap">
+                    <table className="la-salary-table">
+                      <thead>
+                        <tr>
+                          <th>Role</th>
+                          <th>Base</th>
+                          <th>Equity / yr</th>
+                          <th>Total Comp</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {life.salaries.map((s, i) => (
+                          <tr key={i}>
+                            <td className="la-role">{s.role}</td>
+                            <td className="la-num">{s.base ?? "—"}</td>
+                            <td className="la-num">{s.equity ?? "—"}</td>
+                            <td className="la-num la-total">{s.total ?? "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="la-disclaimer">
+                    Figures are approximate medians from Levels.fyi & Glassdoor. Verify before negotiating.
+                  </p>
+                </>
+              ) : (
+                <div className="la-empty">
+                  <p>No salary data found yet.</p>
+                  <a href={`https://www.levels.fyi/companies/${companyName.toLowerCase().replace(/\s+/g,"-")}/salaries/`}
+                     target="_blank" rel="noopener noreferrer" className="sp-link">
+                    Check Levels.fyi directly ↗
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── PERKS ── */}
+          {activeTab === "Perks" && (
+            <div className="la-panel" role="tabpanel" aria-label="Benefits and perks">
+              {life.perks?.length > 0 ? (
+                <ul className="la-perks-grid" aria-label={`${companyName} employee benefits`}>
+                  {life.perks.map((perk, i) => (
+                    <li key={i} className="la-perk-item">
+                      <span className="la-perk-check" aria-hidden>✓</span>
+                      <span>{perk}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="la-empty">
+                  <p>No perks data found.</p>
+                  <a href={`https://www.glassdoor.com/Benefits/${companyName.replace(/\s+/g,"-")}-Benefits-E.htm`}
+                     target="_blank" rel="noopener noreferrer" className="sp-link">
+                    View on Glassdoor ↗
+                  </a>
+                </div>
+              )}
+              {/* Source links */}
+              {life.sources?.length > 0 && (
+                <div className="la-sources">
+                  {life.sources.map((s, i) => (
+                    <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" className="la-source-link">
+                      {s.name} ↗
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── OFFICE PHOTOS ── */}
+          {activeTab === "Office" && (
+            <div className="la-panel" role="tabpanel" aria-label="Office photos">
+              {life.officePhotos?.filter(p => p.imageUrl || p.sourceUrl).length > 0 ? (
+                <>
+                  <div className="la-photo-grid">
+                    {life.officePhotos.slice(0, 6).map((p, i) => (
+                      <a key={i} href={p.sourceUrl} target="_blank" rel="noopener noreferrer"
+                         className="la-photo-card" title={p.title}>
+                        {p.imageUrl && !imgErrors[i] ? (
+                          <img
+                            src={p.imageUrl}
+                            alt={p.title || `${companyName} office`}
+                            className="la-photo-img"
+                            loading="lazy"
+                            onError={() => setImgErrors(e => ({ ...e, [i]: true }))}
+                          />
+                        ) : (
+                          <div className="la-photo-placeholder" aria-hidden>🏢</div>
+                        )}
+                        <div className="la-photo-caption">{p.title?.slice(0, 60)}</div>
+                      </a>
+                    ))}
+                  </div>
+                  <p className="la-disclaimer">Photos sourced from public articles. Click to view source.</p>
+                </>
+              ) : (
+                <div className="la-empty">
+                  <p>No office photos found.</p>
+                  <a href={`https://www.google.com/search?q=${encodeURIComponent(companyName + " office photos headquarters")}&tbm=isch`}
+                     target="_blank" rel="noopener noreferrer" className="sp-link">
+                    Search Google Images ↗
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── CULTURE & FAQ ── */}
+          {activeTab === "Culture & FAQ" && (
+            <div className="la-panel" role="tabpanel" aria-label="Culture and FAQ">
+              {/* Culture snippets */}
+              {(life.cultureSnippets || life.highlights)?.length > 0 && (
+                <div className="la-culture-list">
+                  <h3 className="la-sub-title">What employees say</h3>
+                  {(life.cultureSnippets || life.highlights).map((s, i) => (
+                    <blockquote key={i} className="la-culture-quote">
+                      <p>{s}</p>
+                    </blockquote>
+                  ))}
+                </div>
+              )}
+
+              {/* FAQ */}
+              {life.faq?.length > 0 && (
+                <div className="la-faq-list">
+                  <h3 className="la-sub-title" style={{ marginTop: 20 }}>Frequently asked</h3>
+                  {life.faq.map((item, i) => (
+                    <details key={i} className="la-faq-item">
+                      <summary className="la-faq-q">{item.q}</summary>
+                      <p className="la-faq-a">{item.a}</p>
+                    </details>
+                  ))}
+                </div>
+              )}
+
+              {!life.cultureSnippets?.length && !life.faq?.length && (
+                <div className="la-empty">
+                  <a href={`https://www.glassdoor.com/Reviews/${companyName.replace(/\s+/g,"-")}-Reviews-E.htm`}
+                     target="_blank" rel="noopener noreferrer" className="sp-link">
+                    Read reviews on Glassdoor ↗
+                  </a>
+                </div>
+              )}
+
+              {/* Source attribution */}
+              <div className="la-sources" style={{ marginTop: 16 }}>
+                {[
+                  { name: "Glassdoor", url: `https://www.glassdoor.com/Reviews/${companyName.replace(/\s+/g,"-")}-Reviews-E.htm` },
+                  { name: "Blind", url: `https://www.teamblind.com/company/${companyName.replace(/\s+/g,"-")}` },
+                  { name: "Reddit", url: `https://www.reddit.com/search/?q=${encodeURIComponent(companyName + " work culture")}` },
+                ].map((s, i) => (
+                  <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" className="la-source-link">
+                    {s.name} ↗
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 /* ── Main Public Page ────────────────────────────────────────── */
 export default function StartupPublicPage({ data, slug }) {
   const name = data.name || slug;
@@ -546,6 +812,9 @@ export default function StartupPublicPage({ data, slug }) {
 
           {/* ── Employee Finder ──────────────────────────────── */}
           <EmployeeFinder companyName={name} domain={domain} />
+
+          {/* ── Life at Company ──────────────────────────────── */}
+          <LifeAtCompany companyName={name} />
 
           {/* ── Competitors ──────────────────────────────────── */}
           {data.competitorNames?.length > 0 && (

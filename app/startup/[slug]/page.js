@@ -144,17 +144,23 @@ export async function generateMetadata({ params }) {
   const founderStr = founderName ? ` Founded by ${founderName}.` : "";
 
   return {
-    title: `${name} — Funding History, Founders & Team | Miru`,
-    description: `${name}: ${data.tagline || "Startup intelligence brief."}${funding}${founderStr} Full competitor analysis, funding timeline, and employee directory on Miru.`,
+    title: `${name} — Salary, Perks, Funding & Founders | Miru`,
+    description: `${name}: ${data.tagline || "Company intelligence brief."}${funding}${founderStr} Salary benchmarks, employee perks, office culture, competitor analysis and funding history on Miru.`,
     keywords: [
       name,
+      `${name} salary`,
+      `${name} software engineer salary`,
+      `${name} total compensation`,
+      `${name} perks benefits`,
+      `${name} work culture`,
+      `${name} glassdoor rating`,
+      `${name} interview process`,
       `${name} funding`,
       `${name} founders`,
       `${name} competitors`,
-      `${name} interview prep`,
-      `${name} investors`,
+      `life at ${name}`,
+      `work at ${name}`,
       `${name} employees`,
-      "YC startup",
       data.sector,
     ]
       .filter(Boolean)
