@@ -609,12 +609,63 @@ function LifeAtCompany({ companyName, companyData }) {
 }
 
 
+/* ── Hero Logo ───────────────────────────────────────────────── */
+function HeroLogo({ name, logoUrl, domain }) {
+  const realDomain = domain?.replace(/^https?:\/\//, "").replace(/\/$/, "").split("/")[0];
+  const initial = logoUrl
+    ? logoUrl
+    : realDomain
+      ? `https://icon.horse/icon/${realDomain}`
+      : null;
+
+  const [src, setSrc]     = useState(initial);
+  const [failed, setFailed] = useState(!initial);
+
+  const COLORS = ["#e8522a","#2a7ae8","#2ae87a","#e8a02a","#7a2ae8","#e82a7a","#0ea5e9","#f59e0b"];
+  const bg = (() => {
+    let h = 0;
+    for (const c of (name || "")) h = c.charCodeAt(0) + ((h << 5) - h);
+    return COLORS[Math.abs(h) % COLORS.length];
+  })();
+
+  const handleError = () => {
+    if (src?.includes("icon.horse") && realDomain) {
+      setSrc(`https://www.google.com/s2/favicons?domain=${realDomain}&sz=128`);
+    } else setFailed(true);
+  };
+
+  if (failed) {
+    return (
+      <div className="sp-hero-logo" style={{
+        background: bg, display: "flex", alignItems: "center", justifyContent: "center",
+        color: "#fff", fontWeight: 700, fontSize: 28, borderRadius: 10, flexShrink: 0,
+      }}>
+        {(name || "?")[0].toUpperCase()}
+      </div>
+    );
+  }
+  return (
+    <img
+      src={src}
+      alt={`${name} logo`}
+      className="sp-hero-logo"
+      onError={handleError}
+      loading="eager"
+    />
+  );
+}
+
 /* ── Main Public Page ────────────────────────────────────────── */
 
 export default function StartupPublicPage({ data, slug }) {
-  const name = data.name || slug;
+  const name = data.name
+    ? data.name.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
+    : slug.replace(/-/g, " ").split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
   const domain = data.domain;
-  const isStub = (data._source === "stub" || data._source === "yc_db") && !data.whyFunded;
+  // Stub = any page that doesn't have real AI-researched content yet
+  const hasDeepData = !!(data.whyFunded || data.solution || data.competitiveAdvantage ||
+    (data.founders?.length > 0) || (data.fundingTimeline?.length > 0));
+  const isStub = !hasDeepData;
   const publishDate = data._updatedAt
     ? new Date(data._updatedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
     : null;
@@ -626,7 +677,7 @@ export default function StartupPublicPage({ data, slug }) {
   const [errorDetail, setErrorDetail]   = useState("");
   const [reportSource, setReportSource] = useState(data._source || "");
 
-  // Auto-trigger research for stub pages (yc_db / stub source only)
+  // Auto-trigger research for any page without deep AI data
   useEffect(() => {
     if (!isStub) return;
     let cancelled = false;
@@ -634,15 +685,17 @@ export default function StartupPublicPage({ data, slug }) {
     const runResearch = async () => {
       setResearchState("loading");
       const msgs = [
-        "Scanning funding databases…",
-        "Profiling founders…",
-        "Mapping competitor landscape…",
+        "Scanning funding & financial databases…",
+        "Profiling founders & key executives…",
+        "Mapping revenue, valuation & market cap…",
+        "Analysing competitor landscape…",
+        "Reading latest news & press coverage…",
         "Generating intelligence brief…",
       ];
       let idx = 0;
       const ticker = setInterval(() => {
         if (!cancelled) setResearchMsg(msgs[Math.min(++idx, msgs.length - 1)]);
-      }, 3000);
+      }, 2800);
 
       try {
         const res = await fetch("/api/analyse", {
@@ -786,10 +839,7 @@ export default function StartupPublicPage({ data, slug }) {
 
           {/* ── Hero ─────────────────────────────────────────── */}
           <div className="sp-hero">
-            {data.logo_url && (
-              <img src={data.logo_url} alt={`${name} logo`} className="sp-hero-logo"
-                onError={(e) => { e.target.style.display = "none"; }} />
-            )}
+            <HeroLogo name={name} logoUrl={data.logo_url} domain={domain} />
             <div style={{ flex: 1 }}>
               <h1 className="sp-hero-name" itemProp="headline">{name}</h1>
               {data.tagline && <p className="sp-hero-tagline" itemProp="description">{data.tagline}</p>}
