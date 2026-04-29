@@ -27,13 +27,12 @@ function toSlug(name = "") {
 async function getStartupData(slug) {
   const db = getSupabaseServer();
 
-  // Build multiple name variants to try matching
-  const nameFromSlug = slug.replace(/-/g, " ");           // "neo-cognition" → "neo cognition"
-  const nameCapitalized = nameFromSlug                    // "neocognition"
+  const nameFromSlug = slug.replace(/-/g, " ");
+  const nameCapitalized = nameFromSlug
     .split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
   if (db) {
-    // 1. Try to find a deep research report first (richest data)
+    // 1. Check for a full AI research report (richest data)
     const { data: reports } = await db
       .from("startup_reports")
       .select("startup_name, domain, report, created_at")
@@ -46,8 +45,47 @@ async function getStartupData(slug) {
       return { ...r.report, _source: "report", _updatedAt: r.created_at };
     }
 
-    // 2. Fall back to YC companies table — try slug, then name variants
-    const { data: companies } = await db
+    // 2. Check the new master companies table (YC + Fortune 500 + Unicorns + Tech Giants)
+    const { data: masterHit } = await db
+      .from("companies")
+      .select("*")
+      .or(`slug.eq.${slug},name.ilike.${nameCapitalized},name.ilike.%${nameFromSlug}%`)
+      .order("source", { ascending: true }) // yc < unicorn < fortune500 < tech_list
+      .limit(1);
+
+    if (masterHit?.[0]) {
+      const c = masterHit[0];
+      return {
+        name:          c.name,
+        tagline:       c.tagline || null,
+        overview:      c.description || null,
+        stage:         c.category || null,
+        founded:       c.yc_batch_year || null,
+        totalFunding:  c.total_funding || null,
+        sector:        c.sector?.[0] || null,
+        founders:      [],
+        domain:        c.website?.replace(/^https?:\/\//, "").replace(/\/$/, "") || null,
+        logo_url:      c.logo_url || null,
+        // Extra fields available for display
+        employeeCount: c.employee_count || null,
+        valuationUsd:  c.valuation_usd || null,
+        revenueUsd:    c.revenue_usd || null,
+        marketCapUsd:  c.market_cap_usd || null,
+        stockTicker:   c.stock_ticker || null,
+        isPublic:      c.is_public || false,
+        ranking:       c.ranking || null,
+        country:       c.country || null,
+        hqCity:        c.hq_city || null,
+        yc_batch:      c.yc_batch || null,
+        _source:       c.source === "yc" ? "yc_db" : c.source,
+        _dbSource:     c.source,
+        _slug:         slug,
+        _updatedAt:    c.updated_at,
+      };
+    }
+
+    // 3. Legacy fallback to old yc_companies table
+    const { data: ycHit } = await db
       .from("yc_companies")
       .select("*")
       .or(
@@ -58,8 +96,8 @@ async function getStartupData(slug) {
       )
       .limit(1);
 
-    if (companies?.[0]) {
-      const c = companies[0];
+    if (ycHit?.[0]) {
+      const c = ycHit[0];
       return {
         name: c.name,
         tagline: c.one_liner || c.tagline,
@@ -78,8 +116,7 @@ async function getStartupData(slug) {
     }
   }
 
-  // 3. Return minimal stub so the page still renders (not 404)
-  // The client component will auto-trigger research
+  // 4. Return stub — client will auto-trigger research
   return {
     name: nameCapitalized || slug,
     tagline: null,
@@ -231,15 +268,16 @@ export default async function StartupPage({ params }) {
   );
 }
 
-// Generate static params for top YC companies (pre-renders at build time)
+// Pre-render top companies from all sources at build time
 export async function generateStaticParams() {
   const db = getSupabaseServer();
   if (!db) return [];
 
   const { data } = await db
-    .from("yc_companies")
-    .select("slug, name")
-    .limit(200); // Pre-render top 200 at build time; rest use ISR
+    .from("companies")
+    .select("slug, name, source")
+    .order("source")
+    .limit(500); // Pre-render top 500; rest use ISR
 
   return (data || []).map((c) => ({
     slug: c.slug || toSlug(c.name),
