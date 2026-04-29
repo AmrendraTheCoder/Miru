@@ -818,17 +818,30 @@ export default function StartupPublicPage({ data, slug }) {
         </div>
       )}
 
-      {/* Partial — Exa fallback, Gemini quota exhausted */}
+      {/* Partial — Exa fallback, all AI APIs unavailable */}
       {researchState === "partial" && (
         <div className="sp-banner sp-banner-partial">
-          <div>
-            <strong>⚠️ Partial data loaded</strong> — AI analysis skipped because the{" "}
-            <strong>Gemini API quota is exhausted</strong> for today.
-          </div>
-          <div style={{ fontSize: 11, marginTop: 4, opacity: 0.85 }}>
-            Full intelligence brief will auto-populate after quota resets (~12:30 AM IST).
-            To get it now: add a fresh <code style={{ background: "rgba(0,0,0,0.15)", padding: "1px 4px", borderRadius: 3 }}>GEMINI_API_KEY</code> to your{" "}
-            <code style={{ background: "rgba(0,0,0,0.15)", padding: "1px 4px", borderRadius: 3 }}>.env.local</code>.
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <div>
+              <strong>AI analysis unavailable</strong> — all AI APIs returned quota or server errors.
+              <div style={{ fontSize: 11, marginTop: 4, opacity: 0.85 }}>
+                Showing basic data only. To get the full intelligence brief, ensure{" "}
+                <code style={{ background: "rgba(0,0,0,0.15)", padding: "1px 4px", borderRadius: 3 }}>GEMINI_API_KEY</code>
+                {" "}and{" "}
+                <code style={{ background: "rgba(0,0,0,0.15)", padding: "1px 4px", borderRadius: 3 }}>GROQ_API_KEY</code>
+                {" "}are set in{" "}
+                <strong>Vercel → Project Settings → Environment Variables</strong>
+                {" "}(then redeploy), or in <code style={{ background: "rgba(0,0,0,0.15)", padding: "1px 4px", borderRadius: 3 }}>.env.local</code> locally.
+              </div>
+            </div>
+            <button
+              className="sp-refresh-btn"
+              onClick={refreshData}
+              disabled={refreshing}
+              style={{ flexShrink: 0 }}
+            >
+              {refreshing ? <><span className="sp-refresh-spin" />Retrying…</> : <>↻ Retry</>}
+            </button>
           </div>
         </div>
       )}
