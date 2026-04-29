@@ -126,15 +126,34 @@ async function geminiCascade(prompt) {
 }
 
 // Structured report from raw Exa results when Gemini is unavailable
+function stripMd(text = "") {
+  return text
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")  // [text](url) → text
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, "")      // images
+    .replace(/^#{1,6}\s+/gm, "")               // headers
+    .replace(/[*_`~>]+/g, "")                  // bold/italic/code/blockquote
+    .replace(/\|.*\|/g, "")                    // tables
+    .replace(/\n{3,}/g, "\n\n")                // excess newlines
+    .replace(/https?:\/\/\S+/g, "")            // bare URLs
+    .trim();
+}
+
 function exaFallbackReport(name, results) {
   const allText = results.map(r => r.text || r.title || "").join(" ");
+  const cleanText = stripMd(allText);
   const fundingMatch = allText.match(/\$([\d.]+)\s*([BMmKk](?:illion|M|B|K)?)/);
   const funding = fundingMatch ? `$${fundingMatch[1]}${fundingMatch[2].charAt(0).toUpperCase()}` : null;
+
+  // Build a readable 2–3 sentence overview from clean snippets
+  const sentences = cleanText.split(/\.\s+/).filter(s => s.length > 40 && !s.includes("http")).slice(0, 3);
+  const overview = sentences.length
+    ? sentences.join(". ").slice(0, 500) + "."
+    : `${name} is a company. Full intelligence brief loading — click Research above to generate the complete analysis.`;
 
   return {
     name,
     tagline: results[0]?.title?.replace(new RegExp(`${name}[:\\s\\-]*`, "i"), "").slice(0, 120) || null,
-    overview: allText.slice(0, 600) || `${name} is a startup. Full analysis coming soon.`,
+    overview,
     stage: null,
     founded: null,
     headquarters: null,

@@ -8,6 +8,20 @@ function toSlug(name = "") {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
+// Strip raw markdown formatting from text (for fallback Exa scraped content)
+function stripMd(text = "") {
+  return text
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")   // [label](url) → label
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, "")       // images
+    .replace(/^#{1,6}\s+/gm, "")                // # headers
+    .replace(/[*_`~]+/g, "")                     // bold/italic/code
+    .replace(/^>\s*/gm, "")                      // blockquotes
+    .replace(/\|.*\|/g, "")                     // tables
+    .replace(/https?:\/\/\S+/g, "")             // bare URLs
+    .replace(/\n{3,}/g, "\n\n")                 // excess newlines
+    .trim();
+}
+
 function avatarColor(name = "") {
   const colors = ["#e8522a", "#2a7ae8", "#2ae87a", "#e8a02a", "#7a2ae8", "#e82a7a"];
   let h = 0;
@@ -805,11 +819,11 @@ export default function StartupPublicPage({ data, slug }) {
             </div>
           </div>
 
-          {/* ── Overview ─────────────────────────────────────── */}
+          {/* ── Overview ───────────────────────────────────── */}
           {data.overview && (
             <section className="sp-section">
               <h2 className="sp-section-title">Overview</h2>
-              <p className="sp-body" itemProp="articleBody">{data.overview}</p>
+              <p className="sp-body" itemProp="articleBody">{stripMd(data.overview)}</p>
             </section>
           )}
 

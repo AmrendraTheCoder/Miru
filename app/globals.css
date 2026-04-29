@@ -996,7 +996,6 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 /* Section wrapper */
 .la-section {
   padding: 24px 0;
-  border-top: 1px solid var(--border);
 }
 
 /* ── Header ── */
