@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Allow: /startup/
+Allow: /sitemap.xml
+
+Disallow: /api/
+Disallow: /_next/
+Disallow: /api/exa
+Disallow: /api/news
+Disallow: /api/settings
+
+Sitemap: https://miru-1.vercel.app/sitemap.xml
