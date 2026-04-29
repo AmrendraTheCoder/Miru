@@ -12,12 +12,20 @@ import { getSupabaseServer } from "@/lib/supabase";
 const EXA_BASE    = "https://api.exa.ai";
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
+// Models ordered by RPM availability (highest first → best chance of success)
+// jsonMode=false for Gemma — those models don't support responseMimeType
 const GEMINI_MODELS = [
-  "gemini-2.0-flash-lite",
-  "gemini-2.0-flash",
-  "gemini-1.5-flash-8b",
-  "gemini-1.5-flash",
-  "gemini-2.5-flash",
+  { id: "gemini-2.0-flash-lite",          jsonMode: true  }, // 4K RPM, Unlimited RPD ← best
+  { id: "gemini-2.0-flash",               jsonMode: true  }, // 2K RPM, Unlimited RPD
+  { id: "gemini-2.5-flash",               jsonMode: true  }, // 5+ RPM, 250K TPM
+  { id: "gemini-2.5-flash-preview-04-17", jsonMode: true  }, // alternate 2.5 flash ID
+  { id: "gemini-2.5-pro",                 jsonMode: true  }, // 0+150 RPM
+  { id: "gemini-2.5-pro-preview-03-25",   jsonMode: true  }, // alternate 2.5 pro ID
+  { id: "gemma-3-27b-it",                 jsonMode: false }, // 30 RPM, best Gemma quality
+  { id: "gemma-3-12b-it",                 jsonMode: false }, // 30 RPM
+  { id: "gemma-3-4b-it",                  jsonMode: false }, // 30 RPM
+  { id: "gemma-3-2b-it",                  jsonMode: false }, // 30 RPM
+  { id: "gemma-3-1b-it",                  jsonMode: false }, // 30 RPM ← last resort
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────
@@ -59,18 +67,22 @@ async function exaSearch(query, opts = {}) {
   }
 }
 
-// Try one Gemini model with a hard 15s timeout
-async function tryGemini(modelId, apiKey, prompt) {
+// Try one Gemini/Gemma model with a hard 15s timeout
+async function tryGemini(model, apiKey, prompt) {
+  const { id, jsonMode } = model;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
 
   try {
-    const res = await fetch(`${GEMINI_BASE}/${modelId}:generateContent?key=${apiKey}`, {
+    const genConfig = { temperature: 0.15, maxOutputTokens: 3500 };
+    if (jsonMode) genConfig.responseMimeType = "application/json";
+
+    const res = await fetch(`${GEMINI_BASE}/${id}:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.15, maxOutputTokens: 3500, responseMimeType: "application/json" },
+        generationConfig: genConfig,
       }),
       signal: controller.signal,
     });
@@ -80,8 +92,9 @@ async function tryGemini(modelId, apiKey, prompt) {
 
     const data = await res.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-    const cleaned = text.replace(/```json[\s\S]*?```|```/g, "").trim();
 
+    // Strip markdown fences and extract JSON object
+    const cleaned = text.replace(/```json[\s\S]*?```|```[\s\S]*?```/g, "").trim();
     const parsed = (() => {
       try { return JSON.parse(cleaned); }
       catch {
@@ -90,14 +103,14 @@ async function tryGemini(modelId, apiKey, prompt) {
       }
     })();
 
-    if (!parsed) throw new Error("json_parse");
-    return { result: parsed, model: modelId };
+    if (!parsed || typeof parsed !== "object") throw new Error("json_parse");
+    return { result: parsed, model: id };
   } finally {
     clearTimeout(timeout);
   }
 }
 
-// Try models one by one — no artificial delays
+// Try all models in cascade — no delays, first success wins
 async function geminiCascade(prompt) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return null;
@@ -106,10 +119,10 @@ async function geminiCascade(prompt) {
     try {
       return await tryGemini(model, key, prompt);
     } catch (e) {
-      console.warn(`[analyse] ${model}: ${e.message}`);
+      console.warn(`[analyse] ${model.id}: ${e.message}`);
     }
   }
-  return null; // all failed — caller uses Exa fallback
+  return null;
 }
 
 // Structured report from raw Exa results when Gemini is unavailable
