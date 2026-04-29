@@ -186,17 +186,18 @@ export const maxDuration = 55;
 export async function POST(request) {
   try {
   const body = await request.json().catch(() => ({}));
-  const raw = body?.query?.trim();
+  const raw   = body?.query?.trim();
+  const force = body?.force === true;   // force-refresh: bypass + delete cache
   if (!raw) return NextResponse.json({ error: "query required" }, { status: 400 });
 
   const name = cleanQuery(raw);
   if (!name) return NextResponse.json({ error: "Could not parse company name" }, { status: 400 });
 
-  console.log(`[analyse] "${name}" (raw="${raw}")`);
+  console.log(`[analyse] "${name}" force=${force}`);
 
-  // 1. Supabase cache check
+  // 1. Supabase cache check (skipped when force=true)
   const db = getSupabaseServer();
-  if (db) {
+  if (db && !force) {
     const cutoff = new Date(Date.now() - 7 * 86_400_000).toISOString();
     const { data: hit } = await db
       .from("startup_reports")
@@ -210,6 +211,12 @@ export async function POST(request) {
       console.log(`[analyse] cache hit for "${name}"`);
       return NextResponse.json({ report: hit[0].report, cached: true });
     }
+  }
+
+  // 1b. Force-refresh — delete old cache entry so fresh data is saved
+  if (db && force) {
+    await db.from("startup_reports").delete().ilike("startup_name", name);
+    console.log(`[analyse] cache cleared for "${name}" (force refresh)`);
   }
 
   // 2. Exa search (parallel — always runs)

@@ -673,9 +673,31 @@ export default function StartupPublicPage({ data, slug }) {
   const [researchState, setResearchState] = useState(
     isStub ? "pending" : "done"
   );
-  const [researchMsg, setResearchMsg]   = useState("Fetching intelligence brief…");
+  const [researchMsg, setResearchMsg]   = useState("Scanning funding & financial databases…");
   const [errorDetail, setErrorDetail]   = useState("");
   const [reportSource, setReportSource] = useState(data._source || "");
+  const [refreshing, setRefreshing]     = useState(false);
+
+  const refreshData = async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    gaEvent("event", "cache_refresh_clicked", { company: name });
+    try {
+      const res  = await fetch("/api/analyse", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ query: name, force: true }),
+      });
+      if (res.ok) {
+        // Small pause so user sees the state change, then reload
+        setTimeout(() => window.location.reload(), 800);
+      } else {
+        setRefreshing(false);
+      }
+    } catch {
+      setRefreshing(false);
+    }
+  };
 
   // Auto-trigger research for any page without deep AI data
   useEffect(() => {
@@ -849,6 +871,21 @@ export default function StartupPublicPage({ data, slug }) {
                 <span>By <strong>Miru Intelligence</strong></span>
                 {publishDate && <span>· Updated {publishDate}</span>}
                 {data.overview && <span>· {readTime(data)}</span>}
+                {/* Refresh cached data */}
+                {data._source === "report" && researchState === "done" && (
+                  <button
+                    className="sp-refresh-btn"
+                    onClick={refreshData}
+                    disabled={refreshing}
+                    title="Fetch latest data from Exa + Gemini"
+                  >
+                    {refreshing ? (
+                      <><span className="sp-refresh-spin" />Refreshing...</>
+                    ) : (
+                      <>↻ Refresh data</>
+                    )}
+                  </button>
+                )}
               </div>
 
               <div className="sp-hero-meta">
