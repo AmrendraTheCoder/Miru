@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { sendGAEvent } from "@next/third-parties/google";
+import { gaEvent } from "@/lib/ga";
 
 const BASE_URL = "https://miru-1.vercel.app";
 
@@ -31,7 +31,7 @@ function ShareBar({ name, slug }) {
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-      sendGAEvent("event", "share_clicked", { method: "copy", company: name });
+      gaEvent("event", "share_clicked", { method: "copy", company: name });
     });
   };
 
@@ -42,14 +42,14 @@ function ShareBar({ name, slug }) {
         href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`}
         target="_blank" rel="noopener noreferrer"
         className="sp-share-btn sp-share-x"
-        onClick={() => sendGAEvent("event", "share_clicked", { method: "twitter", company: name })}
+        onClick={() => gaEvent("event", "share_clicked", { method: "twitter", company: name })}
         title="Share on X"
       >𝕏</a>
       <a
         href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`}
         target="_blank" rel="noopener noreferrer"
         className="sp-share-btn sp-share-li"
-        onClick={() => sendGAEvent("event", "share_clicked", { method: "linkedin", company: name })}
+        onClick={() => gaEvent("event", "share_clicked", { method: "linkedin", company: name })}
         title="Share on LinkedIn"
       >in</a>
       <button className="sp-share-btn sp-share-copy" onClick={copy} title="Copy link">
@@ -70,7 +70,7 @@ function LeetCodeSection({ companyName, slug }) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    sendGAEvent("event", "leetcode_opened", { company: companyName });
+    gaEvent("event", "leetcode_opened", { company: companyName });
     try {
       const res = await fetch(`/api/leetcode?company=${encodeURIComponent(companyName)}`);
       setData(await res.json());
@@ -103,7 +103,7 @@ function LeetCodeSection({ companyName, slug }) {
           href={data.directUrl}
           target="_blank" rel="noopener noreferrer"
           className="sp-lc-direct-link"
-          onClick={() => sendGAEvent("event", "leetcode_company_clicked", { company: companyName })}
+          onClick={() => gaEvent("event", "leetcode_company_clicked", { company: companyName })}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="#FFA116"><path d="M13.483 0a1.374 1.374 0 0 0-.961.438L7.116 6.226l-3.854 4.126a5.266 5.266 0 0 0-1.209 2.104 5.35 5.35 0 0 0-.125.513 5.527 5.527 0 0 0 .062 2.362 5.83 5.83 0 0 0 .349 1.017 5.938 5.938 0 0 0 1.271 1.818l4.277 4.193.039.038c2.248 2.165 5.852 2.133 8.063-.074l2.396-2.392c.54-.54.54-1.414.003-1.955a1.378 1.378 0 0 0-1.951-.003l-2.396 2.392a3.021 3.021 0 0 1-4.205.038l-.02-.019-4.276-4.193c-.652-.64-.972-1.469-.948-2.263a2.68 2.68 0 0 1 .066-.523 2.545 2.545 0 0 1 .619-1.164L9.13 8.114c1.058-1.134 3.204-1.27 4.43-.278l3.501 2.831c.593.48 1.461.387 1.94-.207a1.384 1.384 0 0 0-.207-1.943l-3.5-2.831c-.8-.647-1.766-1.045-2.774-1.202l2.015-2.158A1.384 1.384 0 0 0 13.483 0zm-2.866 12.815a1.38 1.38 0 0 0-1.38 1.382 1.38 1.38 0 0 0 1.38 1.382H20.79a1.38 1.38 0 0 0 1.38-1.382 1.38 1.38 0 0 0-1.38-1.382z"/></svg>
           View all {companyName} questions on LeetCode →
@@ -120,7 +120,7 @@ function LeetCodeSection({ companyName, slug }) {
             <a
               key={i} href={q.url} target="_blank" rel="noopener noreferrer"
               className="sp-lc-row"
-              onClick={() => sendGAEvent("event", "leetcode_problem_clicked", { company: companyName, problem: q.title })}
+              onClick={() => gaEvent("event", "leetcode_problem_clicked", { company: companyName, problem: q.title })}
             >
               <span className="sp-lc-num">{i + 1}</span>
               <span className="sp-lc-title">{q.title}</span>
@@ -168,7 +168,7 @@ function EmployeeFinder({ companyName, domain }) {
 
   const findEmployees = async () => {
     setLoading(true);
-    sendGAEvent("event", "employee_finder_opened", { company: companyName });
+    gaEvent("event", "employee_finder_opened", { company: companyName });
     try {
       const res = await fetch("/api/employees", {
         method: "POST",
@@ -215,7 +215,7 @@ function EmployeeFinder({ companyName, domain }) {
             {employees.map((emp, i) => (
               <a key={i} href={emp.linkedinUrl} target="_blank" rel="noopener noreferrer"
                 className="sp-employee-card"
-                onClick={() => sendGAEvent("event", "employee_profile_clicked", { company: companyName })}>
+                onClick={() => gaEvent("event", "employee_profile_clicked", { company: companyName })}>
                 <div className="sp-emp-avatar" style={{ background: avatarColor(emp.name) }}>
                   {(emp.name || "?")[0].toUpperCase()}
                 </div>
@@ -299,7 +299,7 @@ export default function StartupPublicPage({ data, slug }) {
 
   // Track page view with company context
   useEffect(() => {
-    sendGAEvent("event", "company_page_viewed", { company: name, source: data._source });
+    gaEvent("event", "company_page_viewed", { company: name, source: data._source });
   }, [name, data._source]);
 
   return (
@@ -313,7 +313,7 @@ export default function StartupPublicPage({ data, slug }) {
           <a
             href={`${BASE_URL}/?q=${encodeURIComponent(name)}`}
             className="sp-research-cta"
-            onClick={() => sendGAEvent("event", "research_deeper_clicked", { company: name })}
+            onClick={() => gaEvent("event", "research_deeper_clicked", { company: name })}
           >
             Research {name} deeper →
           </a>
@@ -441,7 +441,7 @@ export default function StartupPublicPage({ data, slug }) {
             <a
               href={`${BASE_URL}/?q=${encodeURIComponent(name)}`}
               className="sp-cta-btn"
-              onClick={() => sendGAEvent("event", "interview_cta_clicked", { company: name })}
+              onClick={() => gaEvent("event", "interview_cta_clicked", { company: name })}
             >
               Research {name} on Miru →
             </a>
@@ -476,7 +476,7 @@ export default function StartupPublicPage({ data, slug }) {
                         <a
                           href={f.linkedinUrl || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(f.name)}`}
                           target="_blank" rel="noopener noreferrer" className="sp-li-btn"
-                          onClick={() => sendGAEvent("event", "founder_linkedin_clicked", { company: name, founder: f.name })}
+                          onClick={() => gaEvent("event", "founder_linkedin_clicked", { company: name, founder: f.name })}
                         >
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
@@ -541,7 +541,7 @@ export default function StartupPublicPage({ data, slug }) {
               <div className="sp-press-list">
                 {data.pressArticles.slice(0, 6).map((a, i) => (
                   <a key={i} href={a.url} target="_blank" rel="noopener noreferrer" className="sp-press-item"
-                    onClick={() => sendGAEvent("event", "press_article_clicked", { company: name })}>
+                    onClick={() => gaEvent("event", "press_article_clicked", { company: name })}>
                     <div className="sp-press-title">{a.title}</div>
                     <div className="sp-press-meta">
                       {a.source && <span>{a.source}</span>}

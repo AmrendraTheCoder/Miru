@@ -1,177 +1,260 @@
 /**
- * POST /api/analyse
- * Body: { query: "Coinbase" }
+ * POST /api/analyse  { query: "Stripe" }
  *
- * Runs the full research pipeline server-side using EXA_API_KEY + GEMINI_API_KEY
- * env vars, saves the report to Supabase, and returns it.
- * Called automatically by /startup/[slug] when no cached report exists.
+ * Research pipeline: Exa search runs first (always), then Gemini
+ * tries to analyse it. If Gemini quota is exhausted, returns the
+ * Exa data directly as a structured report. Never hangs.
  */
 
 import { NextResponse } from "next/server";
 import { getSupabaseServer } from "@/lib/supabase";
 
-const EXA_BASE = "https://api.exa.ai";
+const EXA_BASE    = "https://api.exa.ai";
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
 const GEMINI_MODELS = [
-  "gemini-2.5-flash",
-  "gemini-2.0-flash",
   "gemini-2.0-flash-lite",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash-8b",
+  "gemini-1.5-flash",
+  "gemini-2.5-flash",
 ];
 
-// ── Exa search ────────────────────────────────────────────────────
-async function exaSearch(query, opts = {}) {
-  const apiKey = process.env.EXA_API_KEY;
-  if (!apiKey) throw new Error("EXA_API_KEY not set");
+// ── Helpers ────────────────────────────────────────────────────────
 
-  const res = await fetch(`${EXA_BASE}/search`, {
-    method: "POST",
-    headers: { "x-api-key": apiKey, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      query,
-      type: "neural",
-      numResults: opts.numResults || 8,
-      contents: { text: { maxCharacters: 3000 }, highlights: { numSentences: 3, highlightsPerUrl: 2 } },
-      ...opts,
-    }),
-  });
-
-  if (!res.ok) throw new Error(`Exa search failed: ${res.status}`);
-  return res.json();
+function cleanQuery(raw = "") {
+  return raw
+    .replace(/['']s\s+.*/i, "")
+    .replace(/\s+(raises?|bets?|launches?|gets?|lands?|closes?|secures?|acquires?).*/i, "")
+    .replace(/\s*[\|–—]\s*.*/g, "")
+    .replace(/\$[\d,.]+[MmBbKk]?(\s+\w+)*/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
 
-// ── Gemini analysis ───────────────────────────────────────────────
-async function geminiAnalyse(prompt) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY not set");
+async function exaSearch(query, opts = {}) {
+  const key = process.env.EXA_API_KEY;
+  if (!key) throw new Error("EXA_API_KEY not configured");
 
-  for (const model of GEMINI_MODELS) {
-    try {
-      const res = await fetch(`${GEMINI_BASE}/${model}:generateContent?key=${apiKey}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.15,
-            maxOutputTokens: 4000,
-            responseMimeType: "application/json",
-          },
-        }),
-      });
-      if (!res.ok) continue;
-      const data = await res.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-      const cleaned = text.replace(/```json|```/g, "").trim();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+
+  try {
+    const res = await fetch(`${EXA_BASE}/search`, {
+      method: "POST",
+      headers: { "x-api-key": key, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query,
+        type: "neural",
+        numResults: opts.numResults || 6,
+        contents: { text: { maxCharacters: 2000 }, highlights: { numSentences: 2, highlightsPerUrl: 2 } },
+        ...opts,
+      }),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`Exa ${res.status}`);
+    return res.json();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+// Try one Gemini model with a hard 15s timeout
+async function tryGemini(modelId, apiKey, prompt) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+
+  try {
+    const res = await fetch(`${GEMINI_BASE}/${modelId}:generateContent?key=${apiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.15, maxOutputTokens: 3500, responseMimeType: "application/json" },
+      }),
+      signal: controller.signal,
+    });
+
+    if (res.status === 429) throw new Error("quota");
+    if (!res.ok) throw new Error(`http_${res.status}`);
+
+    const data = await res.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+    const cleaned = text.replace(/```json[\s\S]*?```|```/g, "").trim();
+
+    const parsed = (() => {
       try { return JSON.parse(cleaned); }
       catch {
         const m = cleaned.match(/\{[\s\S]*\}/);
-        if (m) return JSON.parse(m[0]);
+        return m ? JSON.parse(m[0]) : null;
       }
-    } catch { continue; }
+    })();
+
+    if (!parsed) throw new Error("json_parse");
+    return { result: parsed, model: modelId };
+  } finally {
+    clearTimeout(timeout);
   }
-  throw new Error("All Gemini models exhausted");
 }
 
-// ── Main handler ──────────────────────────────────────────────────
-export async function POST(request) {
-  const { query } = await request.json().catch(() => ({}));
-  if (!query?.trim()) {
-    return NextResponse.json({ error: "query required" }, { status: 400 });
+// Try models one by one — no artificial delays
+async function geminiCascade(prompt) {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return null;
+
+  for (const model of GEMINI_MODELS) {
+    try {
+      return await tryGemini(model, key, prompt);
+    } catch (e) {
+      console.warn(`[analyse] ${model}: ${e.message}`);
+    }
   }
+  return null; // all failed — caller uses Exa fallback
+}
 
-  const name = query.trim();
+// Structured report from raw Exa results when Gemini is unavailable
+function exaFallbackReport(name, results) {
+  const allText = results.map(r => r.text || r.title || "").join(" ");
+  const fundingMatch = allText.match(/\$([\d.]+)\s*([BMmKk](?:illion|M|B|K)?)/);
+  const funding = fundingMatch ? `$${fundingMatch[1]}${fundingMatch[2].charAt(0).toUpperCase()}` : null;
 
-  // Check if already cached in Supabase
+  return {
+    name,
+    tagline: results[0]?.title?.replace(new RegExp(`${name}[:\\s\\-]*`, "i"), "").slice(0, 120) || null,
+    overview: allText.slice(0, 600) || `${name} is a startup. Full analysis coming soon.`,
+    stage: null,
+    founded: null,
+    headquarters: null,
+    totalFunding: funding,
+    sector: null,
+    problem: null,
+    solution: null,
+    whyFunded: null,
+    competitiveAdvantage: null,
+    founders: [],
+    fundingTimeline: [],
+    insights: [],
+    risks: [],
+    competitorNames: [],
+    analystVerdict: null,
+    pressArticles: results.slice(0, 5).map(r => ({
+      title: r.title || "",
+      url: r.url || "",
+      source: (() => { try { return new URL(r.url).hostname.replace("www.", ""); } catch { return ""; } })(),
+      date: r.publishedDate?.slice(0, 10) || null,
+    })).filter(a => a.url),
+    _source: "exa_fallback",
+    _updatedAt: new Date().toISOString(),
+  };
+}
+
+// ── Route ──────────────────────────────────────────────────────────
+export const maxDuration = 55;
+
+export async function POST(request) {
+  try {
+  const body = await request.json().catch(() => ({}));
+  const raw = body?.query?.trim();
+  if (!raw) return NextResponse.json({ error: "query required" }, { status: 400 });
+
+  const name = cleanQuery(raw);
+  if (!name) return NextResponse.json({ error: "Could not parse company name" }, { status: 400 });
+
+  console.log(`[analyse] "${name}" (raw="${raw}")`);
+
+  // 1. Supabase cache check
   const db = getSupabaseServer();
   if (db) {
     const cutoff = new Date(Date.now() - 7 * 86_400_000).toISOString();
-    const { data: existing } = await db
+    const { data: hit } = await db
       .from("startup_reports")
-      .select("report, created_at")
+      .select("report")
       .ilike("startup_name", name)
       .gte("created_at", cutoff)
+      .order("created_at", { ascending: false })
       .limit(1);
 
-    if (existing?.[0]?.report) {
-      return NextResponse.json({ report: existing[0].report, cached: true });
+    if (hit?.[0]?.report) {
+      console.log(`[analyse] cache hit for "${name}"`);
+      return NextResponse.json({ report: hit[0].report, cached: true });
     }
   }
 
+  // 2. Exa search (parallel — always runs)
+  let exaResults = [];
   try {
-    // 1. Fetch raw intelligence via Exa
-    const [fundingData, pressData] = await Promise.all([
-      exaSearch(`${name} startup funding investors pitch deck`, {
-        numResults: 6,
-        includeDomains: ["crunchbase.com", "techcrunch.com", "bloomberg.com", "forbes.com", "pitchbook.com"],
-      }).catch(() => ({ results: [] })),
-      exaSearch(`${name} company overview founders team`, {
-        numResults: 6,
-        includeDomains: ["linkedin.com", "crunchbase.com", "ycombinator.com", "techcrunch.com"],
-      }).catch(() => ({ results: [] })),
+    const [r1, r2] = await Promise.all([
+      exaSearch(`${name} startup funding investors valuation`, {
+        numResults: 5,
+        includeDomains: ["crunchbase.com", "techcrunch.com", "bloomberg.com", "forbes.com"],
+      }),
+      exaSearch(`${name} company founders CEO team overview`, {
+        numResults: 5,
+        includeDomains: ["crunchbase.com", "ycombinator.com", "techcrunch.com", "linkedin.com"],
+      }),
     ]);
+    exaResults = [...(r1.results || []), ...(r2.results || [])].slice(0, 10);
+    console.log(`[analyse] Exa returned ${exaResults.length} results for "${name}"`);
+  } catch (e) {
+    console.error(`[analyse] Exa failed: ${e.message}`);
+    return NextResponse.json({ error: `Data fetch failed: ${e.message}` }, { status: 502 });
+  }
 
-    const allResults = [
-      ...(fundingData.results || []),
-      ...(pressData.results || []),
-    ].slice(0, 12);
+  // 3. Gemini analysis (falls back to Exa-only on quota)
+  const context = exaResults
+    .map((r, i) => `[${i + 1}] ${r.url}\n${r.title || ""}\n${(r.text || "").slice(0, 1500)}`)
+    .join("\n\n---\n\n");
 
-    const context = allResults
-      .map((r, i) => `[Source ${i + 1}] ${r.url}\nTitle: ${r.title || ""}\n${r.text?.slice(0, 1500) || ""}`)
-      .join("\n\n---\n\n");
-
-    // 2. Analyse with Gemini
-    const prompt = `You are a senior startup analyst. Based on the sources below, generate a comprehensive intelligence report for "${name}".
+  const prompt = `You are a senior startup analyst. Based on these sources, write a JSON intelligence report for "${name}".
 
 SOURCES:
 ${context}
 
-Return ONLY valid JSON matching this exact schema:
+Return ONLY a valid JSON object:
 {
-  "name": "exact company name",
-  "tagline": "1 sentence tagline",
-  "overview": "3-4 sentence overview",
+  "name": "${name}",
+  "tagline": "one sharp sentence",
+  "overview": "3-4 sentence overview paragraph",
   "stage": "Seed|Series A|Series B|Series C|Late Stage|Public|Acquired",
-  "founded": "year as string",
-  "headquarters": "City, State/Country",
-  "totalFunding": "e.g. $40M",
+  "founded": "YYYY",
+  "headquarters": "City, Country",
+  "totalFunding": "$XM or null",
   "sector": "primary sector",
   "problem": { "statement": "...", "urgency": "...", "marketSize": "..." },
   "solution": "what they built",
-  "whyFunded": "why investors funded this",
-  "competitiveAdvantage": "moat / key differentiator",
+  "whyFunded": "investor thesis 2-3 sentences",
+  "competitiveAdvantage": "key moat",
   "founders": [{ "name": "...", "role": "...", "background": "...", "linkedinUrl": null }],
-  "fundingTimeline": [{ "date": "...", "event": "...", "amount": "...", "investors": "..." }],
-  "insights": ["key insight 1", "key insight 2", "key insight 3"],
+  "fundingTimeline": [{ "date": "Mon YYYY", "event": "...", "amount": "$XM", "investors": "..." }],
+  "insights": ["insight 1", "insight 2", "insight 3"],
   "risks": ["risk 1", "risk 2"],
-  "competitorNames": ["competitor1", "competitor2", "competitor3"],
-  "analystVerdict": {
-    "summary": "2-3 sentence verdict",
-    "watchScore": 7,
-    "moatStrength": "Strong|Moderate|Weak",
-    "marketPosition": "Leader|Challenger|Niche|Emerging",
-    "fundingLikelihood": "High|Medium|Low"
-  },
-  "pressArticles": [{ "title": "...", "url": "...", "source": "...", "date": "..." }]
+  "competitorNames": ["name1", "name2", "name3"],
+  "analystVerdict": { "summary": "...", "watchScore": 8, "moatStrength": "Strong|Moderate|Weak", "marketPosition": "Leader|Challenger|Niche|Emerging", "fundingLikelihood": "High|Medium|Low" },
+  "pressArticles": [{ "title": "...", "url": "...", "source": "...", "date": "YYYY-MM-DD" }]
 }`;
 
-    const report = await geminiAnalyse(prompt);
-    report._source = "report";
-    report._updatedAt = new Date().toISOString();
+  const geminiResult = await geminiCascade(prompt);
 
-    // 3. Save to Supabase for future visits
-    if (db) {
-      await db.from("startup_reports").insert({
-        startup_name: report.name || name,
-        domain: null,
-        report,
-        created_at: new Date().toISOString(),
-      }).catch(() => {}); // non-fatal
-    }
+  let report;
+  if (geminiResult) {
+    report = { ...geminiResult.result, _source: "report", _model: geminiResult.model, _updatedAt: new Date().toISOString() };
+    console.log(`[analyse] Gemini succeeded with ${geminiResult.model}`);
+  } else {
+    report = exaFallbackReport(name, exaResults);
+    console.warn(`[analyse] Gemini unavailable — using Exa fallback for "${name}"`);
+  }
 
-    return NextResponse.json({ report, cached: false });
+  // 4. Save to Supabase (plain insert — no unique constraint on startup_name)
+  if (db) {
+    db.from("startup_reports")
+      .insert({ startup_name: report.name || name, domain: null, report, created_at: new Date().toISOString() })
+      .then(({ error }) => { if (error) console.warn("[analyse] Supabase save:", error.message); })
+      .catch(e => console.warn("[analyse] Supabase save error:", e.message));
+  }
+
+  return NextResponse.json({ report, cached: false });
   } catch (err) {
-    console.error("[analyse]", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("[analyse] Unhandled error:", err?.message || err);
+    return NextResponse.json({ error: err?.message || "Internal server error" }, { status: 500 });
   }
 }
