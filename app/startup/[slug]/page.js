@@ -26,47 +26,67 @@ function toSlug(name = "") {
 // ── Fetch data server-side ──────────────────────────────────────
 async function getStartupData(slug) {
   const db = getSupabaseServer();
-  if (!db) return null;
 
-  // 1. Try to find a deep research report first (richest data)
-  const { data: reports } = await db
-    .from("startup_reports")
-    .select("startup_name, domain, report, created_at")
-    .ilike("startup_name", slug.replace(/-/g, " "))
-    .order("created_at", { ascending: false })
-    .limit(1);
+  // Build multiple name variants to try matching
+  const nameFromSlug = slug.replace(/-/g, " ");           // "neo-cognition" → "neo cognition"
+  const nameCapitalized = nameFromSlug                    // "neocognition"
+    .split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
-  if (reports?.[0]?.report) {
-    const r = reports[0];
-    return { ...r.report, _source: "report", _updatedAt: r.created_at };
+  if (db) {
+    // 1. Try to find a deep research report first (richest data)
+    const { data: reports } = await db
+      .from("startup_reports")
+      .select("startup_name, domain, report, created_at")
+      .or(`startup_name.ilike.%${nameFromSlug}%,startup_name.ilike.%${slug}%`)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (reports?.[0]?.report) {
+      const r = reports[0];
+      return { ...r.report, _source: "report", _updatedAt: r.created_at };
+    }
+
+    // 2. Fall back to YC companies table — try slug, then name variants
+    const { data: companies } = await db
+      .from("yc_companies")
+      .select("*")
+      .or(
+        `slug.eq.${slug},` +
+        `name.ilike.${nameFromSlug},` +
+        `name.ilike.${nameCapitalized},` +
+        `name.ilike.%${nameFromSlug}%`
+      )
+      .limit(1);
+
+    if (companies?.[0]) {
+      const c = companies[0];
+      return {
+        name: c.name,
+        tagline: c.one_liner || c.tagline,
+        overview: c.long_description || c.description,
+        stage: c.status,
+        founded: c.year_founded,
+        totalFunding: null,
+        domain: c.website?.replace(/^https?:\/\//, "").replace(/\/$/, ""),
+        sector: c.tags?.[0] || null,
+        founders: c.founders || [],
+        batch: c.batch,
+        logo_url: c.small_logo_thumb_url,
+        _source: "yc_db",
+        _slug: slug,
+      };
+    }
   }
 
-  // 2. Fall back to YC companies table
-  const { data: companies } = await db
-    .from("yc_companies")
-    .select("*")
-    .or(`slug.eq.${slug},name.ilike.${slug.replace(/-/g, " ")}`)
-    .limit(1);
-
-  if (companies?.[0]) {
-    const c = companies[0];
-    return {
-      name: c.name,
-      tagline: c.one_liner || c.tagline,
-      overview: c.long_description,
-      stage: c.status,
-      founded: c.year_founded,
-      totalFunding: null,
-      domain: c.website?.replace(/^https?:\/\//, "").replace(/\/$/, ""),
-      sector: c.tags?.[0] || null,
-      founders: c.founders || [],
-      batch: c.batch,
-      logo_url: c.small_logo_thumb_url,
-      _source: "yc_db",
-    };
-  }
-
-  return null;
+  // 3. Return minimal stub so the page still renders (not 404)
+  // The client component will auto-trigger research
+  return {
+    name: nameCapitalized || slug,
+    tagline: null,
+    overview: null,
+    _source: "stub",
+    _slug: slug,
+  };
 }
 
 // ── generateMetadata — unique title/description per company ─────
@@ -185,7 +205,23 @@ export default async function StartupPage({ params }) {
   const { slug } = await params;
   const data = await getStartupData(slug);
 
-  if (!data) notFound();
+  // Never 404 — always render the page with whatever data we have
+  // The client component handles the "stub" state by auto-triggering research
+  if (!data) {
+    const nameFromSlug = slug
+      .replace(/-/g, " ")
+      .split(" ")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+    return (
+      <>
+        <StartupPublicPage
+          data={{ name: nameFromSlug, tagline: null, overview: null, _source: "stub", _slug: slug }}
+          slug={slug}
+        />
+      </>
+    );
+  }
 
   return (
     <>

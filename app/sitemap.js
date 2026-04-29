@@ -1,11 +1,9 @@
 /**
  * Dynamic Sitemap — tells Google about every startup page on Miru.
- * Pulls from two sources:
- *   1. yc_companies table — all 2000+ YC companies (base coverage)
- *   2. startup_reports table — deeply researched companies (higher priority)
- *
- * Google will crawl these and index them as individual pages,
- * giving Miru thousands of keyword-targeted entry points.
+ * Sources:
+ *   1. startup_reports — deeply researched companies (highest priority)
+ *   2. yc_companies    — all 2000+ YC companies (base coverage)
+ *   3. Trending news companies (hardcoded seeds for crawl bootstrap)
  */
 
 import { getSupabaseServer } from "@/lib/supabase";
@@ -16,8 +14,18 @@ function toSlug(name = "") {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
+// Seed list — ensures Google crawls these high-traffic company pages
+// even before they get researched by a user
+const SEED_COMPANIES = [
+  "Airbnb", "Stripe", "Coinbase", "DoorDash", "Dropbox", "Brex", "Gusto",
+  "Scale AI", "OpenAI", "Anthropic", "Notion", "Linear", "Figma", "Vercel",
+  "Supabase", "Airtable", "Retool", "Ramp", "Mercury", "Deel", "Rippling",
+  "NeoCognition", "Perplexity", "Mistral", "Cohere", "Inflection", "Character.AI",
+];
+
 export default async function sitemap() {
   const db = getSupabaseServer();
+  const now = new Date().toISOString();
 
   // ── Static pages ──────────────────────────────────────────────
   const staticPages = [
@@ -26,7 +34,26 @@ export default async function sitemap() {
     { url: `${BASE_URL}/#feed`, priority: 0.8, changeFrequency: "daily" },
   ];
 
-  // ── YC company pages (base) ───────────────────────────────────
+  // ── Deeply researched startup pages (highest priority) ────────
+  let reportPages = [];
+  if (db) {
+    const { data: reports } = await db
+      .from("startup_reports")
+      .select("startup_name, created_at")
+      .order("created_at", { ascending: false })
+      .limit(2000);
+
+    if (reports?.length) {
+      reportPages = reports.map((r) => ({
+        url: `${BASE_URL}/startup/${toSlug(r.startup_name)}`,
+        lastModified: r.created_at,
+        priority: 0.9,
+        changeFrequency: "daily",
+      }));
+    }
+  }
+
+  // ── YC company pages (base coverage) ─────────────────────────
   let companyPages = [];
   if (db) {
     const { data: companies } = await db
@@ -37,34 +64,24 @@ export default async function sitemap() {
     if (companies?.length) {
       companyPages = companies.map((c) => ({
         url: `${BASE_URL}/startup/${c.slug || toSlug(c.name)}`,
-        lastModified: c.updated_at || new Date().toISOString(),
+        lastModified: c.updated_at || now,
         priority: 0.6,
         changeFrequency: "weekly",
       }));
     }
   }
 
-  // ── Deeply researched startup pages (higher priority) ─────────
-  let reportPages = [];
-  if (db) {
-    const { data: reports } = await db
-      .from("startup_reports")
-      .select("startup_name, domain, created_at")
-      .order("created_at", { ascending: false })
-      .limit(1000);
+  // ── Seed pages (high-traffic companies bootstrapped for crawl) ─
+  const seedPages = SEED_COMPANIES.map((name) => ({
+    url: `${BASE_URL}/startup/${toSlug(name)}`,
+    lastModified: now,
+    priority: 0.7,
+    changeFrequency: "weekly",
+  }));
 
-    if (reports?.length) {
-      reportPages = reports.map((r) => ({
-        url: `${BASE_URL}/startup/${toSlug(r.startup_name)}`,
-        lastModified: r.created_at,
-        priority: 0.9, // Higher — these have rich AI-generated content
-        changeFrequency: "daily",
-      }));
-    }
-  }
-
-  // Deduplicate by URL (researched companies override base company pages)
-  const allPages = [...staticPages, ...companyPages, ...reportPages];
+  // Merge: reports override yc_companies override seeds
+  // Higher-priority sources first so dedup keeps them
+  const allPages = [...staticPages, ...reportPages, ...seedPages, ...companyPages];
   const seen = new Set();
   const deduplicated = allPages.filter((p) => {
     if (seen.has(p.url)) return false;

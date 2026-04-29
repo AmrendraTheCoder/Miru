@@ -243,9 +243,59 @@ function EmployeeFinder({ companyName, domain }) {
 export default function StartupPublicPage({ data, slug }) {
   const name = data.name || slug;
   const domain = data.domain;
+  const isStub = data._source === "stub" || (!data.overview && !data.tagline && !data.founders?.length);
   const publishDate = data._updatedAt
     ? new Date(data._updatedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
     : null;
+
+  const [researchState, setResearchState] = useState(
+    isStub ? "pending" : "done"
+  );
+  const [researchMsg, setResearchMsg] = useState("Fetching intelligence brief…");
+
+  // Auto-trigger research for stub pages
+  useEffect(() => {
+    if (!isStub) return;
+    let cancelled = false;
+
+    const runResearch = async () => {
+      setResearchState("loading");
+      try {
+        const msgs = [
+          "Scanning funding databases…",
+          "Profiling founders…",
+          "Mapping competitor landscape…",
+          "Generating intelligence brief…",
+        ];
+        let idx = 0;
+        const ticker = setInterval(() => {
+          if (!cancelled) setResearchMsg(msgs[Math.min(++idx, msgs.length - 1)]);
+        }, 3000);
+
+        const res = await fetch("/api/analyse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: name }),
+        });
+
+        clearInterval(ticker);
+        if (cancelled) return;
+
+        if (res.ok) {
+          setResearchState("done");
+          // Reload the page so the server re-fetches the cached report
+          window.location.reload();
+        } else {
+          setResearchState("error");
+        }
+      } catch {
+        if (!cancelled) setResearchState("error");
+      }
+    };
+
+    runResearch();
+    return () => { cancelled = true; };
+  }, [isStub, name]);
 
   // Track page view with company context
   useEffect(() => {
@@ -269,6 +319,33 @@ export default function StartupPublicPage({ data, slug }) {
           </a>
         </div>
       </header>
+
+      {/* ── Auto-research loading banner ───────────────────── */}
+      {researchState === "loading" && (
+        <div style={{
+          background: "var(--orange)", color: "#fff", textAlign: "center",
+          padding: "10px 16px", fontSize: 13, fontWeight: 500,
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 10
+        }}>
+          <span style={{ display: "inline-flex", gap: 4 }}>
+            <span style={{ animation: "sp-dot-pulse 1.2s infinite", animationDelay: "0s", width: 6, height: 6, borderRadius: "50%", background: "#fff", display: "inline-block" }} />
+            <span style={{ animation: "sp-dot-pulse 1.2s infinite", animationDelay: "0.4s", width: 6, height: 6, borderRadius: "50%", background: "#fff", display: "inline-block" }} />
+            <span style={{ animation: "sp-dot-pulse 1.2s infinite", animationDelay: "0.8s", width: 6, height: 6, borderRadius: "50%", background: "#fff", display: "inline-block" }} />
+          </span>
+          {researchMsg}
+        </div>
+      )}
+      {researchState === "error" && (
+        <div style={{
+          background: "#fce4ec", color: "#c62828", textAlign: "center",
+          padding: "8px 16px", fontSize: 12
+        }}>
+          Could not auto-load intelligence brief.{" "}
+          <a href={`${BASE_URL}/?q=${encodeURIComponent(name)}`} style={{ color: "#c62828", fontWeight: 700 }}>
+            Research {name} manually →
+          </a>
+        </div>
+      )}
 
       {/* ── Article wrapper for semantic SEO ──────────────── */}
       <main className="sp-main">
