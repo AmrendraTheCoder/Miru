@@ -243,7 +243,7 @@ function EmployeeFinder({ companyName, domain }) {
 export default function StartupPublicPage({ data, slug }) {
   const name = data.name || slug;
   const domain = data.domain;
-  const isStub = !data.whyFunded && !data.problem && !data.fundingTimeline?.length;
+  const isStub = (data._source === "stub" || data._source === "yc_db") && !data.whyFunded;
   const publishDate = data._updatedAt
     ? new Date(data._updatedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
     : null;
@@ -282,9 +282,14 @@ export default function StartupPublicPage({ data, slug }) {
         if (cancelled) return;
 
         if (res.ok) {
+          const json = await res.json().catch(() => ({}));
+          const source = json?.report?._source;
           setResearchState("done");
-          // Reload the page so the server re-fetches the cached report
-          window.location.reload();
+          // Only reload if we got a full Gemini report — not an exa_fallback
+          // (reloading on exa_fallback would just cause an infinite loop)
+          if (source === "report") {
+            window.location.reload();
+          }
         } else {
           setResearchState("error");
         }
