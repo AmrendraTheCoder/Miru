@@ -5,16 +5,16 @@ import { exaStartupResearch, exaDailyStartupNews } from "@/lib/exa";
 import { analyseCompetitor, analyseNewsItems } from "@/lib/analyzer";
 import { SearchEngine, getMemoryStats } from "@/lib/searchEngine";
 
-/* ── Fallback static list — logos via Clearbit free API ── */
+/* ── Fallback static list ── */
 const STATIC_STARTUPS = [
-  { name: "Airbnb",    batch: "W09", sectors: ["Travel"],    tagline: "Marketplace for short-term home rentals.",    slug: "airbnb",    logo_url: "https://logo.clearbit.com/airbnb.com",    website: "airbnb.com" },
-  { name: "Stripe",   batch: "S09", sectors: ["FinTech"],   tagline: "Payment infrastructure for the internet.",     slug: "stripe",    logo_url: "https://logo.clearbit.com/stripe.com",    website: "stripe.com" },
-  { name: "Dropbox",  batch: "S07", sectors: ["SaaS"],      tagline: "Cloud file storage and collaboration.",        slug: "dropbox",   logo_url: "https://logo.clearbit.com/dropbox.com",   website: "dropbox.com" },
-  { name: "DoorDash", batch: "S13", sectors: ["Logistics"], tagline: "On-demand food delivery platform.",            slug: "doordash",  logo_url: "https://logo.clearbit.com/doordash.com",  website: "doordash.com" },
-  { name: "Coinbase", batch: "S12", sectors: ["Crypto"],    tagline: "Cryptocurrency exchange. First major crypto IPO.", slug: "coinbase", logo_url: "https://logo.clearbit.com/coinbase.com",  website: "coinbase.com" },
-  { name: "Brex",     batch: "W17", sectors: ["FinTech"],   tagline: "Corporate cards and financial software.",      slug: "brex",      logo_url: "https://logo.clearbit.com/brex.com",      website: "brex.com" },
-  { name: "Scale AI", batch: "S16", sectors: ["AI/ML"],     tagline: "Data labeling and AI infrastructure for ML.",  slug: "scale-ai",  logo_url: "https://logo.clearbit.com/scale.com",     website: "scale.com" },
-  { name: "Gusto",    batch: "W12", sectors: ["HR Tech"],   tagline: "Payroll and HR for small businesses.",         slug: "gusto",     logo_url: "https://logo.clearbit.com/gusto.com",     website: "gusto.com" },
+  { name: "Airbnb",    batch: "W09", sectors: ["Travel"],    tagline: "Marketplace for short-term home rentals.",       slug: "airbnb",   website: "airbnb.com" },
+  { name: "Stripe",   batch: "S09", sectors: ["FinTech"],   tagline: "Payment infrastructure for the internet.",        slug: "stripe",   website: "stripe.com" },
+  { name: "Dropbox",  batch: "S07", sectors: ["SaaS"],      tagline: "Cloud file storage and collaboration.",           slug: "dropbox",  website: "dropbox.com" },
+  { name: "DoorDash", batch: "S13", sectors: ["Logistics"], tagline: "On-demand food delivery platform.",               slug: "doordash", website: "doordash.com" },
+  { name: "Coinbase", batch: "S12", sectors: ["Crypto"],    tagline: "Cryptocurrency exchange. First major crypto IPO.", slug: "coinbase", website: "coinbase.com" },
+  { name: "Brex",     batch: "W17", sectors: ["FinTech"],   tagline: "Corporate cards and financial software.",         slug: "brex",     website: "brex.com" },
+  { name: "Scale AI", batch: "S16", sectors: ["AI/ML"],     tagline: "Data labeling and AI infrastructure for ML.",    slug: "scale-ai", website: "scale.com" },
+  { name: "Gusto",    batch: "W12", sectors: ["HR Tech"],   tagline: "Payroll and HR for small businesses.",            slug: "gusto",    website: "gusto.com" },
 ];
 
 function StatusDot({ active }) {
@@ -162,14 +162,30 @@ function NewsLoader() {
 
 
 function CompanyLogo({ name, logoUrl, website }) {
+  const [src, setSrc] = useState(() => {
+    // Priority 1: DB S3 logo (from yc-oss seeder)
+    if (logoUrl) return logoUrl;
+    // Priority 2: icon.horse — free, no-auth, high quality brand logos
+    const domain = website
+      ? website.replace(/^https?:\/\//, "").split("/")[0]
+      : `${name.toLowerCase().replace(/\s+/g, "")}.com`;
+    return `https://icon.horse/icon/${domain}`;
+  });
   const [failed, setFailed] = useState(false);
-  // Priority: DB logo → Clearbit from website domain → Clearbit from name guess
-  const clearbitUrl = website
-    ? `https://logo.clearbit.com/${website.replace(/^https?:\/\//, "").split("/")[0]}`
-    : `https://logo.clearbit.com/${name.toLowerCase().replace(/\s+/g, "")}.com`;
-  const src = logoUrl || clearbitUrl;
 
-  if (failed || !src) {
+  const handleError = () => {
+    // Fallback chain: icon.horse fails → try Google favicon
+    if (src.includes("icon.horse")) {
+      const domain = website
+        ? website.replace(/^https?:\/\//, "").split("/")[0]
+        : `${name.toLowerCase().replace(/\s+/g, "")}.com`;
+      setSrc(`https://www.google.com/s2/favicons?domain=${domain}&sz=64`);
+    } else {
+      setFailed(true);
+    }
+  };
+
+  if (failed) {
     return (
       <div className="startup-logo-letter">
         {(name || "?")[0].toUpperCase()}
@@ -181,7 +197,7 @@ function CompanyLogo({ name, logoUrl, website }) {
       className="startup-logo-img"
       src={src}
       alt={`${name} logo`}
-      onError={() => setFailed(true)}
+      onError={handleError}
       loading="lazy"
     />
   );
