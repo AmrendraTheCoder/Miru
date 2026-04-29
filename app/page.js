@@ -746,33 +746,69 @@ export default function Home() {
                   <div className="competitor-grid">
                     {competitors.map((c, i) => (
                       <div className="competitor-card" key={i}>
-                        <div className="comp-name">{c.name}</div>
-                        <div className="comp-founded">{c.founded ? `Founded ${c.founded}` : ""}{c.headquarters ? ` · ${c.headquarters}` : ""}</div>
-                        <div className="comp-desc">{c.whatTheyDo}</div>
-                        {c.totalFunding && <div className="comp-funding">Raised {c.totalFunding}</div>}
-                        {c.differentiation && <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6 }}>{c.differentiation}</div>}
-                        {c.keyStrengths?.length > 0 && (
-                          <div style={{ marginTop: 8 }}>
-                            <div className="signal-title">Strengths</div>
-                            <div className="startup-tags" style={{ marginTop: 4 }}>
-                              {c.keyStrengths.map((s, j) => <span key={j} className="startup-tag">{s}</span>)}
+                        {/* ── Main content ── */}
+                        <div className="comp-main">
+                          <div className="comp-name">{c.name}</div>
+                          <div className="comp-founded">
+                            {c.founded ? `Founded ${c.founded}` : ""}
+                            {c.headquarters ? ` · ${c.headquarters}` : ""}
+                          </div>
+                          <div className="comp-desc">{c.whatTheyDo}</div>
+                          {c.differentiation && (
+                            <div className="comp-diff">{c.differentiation}</div>
+                          )}
+                          {c.founders?.length > 0 && (
+                            <div className="comp-founders">
+                              Founders: {c.founders.map((f) => f.name).join(", ")}
                             </div>
-                          </div>
-                        )}
-                        {c.founders?.length > 0 && <div className="comp-founders">Founders: {c.founders.map(f => f.name).join(", ")}</div>}
-                        {c.threatLevel && (
-                          <div style={{ marginTop: 6 }}>
-                            <span className={`comp-threat ${c.threatLevel === "High" ? "threat-high" : c.threatLevel === "Medium" ? "threat-med" : "threat-low"}`}>
-                              {c.threatLevel} threat
-                            </span>
-                          </div>
-                        )}
-                        {c.threatReason && <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>{c.threatReason}</div>}
-                        <button className="btn-research" style={{ marginTop: 10 }} onClick={() => research(c.name)}>Deep research →</button>
+                          )}
+                        </div>
+
+                        {/* ── Side panel ── */}
+                        <div className="comp-side">
+                          {c.totalFunding && (
+                            <div className="comp-funding">Raised {c.totalFunding}</div>
+                          )}
+                          {c.keyStrengths?.length > 0 && (
+                            <div>
+                              <div className="comp-strengths-title">Strengths</div>
+                              <div className="comp-strengths">
+                                {c.keyStrengths.map((s, j) => (
+                                  <div key={j} className="comp-strength-item">{s}</div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {c.threatLevel && (
+                            <div>
+                              <span className={`comp-threat ${
+                                c.threatLevel === "High" ? "threat-high"
+                                : c.threatLevel === "Medium" ? "threat-med"
+                                : "threat-low"
+                              }`}>
+                                {c.threatLevel} threat
+                              </span>
+                              {c.threatReason && (
+                                <div className="comp-threat-reason" style={{ marginTop: 5 }}>
+                                  {c.threatReason}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          <button
+                            className="btn-research"
+                            style={{ marginTop: 4 }}
+                            onClick={() => research(c.name)}
+                          >
+                            Deep research →
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
                 )}
+
+
                 {!report && (
                   <div className="empty-wrap">
                     <div className="empty-title">Research a startup first</div>

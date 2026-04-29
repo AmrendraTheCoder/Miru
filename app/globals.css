@@ -164,18 +164,47 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 .article-source { font-size: 11px; color: var(--muted); margin-top: 2px; }
 .article-date { font-size: 11px; color: var(--muted2); white-space: nowrap; }
 
-/* Competitors */
-.competitor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-.competitor-card { background: var(--surface); padding: 14px; }
-.comp-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
-.comp-founded { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
-.comp-desc { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
-.comp-funding { font-size: 11px; font-weight: 600; color: var(--green); }
-.comp-threat { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 2px; margin-top: 6px; }
-.threat-high { background: #fce4ec; color: #c62828; }
-.threat-med { background: #fff8e1; color: #e65100; }
-.threat-low { background: #e8f5e9; color: #2e7d32; }
-.comp-founders { font-size: 11px; color: var(--muted); margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+/* ── Competitors ─────────────────────────────────────────────── */
+.competitor-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-top: 8px;
+}
+.competitor-card {
+  background: var(--surface);
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 1fr 200px;
+  gap: 0 24px;
+  align-items: start;
+}
+.comp-main   { min-width: 0; }
+.comp-side   { display: flex; flex-direction: column; gap: 8px; padding-top: 2px; }
+.comp-name   { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+.comp-founded{ font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+.comp-desc   { font-size: 12px; line-height: 1.65; color: var(--text); margin-bottom: 8px; }
+.comp-diff   { font-size: 11px; line-height: 1.55; color: var(--muted); margin-bottom: 8px; }
+.comp-funding{ font-size: 11px; font-weight: 700; color: var(--green); background:#f1f8f1; border:1px solid #c8e6c9; padding:3px 8px; border-radius:2px; display:inline-block; }
+.comp-strengths-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 5px; }
+.comp-strengths { display: flex; flex-direction: column; gap: 3px; }
+.comp-strength-item { font-size: 11px; color: var(--text); padding-left: 8px; border-left: 2px solid var(--orange); line-height: 1.4; }
+.comp-founders{ font-size: 11px; color: var(--muted); padding-top: 8px; border-top: 1px solid var(--border); }
+.comp-threat  { display: inline-flex; align-items: center; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 2px; letter-spacing: 0.3px; }
+.comp-threat-reason { font-size: 11px; color: var(--muted); line-height: 1.5; }
+.threat-high  { background: #fce4ec; color: #c62828; }
+.threat-med   { background: #fff8e1; color: #e65100; }
+.threat-low   { background: #e8f5e9; color: #2e7d32; }
+
+@media (max-width: 640px) {
+  .competitor-card { grid-template-columns: 1fr; }
+  .comp-side { padding-top: 10px; border-top: 1px solid var(--border); }
+}
+
 
 /* Founders section */
 .founder-grid { display: flex; flex-direction: column; gap: 1px; }
