@@ -49,7 +49,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   const gaId = process.env.NEXT_PUBLIC_GA_ID;
   return (
-    <html lang="en" className={dmSans.variable}>
+    <html lang="en" className={dmSans.variable} suppressHydrationWarning>
       <body suppressHydrationWarning>
         {children}
         {gaId && <GoogleAnalytics gaId={gaId} />}
