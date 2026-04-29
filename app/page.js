@@ -211,15 +211,12 @@ function StartupCard({ s, onResearch }) {
   const sector = s.sectors?.[0] || "";
   const slug = s.slug || toSlug(s.name || "");
 
-  const goToPage = (e) => {
-    // Only navigate if not clicking the Research button
-    if (!e.target.closest(".card-research-btn")) {
-      window.location.href = `/startup/${slug}`;
-    }
-  };
-
   return (
-    <div className="discover-card" onClick={goToPage} style={{ cursor: "pointer" }}>
+    <div
+      className="discover-card"
+      onClick={() => { window.location.href = `/startup/${slug}`; }}
+      style={{ cursor: "pointer" }}
+    >
       <div className="discover-card-top">
         <CompanyLogo name={s.name} logoUrl={s.logo_url} website={s.website} />
         <div style={{ minWidth: 0 }}>
@@ -238,7 +235,7 @@ function StartupCard({ s, onResearch }) {
           )}
         </div>
         <button
-          className="btn-research card-research-btn"
+          className="btn-research"
           onClick={(e) => { e.stopPropagation(); onResearch(s.name); }}
           style={{ flexShrink: 0 }}
         >
