@@ -12,15 +12,19 @@ import { getSupabaseServer } from "@/lib/supabase";
 const EXA_BASE    = "https://api.exa.ai";
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
-// Models ordered by speed & availability on free tier
-// Gemma models have 30 RPM + 14.4K RPD — abundant
-// Gemini 2.5 Flash has only 20 RPD — use sparingly
+// ── Model lists ───────────────────────────────────────────────────
+// Groq: free tier, blazing fast (LPU), OpenAI-compatible
+// Gemma: Google free tier 30 RPM / 14.4K RPD
+// Gemini 2.5 Flash: 20 RPD only — last resort
+const GROQ_MODELS = [
+  "llama-3.3-70b-versatile",  // Best quality, 1000 RPD free
+  "llama-3.1-8b-instant",     // Ultra-fast, 14400 RPD free
+];
+
 const GEMINI_MODELS = [
   { id: "gemma-3-4b-it",                  jsonMode: false }, // Fast ~5s, 30 RPM, 14.4K RPD
-  { id: "gemma-3-12b-it",                 jsonMode: false }, // Good quality, 30 RPM
-  { id: "gemma-3-1b-it",                  jsonMode: false }, // Tiny but quick fallback
+  { id: "gemma-3-12b-it",                 jsonMode: false }, // Better quality, 30 RPM
   { id: "gemini-2.5-flash",               jsonMode: true  }, // Only 20 RPD — last resort
-  { id: "gemini-2.5-flash-preview-04-17", jsonMode: true  }, // alternate ID
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────
@@ -110,20 +114,85 @@ async function tryGemini(model, apiKey, prompt) {
 }
 
 // Try all models in cascade — no delays, first success wins
-async function geminiCascade(prompt) {
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) { console.warn("[analyse] GEMINI_API_KEY not set"); return null; }
+// ── Groq cascade (OpenAI-compatible, free tier) ──────────────────
+const GROQ_BASE = "https://api.groq.com/openai/v1/chat/completions";
 
-  for (const model of GEMINI_MODELS) {
-    try {
-      const result = await tryGemini(model, key, prompt);
-      console.log(`[analyse] SUCCESS with ${model.id}`);
-      return result;
-    } catch (e) {
-      console.warn(`[analyse] FAIL ${model.id}: ${e.message}`);
-    }
+async function tryGroq(modelId, apiKey, prompt) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20000);
+
+  try {
+    const res = await fetch(GROQ_BASE, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: modelId,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.2,
+        max_tokens: 3500,
+        response_format: { type: "json_object" },
+      }),
+      signal: controller.signal,
+    });
+
+    if (res.status === 429) throw new Error("quota");
+    if (!res.ok) throw new Error(`http_${res.status}`);
+
+    const data = await res.json();
+    const text = data.choices?.[0]?.message?.content || "{}";
+
+    const parsed = (() => {
+      try { return JSON.parse(text); } catch {}
+      const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+      const c = fenced ? fenced[1].trim() : text.trim();
+      try { return JSON.parse(c); } catch {}
+      const m = text.match(/\{[\s\S]*\}/);
+      if (m) { try { return JSON.parse(m[0]); } catch {} }
+      return null;
+    })();
+
+    if (!parsed || typeof parsed !== "object") throw new Error("json_parse");
+    return { result: parsed, model: `groq:${modelId}` };
+  } finally {
+    clearTimeout(timeout);
   }
-  console.warn("[analyse] All models exhausted — falling back to Exa");
+}
+
+// ── Master AI cascade: Groq → Gemma → Gemini 2.5 Flash ─────────
+async function aiCascade(prompt) {
+  // 1. Try Groq first (fastest, most reliable, OpenAI-compatible)
+  const groqKey = process.env.GROQ_API_KEY;
+  if (groqKey) {
+    for (const model of GROQ_MODELS) {
+      try {
+        const result = await tryGroq(model, groqKey, prompt);
+        console.log(`[analyse] SUCCESS groq:${model}`);
+        return result;
+      } catch (e) {
+        console.warn(`[analyse] FAIL groq:${model}: ${e.message}`);
+      }
+    }
+  } else {
+    console.warn("[analyse] GROQ_API_KEY not set — skipping Groq");
+  }
+
+  // 2. Try Gemma / Gemini flash
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (geminiKey) {
+    for (const model of GEMINI_MODELS) {
+      try {
+        const result = await tryGemini(model, geminiKey, prompt);
+        console.log(`[analyse] SUCCESS ${model.id}`);
+        return result;
+      } catch (e) {
+        console.warn(`[analyse] FAIL ${model.id}: ${e.message}`);
+      }
+    }
+  } else {
+    console.warn("[analyse] GEMINI_API_KEY not set — skipping Gemini/Gemma");
+  }
+
+  console.warn("[analyse] All AI models exhausted");
   return null;
 }
 
@@ -274,23 +343,27 @@ Return ONLY a valid JSON object:
   "pressArticles": [{ "title": "...", "url": "...", "source": "...", "date": "YYYY-MM-DD" }]
 }`;
 
-  const geminiResult = await geminiCascade(prompt);
+  const aiResult = await aiCascade(prompt);
 
   let report;
-  if (geminiResult) {
-    report = { ...geminiResult.result, _source: "report", _model: geminiResult.model, _updatedAt: new Date().toISOString() };
-    console.log(`[analyse] Gemini succeeded with ${geminiResult.model}`);
+  if (aiResult) {
+    report = { ...aiResult.result, _source: "report", _model: aiResult.model, _updatedAt: new Date().toISOString() };
+    console.log(`[analyse] Report built via ${aiResult.model}`);
   } else {
     report = exaFallbackReport(name, exaResults);
-    console.warn(`[analyse] Gemini unavailable — using Exa fallback for "${name}"`);
+    console.warn(`[analyse] All AI unavailable — Exa fallback for "${name}"`);
   }
 
-  // 4. Save to Supabase (plain insert — no unique constraint on startup_name)
-  if (db) {
+  // 4. Only cache real AI reports — NEVER cache exa_fallback
+  //    so next visit always retries fresh AI research
+  if (db && report._source === "report") {
     db.from("startup_reports")
       .insert({ startup_name: report.name || name, domain: null, report, created_at: new Date().toISOString() })
       .then(({ error }) => { if (error) console.warn("[analyse] Supabase save:", error.message); })
       .catch(e => console.warn("[analyse] Supabase save error:", e.message));
+    console.log(`[analyse] Cached report for "${name}"`);
+  } else if (report._source === "exa_fallback") {
+    console.warn(`[analyse] NOT caching exa_fallback — will retry on next request`);
   }
 
   return NextResponse.json({ report, cached: false });
