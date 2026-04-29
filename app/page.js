@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import ResearchReport from "./components/ResearchReport";
 import { exaStartupResearch, exaDailyStartupNews } from "@/lib/exa";
 import { analyseCompetitor, analyseNewsItems } from "@/lib/analyzer";
@@ -484,17 +484,6 @@ export default function Home() {
     setLoadingComps(false);
   };
 
-  // Dynamically build filter list from the actual news stages present
-  const newsStages = useMemo(() => {
-    const counts = {};
-    for (const item of news) {
-      const s = item.stage?.trim();
-      if (s) counts[s] = (counts[s] || 0) + 1;
-    }
-    // Sort by count descending so most common stages appear first
-    return Object.entries(counts).sort((a, b) => b[1] - a[1]);
-  }, [news]);
-
   const filteredNews = newsFilter === "All" ? news : news.filter(n =>
     n.stage?.toLowerCase().includes(newsFilter.toLowerCase())
   );
@@ -572,24 +561,8 @@ export default function Home() {
                   </div>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <div className="feed-filters">
-                      {/* "All" always present */}
-                      <button
-                        className={`filter-btn ${newsFilter === "All" ? "active" : ""}`}
-                        onClick={() => setNewsFilter("All")}
-                      >
-                        All
-                        <span className="filter-count">{news.length}</span>
-                      </button>
-                      {/* Dynamic buttons — one per stage found in loaded news */}
-                      {newsStages.map(([stage, count]) => (
-                        <button
-                          key={stage}
-                          className={`filter-btn ${newsFilter === stage ? "active" : ""}`}
-                          onClick={() => setNewsFilter(stage)}
-                        >
-                          {stage}
-                          <span className="filter-count">{count}</span>
-                        </button>
+                      {["All","Seed","Series A","Acquired","IPO"].map(f => (
+                        <button key={f} className={`filter-btn ${newsFilter === f ? "active" : ""}`} onClick={() => setNewsFilter(f)}>{f}</button>
                       ))}
                     </div>
                   {exaKey && <button className="btn btn-sm" onClick={() => fetchFreshNews(exaKey, geminiKey)} style={{ whiteSpace: "nowrap" }}>↻ Refresh</button>}

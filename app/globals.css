@@ -54,11 +54,8 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 .feed-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .feed-title { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
 .feed-filters { display: flex; gap: 4px; }
-.filter-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 2px 8px; border-radius: var(--radius); font-size: 11px; cursor: pointer; font-family: var(--font); display: inline-flex; align-items: center; gap: 4px; }
+.filter-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 2px 8px; border-radius: var(--radius); font-size: 11px; cursor: pointer; font-family: var(--font); }
 .filter-btn:hover, .filter-btn.active { background: var(--orange); border-color: var(--orange); color: #fff; }
-.filter-count { font-size: 10px; font-weight: 700; background: rgba(0,0,0,0.12); border-radius: 8px; padding: 0 5px; line-height: 16px; min-width: 16px; text-align: center; }
-.filter-btn.active .filter-count { background: rgba(255,255,255,0.25); }
-
 
 .news-list { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
 .news-item { padding: 10px 12px; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start; }
