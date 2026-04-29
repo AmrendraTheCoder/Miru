@@ -198,6 +198,46 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 .signal-tags { display: flex; flex-wrap: wrap; gap: 4px; }
 .signal-tag { font-size: 11px; padding: 2px 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 2px; color: var(--text); }
 
+/* ── LinkedIn profile link buttons ── */
+/* Small icon pill shown in the founder card header (always visible) */
+.founder-li-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #0077b5;
+  background: #e8f4fb;
+  border: 1px solid #bce0f5;
+  border-radius: 2px;
+  padding: 2px 7px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.1s;
+}
+.founder-li-btn:hover { background: #cce8f5; }
+.founder-li-btn svg { flex-shrink: 0; }
+
+/* Full-width button shown in the expanded body */
+.founder-li-full-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 12px;
+  padding: 8px 14px;
+  background: #0077b5;
+  color: #fff;
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.founder-li-full-btn:hover { background: #005e8f; }
+.founder-li-full-btn svg { flex-shrink: 0; }
+
+
+
 /* LinkedIn Composer */
 .linkedin-btn { background: #0077b5; color: #fff; border: none; padding: 5px 12px; border-radius: var(--radius); font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--font); margin-top: 12px; display: flex; align-items: center; gap: 5px; }
 .linkedin-btn:hover { background: #005e8f; }
