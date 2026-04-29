@@ -251,27 +251,29 @@ export default function StartupPublicPage({ data, slug }) {
   const [researchState, setResearchState] = useState(
     isStub ? "pending" : "done"
   );
-  const [researchMsg, setResearchMsg] = useState("Fetching intelligence brief…");
+  const [researchMsg, setResearchMsg]   = useState("Fetching intelligence brief…");
+  const [errorDetail, setErrorDetail]   = useState("");
+  const [reportSource, setReportSource] = useState(data._source || "");
 
-  // Auto-trigger research for stub pages
+  // Auto-trigger research for stub pages (yc_db / stub source only)
   useEffect(() => {
     if (!isStub) return;
     let cancelled = false;
 
     const runResearch = async () => {
       setResearchState("loading");
-      try {
-        const msgs = [
-          "Scanning funding databases…",
-          "Profiling founders…",
-          "Mapping competitor landscape…",
-          "Generating intelligence brief…",
-        ];
-        let idx = 0;
-        const ticker = setInterval(() => {
-          if (!cancelled) setResearchMsg(msgs[Math.min(++idx, msgs.length - 1)]);
-        }, 3000);
+      const msgs = [
+        "Scanning funding databases…",
+        "Profiling founders…",
+        "Mapping competitor landscape…",
+        "Generating intelligence brief…",
+      ];
+      let idx = 0;
+      const ticker = setInterval(() => {
+        if (!cancelled) setResearchMsg(msgs[Math.min(++idx, msgs.length - 1)]);
+      }, 3000);
 
+      try {
         const res = await fetch("/api/analyse", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -281,20 +283,46 @@ export default function StartupPublicPage({ data, slug }) {
         clearInterval(ticker);
         if (cancelled) return;
 
-        if (res.ok) {
-          const json = await res.json().catch(() => ({}));
-          const source = json?.report?._source;
-          setResearchState("done");
-          // Only reload if we got a full Gemini report — not an exa_fallback
-          // (reloading on exa_fallback would just cause an infinite loop)
-          if (source === "report") {
-            window.location.reload();
+        const json = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          // API returned an error — show specific reason
+          const msg = json?.error || "Unknown server error";
+          const lower = msg.toLowerCase();
+          let friendly;
+          if (lower.includes("exa") || lower.includes("exa_api")) {
+            friendly = "EXA_API_KEY is missing or invalid. Add it to .env.local to enable data fetching.";
+          } else if (lower.includes("gemini") || lower.includes("api_key")) {
+            friendly = "GEMINI_API_KEY is missing or invalid. Add it to .env.local.";
+          } else if (lower.includes("fetch") || lower.includes("network")) {
+            friendly = "Network error — could not reach research APIs. Check your internet connection.";
+          } else {
+            friendly = `Research failed: ${msg}`;
           }
+          setErrorDetail(friendly);
+          setResearchState("error");
+          return;
+        }
+
+        const source = json?.report?._source;
+        setReportSource(source);
+
+        if (source === "report") {
+          // Full Gemini analysis — reload to show rich data
+          setResearchState("success");
+          setTimeout(() => window.location.reload(), 1200);
+        } else if (source === "exa_fallback") {
+          // Gemini quota exhausted — partial data from Exa only
+          setResearchState("partial");
         } else {
+          setResearchState("done");
+        }
+      } catch (e) {
+        clearInterval(ticker);
+        if (!cancelled) {
+          setErrorDetail("Network error — could not connect to research service.");
           setResearchState("error");
         }
-      } catch {
-        if (!cancelled) setResearchState("error");
       }
     };
 
@@ -325,30 +353,50 @@ export default function StartupPublicPage({ data, slug }) {
         </div>
       </header>
 
-      {/* ── Auto-research loading banner ───────────────────── */}
+      {/* ── Research status banners ──────────────────────── */}
+
+      {/* Loading */}
       {researchState === "loading" && (
-        <div style={{
-          background: "var(--orange)", color: "#fff", textAlign: "center",
-          padding: "10px 16px", fontSize: 13, fontWeight: 500,
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 10
-        }}>
-          <span style={{ display: "inline-flex", gap: 4 }}>
-            <span style={{ animation: "sp-dot-pulse 1.2s infinite", animationDelay: "0s", width: 6, height: 6, borderRadius: "50%", background: "#fff", display: "inline-block" }} />
-            <span style={{ animation: "sp-dot-pulse 1.2s infinite", animationDelay: "0.4s", width: 6, height: 6, borderRadius: "50%", background: "#fff", display: "inline-block" }} />
-            <span style={{ animation: "sp-dot-pulse 1.2s infinite", animationDelay: "0.8s", width: 6, height: 6, borderRadius: "50%", background: "#fff", display: "inline-block" }} />
+        <div className="sp-banner sp-banner-loading">
+          <span className="sp-banner-dots">
+            <span /><span /><span />
           </span>
-          {researchMsg}
+          <span>{researchMsg}</span>
         </div>
       )}
+
+      {/* Success — full Gemini report, page about to reload */}
+      {researchState === "success" && (
+        <div className="sp-banner sp-banner-success">
+          ✅ Full intelligence brief ready — loading now…
+        </div>
+      )}
+
+      {/* Partial — Exa fallback, Gemini quota exhausted */}
+      {researchState === "partial" && (
+        <div className="sp-banner sp-banner-partial">
+          <div>
+            <strong>⚠️ Partial data loaded</strong> — AI analysis skipped because the{" "}
+            <strong>Gemini API quota is exhausted</strong> for today.
+          </div>
+          <div style={{ fontSize: 11, marginTop: 4, opacity: 0.85 }}>
+            Full intelligence brief will auto-populate after quota resets (~12:30 AM IST).
+            To get it now: add a fresh <code style={{ background: "rgba(0,0,0,0.15)", padding: "1px 4px", borderRadius: 3 }}>GEMINI_API_KEY</code> to your{" "}
+            <code style={{ background: "rgba(0,0,0,0.15)", padding: "1px 4px", borderRadius: 3 }}>.env.local</code>.
+          </div>
+        </div>
+      )}
+
+      {/* Error — specific actionable reason */}
       {researchState === "error" && (
-        <div style={{
-          background: "#fce4ec", color: "#c62828", textAlign: "center",
-          padding: "8px 16px", fontSize: 12
-        }}>
-          Could not auto-load intelligence brief.{" "}
-          <a href={`${BASE_URL}/?q=${encodeURIComponent(name)}`} style={{ color: "#c62828", fontWeight: 700 }}>
-            Research {name} manually →
-          </a>
+        <div className="sp-banner sp-banner-error">
+          <div><strong>❌ Intelligence brief failed</strong></div>
+          <div style={{ fontSize: 11, marginTop: 4 }}>{errorDetail}</div>
+          <div style={{ marginTop: 6 }}>
+            <a href={`${BASE_URL}/?q=${encodeURIComponent(name)}`} className="sp-banner-link">
+              Try manual research on Miru →
+            </a>
+          </div>
         </div>
       )}
 

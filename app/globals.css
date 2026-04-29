@@ -328,6 +328,32 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 @keyframes sp-dot-pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.7); } }
 @keyframes stripe-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(400%); } }
 
+/* ── Research Status Banners ── */
+.sp-banner {
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+.sp-banner-loading  { background: #e8522a; color: #fff; flex-direction: row; gap: 10px; }
+.sp-banner-success  { background: #1a7a4a; color: #fff; }
+.sp-banner-partial  { background: #7a5a00; color: #ffe082; }
+.sp-banner-error    { background: #4a0a0a; color: #ffcdd2; }
+.sp-banner-link     { color: inherit; text-decoration: underline; font-weight: 700; }
+.sp-banner-dots     { display: inline-flex; gap: 4px; align-items: center; }
+.sp-banner-dots span {
+  width: 6px; height: 6px; border-radius: 50%; background: #fff;
+  display: inline-block;
+  animation: sp-dot-pulse 1.2s infinite;
+}
+.sp-banner-dots span:nth-child(2) { animation-delay: 0.4s; }
+.sp-banner-dots span:nth-child(3) { animation-delay: 0.8s; }
+
 /* ── Main research loader ── */
 .loading-wrap {
   padding: 60px 24px 40px;
