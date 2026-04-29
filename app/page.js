@@ -710,54 +710,52 @@ export default function Home() {
 
         {tab === "discover" && (
           <div>
-            {/* Discover tab bar */}
-            <div className="feed-header" style={{ flexDirection: "column", gap: 10 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8 }}>
-                <div>
-                  <div className="feed-title">
-                    {discoverTab === "yc"        && "YC Company Database"}
-                    {discoverTab === "unicorn"    && "🦄 Unicorn Companies ($1B+)"}
-                    {discoverTab === "fortune500" && "🏆 Fortune 500 & Forbes Global"}
-                    {discoverTab === "tech"       && "🏢 Big Tech & MNCs"}
-                    {discoverTab === "all"        && "All Companies"}
-                  </div>
-                  {discoverTotal > 0 && <div style={{ fontSize: 11, color: "var(--muted)" }}>{discoverTotal.toLocaleString()} companies</div>}
+            {/* Discover header */}
+            <div className="feed-header" style={{ flexWrap: "wrap", gap: 8 }}>
+              <div>
+                <div className="feed-title">
+                  {discoverTab === "yc"         && "YC Company Database"}
+                  {discoverTab === "unicorn"     && "Unicorn Companies ($1B+)"}
+                  {discoverTab === "fortune500"  && "Fortune 500 & Forbes Global"}
+                  {discoverTab === "tech"        && "Big Tech & MNCs"}
+                  {discoverTab === "all"         && "All Companies"}
                 </div>
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-                  <input
-                    ref={discoverSearchRef}
-                    style={{ padding: "4px 8px", border: "1px solid var(--border)", borderRadius: "var(--radius)", fontFamily: "var(--font)", fontSize: 12, width: 150 }}
-                    placeholder="Filter companies..."
-                    defaultValue={discoverSearch}
-                    onKeyDown={e => { if (e.key === "Enter") handleDiscoverFilter(sectorFilter, batchFilter, e.target.value); }}
-                  />
-                  {discoverTab === "yc" && (
-                    <select
-                      style={{ padding: "4px 6px", border: "1px solid var(--border)", borderRadius: "var(--radius)", fontFamily: "var(--font)", fontSize: 12 }}
-                      value={batchFilter}
-                      onChange={e => handleDiscoverFilter(sectorFilter, e.target.value, discoverSearch)}
-                    >
-                      {BATCH_OPTIONS.map(b => <option key={b}>{b}</option>)}
-                    </select>
-                  )}
+                {discoverTotal > 0 && <div style={{ fontSize: 11, color: "var(--muted)" }}>{discoverTotal.toLocaleString()} companies</div>}
+              </div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                <input
+                  ref={discoverSearchRef}
+                  style={{ padding: "4px 8px", border: "1px solid var(--border)", borderRadius: "var(--radius)", fontFamily: "var(--font)", fontSize: 12, width: 150 }}
+                  placeholder="Filter companies..."
+                  defaultValue={discoverSearch}
+                  onKeyDown={e => { if (e.key === "Enter") handleDiscoverFilter(sectorFilter, batchFilter, e.target.value); }}
+                />
+                {discoverTab === "yc" && (
                   <select
                     style={{ padding: "4px 6px", border: "1px solid var(--border)", borderRadius: "var(--radius)", fontFamily: "var(--font)", fontSize: 12 }}
-                    value={sectorFilter}
-                    onChange={e => handleDiscoverFilter(e.target.value, batchFilter, discoverSearch)}
+                    value={batchFilter}
+                    onChange={e => handleDiscoverFilter(sectorFilter, e.target.value, discoverSearch)}
                   >
-                    {["All", ...allSectors.slice(0, 30)].map(s => <option key={s}>{s}</option>)}
+                    {BATCH_OPTIONS.map(b => <option key={b}>{b}</option>)}
                   </select>
-                </div>
+                )}
+                <select
+                  style={{ padding: "4px 6px", border: "1px solid var(--border)", borderRadius: "var(--radius)", fontFamily: "var(--font)", fontSize: 12 }}
+                  value={sectorFilter}
+                  onChange={e => handleDiscoverFilter(e.target.value, batchFilter, discoverSearch)}
+                >
+                  {["All", ...allSectors.slice(0, 30)].map(s => <option key={s}>{s}</option>)}
+                </select>
               </div>
 
-              {/* Category tab switcher */}
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {/* Category tab switcher — no emojis */}
+              <div style={{ width: "100%", display: "flex", gap: 6, flexWrap: "wrap", marginTop: 2 }}>
                 {[
-                  { id: "yc",        label: "YC Startups",    emoji: "🚀" },
-                  { id: "unicorn",   label: "Unicorns",        emoji: "🦄" },
-                  { id: "fortune500",label: "Fortune 500",     emoji: "🏆" },
-                  { id: "tech",      label: "Big Tech & MNCs", emoji: "🏢" },
-                  { id: "all",       label: "All",             emoji: "🌐" },
+                  { id: "yc",         label: "YC Startups"    },
+                  { id: "unicorn",    label: "Unicorns"        },
+                  { id: "fortune500", label: "Fortune 500"     },
+                  { id: "tech",       label: "Big Tech & MNCs" },
+                  { id: "all",        label: "All"             },
                 ].map(t => (
                   <button
                     key={t.id}
@@ -770,7 +768,7 @@ export default function Home() {
                       transition: "all 0.15s",
                     }}
                   >
-                    {t.emoji} {t.label}
+                    {t.label}
                   </button>
                 ))}
               </div>
