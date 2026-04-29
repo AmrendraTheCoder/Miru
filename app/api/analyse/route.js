@@ -12,20 +12,15 @@ import { getSupabaseServer } from "@/lib/supabase";
 const EXA_BASE    = "https://api.exa.ai";
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
-// Models ordered by RPM availability (highest first → best chance of success)
+// Models ordered by actual free-tier availability — Gemma has 30 RPM + 14.4K RPD (abundant)
+// Gemini 2.5 Flash has only 20 RPD — keep as late fallback
 // jsonMode=false for Gemma — those models don't support responseMimeType
 const GEMINI_MODELS = [
-  { id: "gemini-2.0-flash-lite",          jsonMode: true  }, // 4K RPM, Unlimited RPD ← best
-  { id: "gemini-2.0-flash",               jsonMode: true  }, // 2K RPM, Unlimited RPD
-  { id: "gemini-2.5-flash",               jsonMode: true  }, // 5+ RPM, 250K TPM
-  { id: "gemini-2.5-flash-preview-04-17", jsonMode: true  }, // alternate 2.5 flash ID
-  { id: "gemini-2.5-pro",                 jsonMode: true  }, // 0+150 RPM
-  { id: "gemini-2.5-pro-preview-03-25",   jsonMode: true  }, // alternate 2.5 pro ID
-  { id: "gemma-3-27b-it",                 jsonMode: false }, // 30 RPM, best Gemma quality
-  { id: "gemma-3-12b-it",                 jsonMode: false }, // 30 RPM
-  { id: "gemma-3-4b-it",                  jsonMode: false }, // 30 RPM
-  { id: "gemma-3-2b-it",                  jsonMode: false }, // 30 RPM
-  { id: "gemma-3-1b-it",                  jsonMode: false }, // 30 RPM ← last resort
+  { id: "gemma-3-27b-it",                 jsonMode: false }, // 30 RPM, 14.4K RPD — highest quality Gemma
+  { id: "gemma-3-12b-it",                 jsonMode: false }, // 30 RPM, 14.4K RPD
+  { id: "gemma-3-4b-it",                  jsonMode: false }, // 30 RPM, 14.4K RPD — fast
+  { id: "gemini-2.5-flash-preview-04-17", jsonMode: true  }, // 5 RPM, 20 RPD — use sparingly
+  { id: "gemini-2.5-flash",               jsonMode: true  }, // 5 RPM, 20 RPD — last resort
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────
@@ -67,11 +62,11 @@ async function exaSearch(query, opts = {}) {
   }
 }
 
-// Try one Gemini/Gemma model with a hard 15s timeout
+// Try one Gemini/Gemma model with a hard 25s timeout
 async function tryGemini(model, apiKey, prompt) {
   const { id, jsonMode } = model;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
+  const timeout = setTimeout(() => controller.abort(), 25000);
 
   try {
     const genConfig = { temperature: 0.15, maxOutputTokens: 3500 };
@@ -113,15 +108,18 @@ async function tryGemini(model, apiKey, prompt) {
 // Try all models in cascade — no delays, first success wins
 async function geminiCascade(prompt) {
   const key = process.env.GEMINI_API_KEY;
-  if (!key) return null;
+  if (!key) { console.warn("[analyse] GEMINI_API_KEY not set"); return null; }
 
   for (const model of GEMINI_MODELS) {
     try {
-      return await tryGemini(model, key, prompt);
+      const result = await tryGemini(model, key, prompt);
+      console.log(`[analyse] SUCCESS with ${model.id}`);
+      return result;
     } catch (e) {
-      console.warn(`[analyse] ${model.id}: ${e.message}`);
+      console.warn(`[analyse] FAIL ${model.id}: ${e.message}`);
     }
   }
+  console.warn("[analyse] All models exhausted — falling back to Exa");
   return null;
 }
 
