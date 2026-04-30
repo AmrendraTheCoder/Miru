@@ -744,7 +744,7 @@ export default function Home() {
         )}
 
         {tab === "discover" && (
-          <div>
+          <div className="discover-tab-wrap">
             {/* Discover header */}
             <div className="feed-header" style={{ flexWrap: "wrap", gap: 8 }}>
               <div>
@@ -831,6 +831,13 @@ export default function Home() {
               <div className="loading-wrap" style={{ padding: "24px 0" }}>
                 <div className="spinner" style={{ marginBottom: 8 }} />
                 <div className="loading-text">Loading from database...</div>
+              </div>
+            )}
+
+            {/* Subtle divider above company list */}
+            {companies.length > 0 && (
+              <div className="card-list-label">
+                {discoverTotal > 0 ? `${companies.length} of ${discoverTotal.toLocaleString()}` : "Companies"}
               </div>
             )}
 

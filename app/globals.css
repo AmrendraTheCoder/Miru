@@ -129,6 +129,15 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 .section-head { font-size: 13px; font-weight: 600; color: var(--text); margin: 20px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
 .section-badge { font-size: 10px; font-weight: 600; padding: 1px 6px; background: var(--orange); color: #fff; border-radius: 2px; }
 
+/* Card list divider — above discover company list */
+.card-list-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.7px; color: var(--muted2);
+  padding: 10px 16px 6px;
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+}
+
 /* ── Research Report ── */
 .report-wrap { display: flex; flex-direction: column; gap: 0; }
 .report-hero { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 2px; }
@@ -1437,12 +1446,15 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   .header-logo     { font-size: 16px; }
   .header-logo-box { font-size: 13px; padding: 2px 5px; }
 
-  /* ── Search: compact bar, no extra padding ── */
-  .search-wrap  { padding: 6px 12px 10px; }
+  /* ── Search: compact single-line bar ── */
+  .search-wrap  { padding: 4px 12px 8px; }
   .search-row   { gap: 6px; }
   /* 16px prevents iOS auto-zoom on focus */
-  .search-input { font-size: 16px !important; padding: 8px 10px; border-radius: 8px; }
-  .search-btn   { padding: 8px 12px; font-size: 12px; font-weight: 700; min-height: 38px; white-space: nowrap; }
+  .search-input { font-size: 16px !important; padding: 6px 10px !important; border-radius: 8px !important; height: 36px; box-sizing: border-box; }
+  .search-btn   { padding: 0 12px !important; font-size: 12px !important; font-weight: 700; height: 36px; min-height: unset !important; white-space: nowrap; box-sizing: border-box; }
+
+  /* ── Discover tab: horizontal padding so filters aren't flush-left ── */
+  .discover-tab-wrap > .feed-header { padding-left: 16px !important; padding-right: 16px !important; }
 
   /* ── Discover grid — borderless list on mobile ── */
   /* Remove the boxed grid look; cards become seamless list rows */
