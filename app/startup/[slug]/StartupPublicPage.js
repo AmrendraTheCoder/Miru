@@ -737,13 +737,13 @@ export default function StartupPublicPage({ data, slug }) {
           const lower = msg.toLowerCase();
           let friendly;
           if (lower.includes("exa") || lower.includes("exa_api")) {
-            friendly = "EXA_API_KEY is missing or invalid. Add it to .env.local to enable data fetching.";
-          } else if (lower.includes("gemini") || lower.includes("api_key")) {
-            friendly = "GEMINI_API_KEY is missing or invalid. Add it to .env.local.";
+            friendly = "Data service temporarily unavailable. Please try again in a few minutes.";
+          } else if (lower.includes("gemini") || lower.includes("api_key") || lower.includes("quota")) {
+            friendly = "AI analysis quota reached. Basic data is still available — full brief will auto-resume shortly.";
           } else if (lower.includes("fetch") || lower.includes("network")) {
-            friendly = "Network error — could not reach research APIs. Check your internet connection.";
+            friendly = "Network error — could not reach research service. Check your connection and try again.";
           } else {
-            friendly = `Research failed: ${msg}`;
+            friendly = `Research temporarily unavailable. Please try again in a moment.`;
           }
           setErrorDetail(friendly);
           setResearchState("error");
@@ -818,20 +818,14 @@ export default function StartupPublicPage({ data, slug }) {
         </div>
       )}
 
-      {/* Partial — Exa fallback, all AI APIs unavailable */}
+      {/* Partial — Exa fallback, all AI APIs at quota limit */}
       {researchState === "partial" && (
         <div className="sp-banner sp-banner-partial">
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
             <div>
-              <strong>AI analysis unavailable</strong> — all AI APIs returned quota or server errors.
+              <strong>⚡ AI analysis paused</strong> — daily quota reached across all providers.
               <div style={{ fontSize: 11, marginTop: 4, opacity: 0.85 }}>
-                Showing basic data only. To get the full intelligence brief, ensure{" "}
-                <code style={{ background: "rgba(0,0,0,0.15)", padding: "1px 4px", borderRadius: 3 }}>GEMINI_API_KEY</code>
-                {" "}and{" "}
-                <code style={{ background: "rgba(0,0,0,0.15)", padding: "1px 4px", borderRadius: 3 }}>GROQ_API_KEY</code>
-                {" "}are set in{" "}
-                <strong>Vercel → Project Settings → Environment Variables</strong>
-                {" "}(then redeploy), or in <code style={{ background: "rgba(0,0,0,0.15)", padding: "1px 4px", borderRadius: 3 }}>.env.local</code> locally.
+                Showing available data for now. Full intelligence brief auto-resumes when quota resets (~24h). You can retry anytime.
               </div>
             </div>
             <button
@@ -846,10 +840,10 @@ export default function StartupPublicPage({ data, slug }) {
         </div>
       )}
 
-      {/* Error — specific actionable reason */}
+      {/* Error — generic user-friendly reason, no dev details */}
       {researchState === "error" && (
         <div className="sp-banner sp-banner-error">
-          <div><strong>❌ Intelligence brief failed</strong></div>
+          <div><strong>Research temporarily unavailable</strong></div>
           <div style={{ fontSize: 11, marginTop: 4 }}>{errorDetail}</div>
           <div style={{ marginTop: 6 }}>
             <a href={`${BASE_URL}/?q=${encodeURIComponent(name)}`} className="sp-banner-link">
