@@ -216,9 +216,17 @@ function toSlug(name = "") {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
+// Company type badge + hint
+const TYPE_META = {
+  product: { label: "Product", hint: "DSA-heavy · High salary · Stock options" },
+  service: { label: "Service", hint: "Project-based · Moderate DSA · Variable pay" },
+  hybrid:  { label: "Hybrid",  hint: "Mix of product and services" },
+};
+
 function StartupCard({ s, onResearch }) {
   const sector = s.sectors?.[0] || "";
   const slug = s.slug || toSlug(s.name || "");
+  const typeMeta = TYPE_META[s.company_type] || null;
 
   return (
     <div
@@ -230,7 +238,15 @@ function StartupCard({ s, onResearch }) {
         <CompanyLogo name={s.name} logoUrl={s.logo_url} website={s.website} />
         <div style={{ minWidth: 0 }}>
           <div className="startup-name">{s.name}</div>
-          <div className="startup-batch">{s.batch}{sector ? ` · ${sector}` : ""}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginTop: 2 }}>
+            {s.batch && <span className="startup-batch">{s.batch}{sector ? ` · ${sector}` : ""}</span>}
+            {typeMeta && (
+              <span className={`ctype-badge ctype-${s.company_type}`}>{typeMeta.label}</span>
+            )}
+          </div>
+          {typeMeta && (
+            <span className="ctype-hint">{typeMeta.hint}</span>
+          )}
         </div>
       </div>
       <div className="startup-desc">{s.tagline || s.description}</div>
@@ -283,6 +299,7 @@ export default function Home() {
   const [batchFilter, setBatchFilter] = useState("All");
   const [discoverSearch, setDiscoverSearch] = useState("");
   const [discoverTab, setDiscoverTab] = useState("yc"); // yc | unicorn | fortune500 | tech | all
+  const [typeFilter, setTypeFilter] = useState("all");   // all | product | service
   const [allSectors, setAllSectors] = useState([]);
   const discoverSearchRef = useRef(null);
 
@@ -422,13 +439,14 @@ export default function Home() {
   const refreshNewsBackground = () => { fetchFreshNews().catch(() => {}); };
 
   /* ── Load companies from unified DB ── */
-  const loadCompanies = useCallback(async (page = 1, sector = "All", batch = "All", search = "", dtab = "yc") => {
+  const loadCompanies = useCallback(async (page = 1, sector = "All", batch = "All", search = "", dtab = "yc", dtype = "all") => {
     setDiscoverLoading(true);
     try {
       const params = new URLSearchParams({ page, limit: 60, tab: dtab });
       if (sector !== "All") params.set("sector", sector);
       if (batch  !== "All" && dtab === "yc") params.set("batch", batch);
       if (search.trim()) params.set("q", search.trim());
+      if (dtype !== "all") params.set("type", dtype);
 
       const res = await fetch(`/api/yc-companies?${params}`).then(r => r.json());
       if (res.companies?.length) {
@@ -450,12 +468,19 @@ export default function Home() {
     setDiscoverLoading(false);
   }, []);
 
-  const handleDiscoverFilter = (sector, batch, search) => {
+  const handleDiscoverFilter = (sector, batch, search, dtype = typeFilter) => {
     setSectorFilter(sector);
     setBatchFilter(batch);
     setDiscoverSearch(search);
     setDiscoverPage(1);
-    loadCompanies(1, sector, batch, search, discoverTab);
+    loadCompanies(1, sector, batch, search, discoverTab, dtype);
+  };
+
+  const handleTypeFilter = (dtype) => {
+    setTypeFilter(dtype);
+    setDiscoverPage(1);
+    setCompanies([]);
+    loadCompanies(1, sectorFilter, batchFilter, discoverSearch, discoverTab, dtype);
   };
 
   /* ── Research (with 7-day cache) ── */
@@ -781,6 +806,24 @@ export default function Home() {
                   </button>
                 ))}
               </div>
+
+              {/* Product vs Service type filter */}
+              <div style={{ width: "100%", display: "flex", gap: 6, marginTop: 6 }}>
+                {[
+                  { id: "all",     label: "All Types" },
+                  { id: "product", label: "Product" },
+                  { id: "service", label: "Service" },
+                ].map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => handleTypeFilter(t.id)}
+                    className={`ctype-filter-btn ${typeFilter === t.id ? `active-${t.id}` : ""}`}
+                  >
+                    {t.id !== "all" && <span className={`ctype-dot ctype-dot-${t.id}`} />}
+                    {t.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {discoverLoading && companies.length === 0 && (
@@ -925,6 +968,26 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* ── Mobile bottom navigation (thumb zone, ≤430px only) ── */}
+      <nav className="mobile-bottom-nav" aria-label="Main navigation">
+        {[
+          { id: "feed",        label: "Feed",       icon: "◉" },
+          { id: "discover",    label: "Discover",   icon: "⊞" },
+          { id: "research",    label: "Research",   icon: "⌕" },
+          { id: "competitors", label: "Rivals",     icon: "⇄" },
+        ].map(({ id, label, icon }) => (
+          <button
+            key={id}
+            className={`mbn-tab ${tab === id ? "active" : ""}`}
+            onClick={() => setTab(id)}
+            aria-label={label}
+          >
+            <span className="mbn-icon">{icon}</span>
+            <span className="mbn-label">{label}</span>
+          </button>
+        ))}
+      </nav>
     </>
   );
 }

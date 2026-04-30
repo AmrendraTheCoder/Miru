@@ -879,6 +879,20 @@ export default function StartupPublicPage({ data, slug }) {
               <h1 className="sp-hero-name" itemProp="headline">{name}</h1>
               {data.tagline && <p className="sp-hero-tagline" itemProp="description">{data.tagline}</p>}
 
+              {/* Company type context — only when column is populated */}
+              {data.company_type && data.company_type !== "product" && (
+                <div className="sp-type-block">
+                  <span className={`ctype-badge ctype-${data.company_type}`}>
+                    {data.company_type === "service" ? "IT Services" : data.company_type === "hybrid" ? "Hybrid" : "Product Company"}
+                  </span>
+                  <p className="sp-type-desc">
+                    {data.company_type === "service"
+                      ? "Project-based interviews · Salary ₹3L–₹12L · Appraisals drive growth"
+                      : "Combines product ownership with service delivery"}
+                  </p>
+                </div>
+              )}
+
               {/* Blog-style meta row */}
               <div className="sp-blog-meta">
                 <span>By <strong>Miru Intelligence</strong></span>

@@ -9,6 +9,7 @@ import { getSupabaseServer } from "@/lib/supabase";
  * Params:
  *   q      — search query
  *   tab    — "yc" | "unicorn" | "fortune500" | "tech" | "all"
+ *   type   — "all" | "product" | "service" | "hybrid"
  *   sector — filter by sector string
  *   batch  — YC batch filter (yc only)
  *   page   — pagination page (default 1)
@@ -18,6 +19,7 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const q      = searchParams.get("q")      || "";
   const tab    = searchParams.get("tab")    || "yc";
+  const type   = searchParams.get("type")   || "all";
   const sector = searchParams.get("sector") || "";
   const batch  = searchParams.get("batch")  || "";
   const page   = parseInt(searchParams.get("page")  || "1");
@@ -30,7 +32,7 @@ export async function GET(request) {
   try {
     let query = db
       .from("companies")
-      .select("id, slug, name, tagline, description, sector, source, category, logo_url, " +
+      .select("id, slug, name, tagline, description, sector, source, category, company_type, logo_url, " +
               "is_public, stock_ticker, ranking, revenue_usd, market_cap_usd, employee_count, " +
               "valuation_usd, total_funding, country, hq_city, yc_batch, yc_batch_year", { count: "exact" })
       .range(from, from + limit - 1);
@@ -47,6 +49,11 @@ export async function GET(request) {
     } else {
       // "all" — everything, ordered by source priority then name
       query = query.order("source", { ascending: true }).order("name", { ascending: true });
+    }
+
+    // Company type filter (product | service | hybrid)
+    if (type && type !== "all") {
+      query = query.eq("company_type", type);
     }
 
     // Search across name + tagline + description
@@ -82,6 +89,7 @@ export async function GET(request) {
       batch:      c.yc_batch || null,
       batch_year: c.yc_batch_year || null,
       status:     c.category || null,
+      company_type: c.company_type || "product",
 
       // New fields
       source:        c.source,

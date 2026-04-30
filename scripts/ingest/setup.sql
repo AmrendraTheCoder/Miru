@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS companies (
   -- Classification
   source         text NOT NULL,          -- 'yc' | 'fortune500' | 'forbes2000' | 'unicorn' | 'tech_list'
   category       text,                   -- 'startup' | 'public' | 'unicorn' | 'mnc'
+  company_type   text DEFAULT 'product', -- 'product' | 'service' | 'hybrid'
   sector         text[],
   is_public      boolean DEFAULT false,
   stock_ticker   text,
@@ -58,3 +59,20 @@ CREATE INDEX IF NOT EXISTS idx_companies_fts ON companies USING GIN(fts);
 ALTER TABLE companies ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "allow_public_read" ON companies FOR SELECT TO anon USING (true);
 CREATE POLICY "allow_service_write" ON companies FOR ALL TO service_role USING (true);
+
+-- ── Run once to backfill company_type ──────────────────────────────
+-- ALTER TABLE companies ADD COLUMN IF NOT EXISTS company_type text DEFAULT 'product';
+-- CREATE INDEX IF NOT EXISTS idx_companies_type ON companies(company_type);
+--
+-- UPDATE companies SET company_type = 'service'
+-- WHERE lower(name) = ANY(ARRAY[
+--   'tcs','tata consultancy services','infosys','wipro','hcl technologies',
+--   'hcl','tech mahindra','mphasis','hexaware','ltimindtree','l&t infotech',
+--   'accenture','deloitte','capgemini','cognizant','dxc technology',
+--   'atos','unisys','ntt data','fujitsu','kyndryl','epam systems',
+--   'globant','thoughtworks','pwc','kpmg','ernst & young','ey',
+--   'mckinsey & company','bain & company','boston consulting group','bcg'
+-- ]);
+--
+-- UPDATE companies SET company_type = 'hybrid'
+-- WHERE lower(name) = ANY(ARRAY['ibm','oracle','sap']);
