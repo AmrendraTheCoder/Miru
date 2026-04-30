@@ -1446,15 +1446,24 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   .header-logo     { font-size: 16px; }
   .header-logo-box { font-size: 13px; padding: 2px 5px; }
 
-  /* ── Search: compact single-line bar ── */
-  .search-wrap  { padding: 4px 12px 8px; }
+  /* ── Search: compact narrow bar ── */
+  .search-wrap  { padding: 4px 16px 10px; }
+  .search-inner { max-width: 320px; }  /* narrow — not full width */
   .search-row   { gap: 6px; }
   /* 16px prevents iOS auto-zoom on focus */
   .search-input { font-size: 16px !important; padding: 6px 10px !important; border-radius: 8px !important; height: 36px; box-sizing: border-box; }
   .search-btn   { padding: 0 12px !important; font-size: 12px !important; font-weight: 700; height: 36px; min-height: unset !important; white-space: nowrap; box-sizing: border-box; }
 
-  /* ── Discover tab: horizontal padding so filters aren't flush-left ── */
-  .discover-tab-wrap > .feed-header { padding-left: 16px !important; padding-right: 16px !important; }
+  /* ── Feed + Discover tab: left/right padding on ALL feed-headers ── */
+  .feed-header { padding-left: 16px !important; padding-right: 16px !important; box-sizing: border-box; }
+
+  /* ── Discover: kill horizontal overflow ── */
+  .discover-tab-wrap { overflow-x: hidden; max-width: 100vw; }
+  /* Constrain filter rows inside feed-header so they can't overflow */
+  .discover-tab-wrap .feed-header > div { max-width: 100%; box-sizing: border-box; }
+  /* Scrollable filter inputs row, no overflow */
+  .discover-tab-wrap .feed-header > div[style] { overflow-x: auto; scrollbar-width: none; flex-wrap: nowrap; }
+  .discover-tab-wrap .feed-header > div[style]::-webkit-scrollbar { display: none; }
 
   /* ── Discover grid — borderless list on mobile ── */
   /* Remove the boxed grid look; cards become seamless list rows */
