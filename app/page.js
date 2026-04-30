@@ -679,7 +679,8 @@ export default function Home() {
                               {item.source && <span>{item.source}</span>}
                               {(item.date || item.publishedDate) && <span style={{ color: "var(--muted2)" }}>{formatDate(item.date || item.publishedDate)}</span>}
                             </div>
-                            {item.summary && <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>{item.summary}</div>}
+                            {item.summary && <div className="news-summary">{item.summary}</div>}
+
                           </div>
                         </div>
                         <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 6 }}>

@@ -78,6 +78,7 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 .btn-view-page:hover { color: var(--text); text-decoration: underline; }
 .news-company-chip { display: inline-block; font-size: 10px; font-weight: 700; color: var(--orange); text-decoration: none; letter-spacing: 0.2px; margin-bottom: 2px; }
 .news-company-chip:hover { text-decoration: underline; }
+.news-summary { font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.5; }
 /* Date group labels in news feed */
 .news-group-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); padding: 6px 12px 4px; background: var(--bg); border-bottom: 1px solid var(--border); }
 
@@ -1427,6 +1428,11 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   .header-nav { display: none; }   /* replaced by bottom nav on mobile */
   .header-inner { padding: 0 12px; }
 
+  /* ── Page background — white on mobile, removes grey frame around cards ── */
+  html, body { background: #fff; }
+  .shell       { padding-left: 0 !important; padding-right: 0 !important; }
+  .section-head { margin-left: 14px; margin-right: 14px; }
+
   /* ── Header: bigger Miru logo on mobile ── */
   .header-logo     { font-size: 16px; }
   .header-logo-box { font-size: 13px; padding: 2px 5px; }
@@ -1448,8 +1454,13 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 
   /* ── Feed / news ── */
   /* Collapse 2-col grid to 1-col so buttons go BELOW text, not beside it */
-  .news-item  { grid-template-columns: 1fr !important; padding: 10px 0; }
+  /* Left padding keeps rank numbers off the screen edge */
+  .news-item  { grid-template-columns: 1fr !important; padding: 10px 14px; }
   .news-headline { font-size: 13px; }
+  /* Truncate long summary to 2 lines — prevents wall-of-text on mobile */
+  .news-summary { -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+  /* Hide the orange company chip — headline already shows the same info */
+  .news-company-chip { display: none !important; }
 
   /* Feed header: stack title on top, filters on next line */
   .feed-header {
