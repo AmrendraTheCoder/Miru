@@ -67,7 +67,7 @@ function ShareBar({ name, slug }) {
         title="Share on LinkedIn"
       >in</a>
       <button className="sp-share-btn sp-share-copy" onClick={copy} title="Copy link">
-        {copied ? "✓ Copied" : "Copy link"}
+        {copied ? "Copied" : "Copy link"}
       </button>
     </div>
   );
@@ -477,7 +477,7 @@ function LifeAtCompany({ companyName, companyData }) {
                     <ul className="la-perks-grid" aria-label={`${companyName} benefits`}>
                       {life.perks.map((perk, i) => (
                         <li key={i} className="la-perk-item">
-                          <span className="la-perk-check">✓</span>
+                          <span className="la-perk-check">&#x2013;</span>
                           <span>{perk}</span>
                         </li>
                       ))}
@@ -814,7 +814,7 @@ export default function StartupPublicPage({ data, slug }) {
       {/* Success — full Gemini report, page about to reload */}
       {researchState === "success" && (
         <div className="sp-banner sp-banner-success">
-          ✅ Full intelligence brief ready — loading now…
+          Full intelligence brief ready — loading now…
         </div>
       )}
 
@@ -823,7 +823,7 @@ export default function StartupPublicPage({ data, slug }) {
         <div className="sp-banner sp-banner-partial">
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
             <div>
-              <strong>⚡ AI analysis paused</strong> — daily quota reached across all providers.
+              <strong>AI analysis paused</strong> — daily quota reached across all providers.
               <div style={{ fontSize: 11, marginTop: 4, opacity: 0.85 }}>
                 Showing available data for now. Full intelligence brief auto-resumes when quota resets (~24h). You can retry anytime.
               </div>
