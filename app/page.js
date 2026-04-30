@@ -571,7 +571,10 @@ export default function Home() {
             ))}
           </nav>
           <div className="header-actions">
-            <button className="settings-btn" onClick={() => setSettingsOpen(true)}>Settings</button>
+            <button className="settings-btn" onClick={() => setSettingsOpen(true)}>
+              <span className="settings-label text-black">Settings</span>
+              <span className="settings-icon" aria-label="Settings">⚙</span>
+            </button>
           </div>
         </div>
       </div>
@@ -586,12 +589,13 @@ export default function Home() {
               value={query}
               onChange={e => setQuery(e.target.value)}
               onKeyDown={e => e.key === "Enter" && !loading && research()}
-              placeholder="Research any startup — Airbnb, Stripe, ReasonBlocks, GodHands..."
+              placeholder="Research any startup — Airbnb, Stripe..."
               autoComplete="off"
               spellCheck={false}
             />
             <button className="search-btn" onClick={() => research()} disabled={loading}>
-              {loading ? "Researching..." : "Research"}
+              <span className="search-btn-label">{loading ? "…" : "Research"}</span>
+              <span className="search-btn-icon">{loading ? "…" : "→"}</span>
             </button>
           </div>
         </div>

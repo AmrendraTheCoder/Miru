@@ -35,6 +35,12 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 .header-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
 .settings-btn { background: none; border: 1px solid rgba(255,255,255,0.4); color: #fff; padding: 3px 8px; border-radius: var(--radius); cursor: pointer; font-family: var(--font); font-size: 12px; }
 .settings-btn:hover { background: rgba(255,255,255,0.1); }
+/* Icon version hidden on desktop, shown on mobile */
+.settings-icon { display: none; }
+.settings-label { display: inline; }
+/* Search btn: label shown on desktop, icon shown on mobile */
+.search-btn-label { display: inline; }
+.search-btn-icon  { display: none; }
 
 /* ── Search Bar ── */
 .search-wrap { background: var(--orange); padding: 0 16px 12px; margin-bottom: 0; }
@@ -1442,27 +1448,68 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   .shell       { padding-left: 0 !important; padding-right: 0 !important; }
   .section-head { margin-left: 14px; margin-right: 14px; }
 
-  /* ── Header: bigger Miru logo on mobile ── */
-  .header-logo     { font-size: 16px; }
-  .header-logo-box { font-size: 13px; padding: 2px 5px; }
+  /* ────────────────────────────────────────────
+     MOBILE HEADER — unified orange app bar
+  ──────────────────────────────────────────── */
 
-  /* ── Search: compact narrow bar ── */
-  .search-wrap  { padding: 4px 16px 10px; }
-  .search-inner { max-width: 320px; }  /* narrow — not full width */
-  .search-row   { gap: 6px; }
-  /* 16px prevents iOS auto-zoom on focus */
-  .search-input { font-size: 16px !important; padding: 6px 10px !important; border-radius: 8px !important; height: 36px; box-sizing: border-box; }
-  .search-btn   { padding: 0 12px !important; font-size: 12px !important; font-weight: 700; height: 36px; min-height: unset !important; white-space: nowrap; box-sizing: border-box; }
+  /* Header: tighter, bolder */
+  .header        { padding: 0 16px; box-shadow: 0 2px 16px rgba(0,0,0,0.18); }
+  .header-inner  { height: 50px; padding: 0; }
+  .header-nav    { display: none; }
 
-  /* ── Feed + Discover tab: left/right padding on ALL feed-headers ── */
+  /* Logo: bigger and bolder */
+  .header-logo     { font-size: 18px; font-weight: 800; letter-spacing: -0.4px; }
+  .header-logo-box { font-size: 14px; padding: 3px 6px; border-radius: 4px; }
+
+  /* Settings: show ⚙ icon only, hide text */
+  .settings-label { display: none; }
+  .settings-icon  { display: inline; font-size: 18px; opacity: 0.9; }
+  .settings-btn {
+    background: rgba(255,255,255,0.18) !important;
+    border: none !important;
+    border-radius: 50% !important;
+    width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 !important;
+    font-size: 18px;
+  }
+
+  /* Search: full-width pill inside orange strip */
+  .search-wrap  { padding: 6px 16px 14px; }
+  .search-inner { max-width: 100% !important; }
+  .search-row   { gap: 8px; }
+  .search-input {
+    font-size: 15px !important;
+    padding: 0 16px !important;
+    height: 42px !important;
+    border-radius: 21px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+    box-sizing: border-box;
+  }
+  /* Research button: compact white pill, shows → icon on mobile */
+  .search-btn {
+    height: 42px !important;
+    min-height: unset !important;
+    border-radius: 21px !important;
+    padding: 0 16px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    background: #fff !important;
+    color: var(--orange) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+    box-sizing: border-box;
+    white-space: nowrap;
+  }
+  .search-btn-label { display: none; }   /* hide 'Research' text — show arrow */
+  .search-btn-icon  { display: inline; font-size: 18px; font-weight: 900; }
+
+  /* ── Feed + Discover: horizontal padding on ALL feed-headers ── */
   .feed-header { padding-left: 16px !important; padding-right: 16px !important; box-sizing: border-box; }
 
   /* ── Discover: kill horizontal overflow ── */
   .discover-tab-wrap { overflow-x: hidden; max-width: 100vw; }
-  /* Constrain filter rows inside feed-header so they can't overflow */
   .discover-tab-wrap .feed-header > div { max-width: 100%; box-sizing: border-box; }
-  /* Scrollable filter inputs row, no overflow */
-  .discover-tab-wrap .feed-header > div[style] { overflow-x: auto; scrollbar-width: none; flex-wrap: nowrap; }
+  .discover-tab-wrap .feed-header > div[style] { overflow-x: auto; scrollbar-width: none; }
   .discover-tab-wrap .feed-header > div[style]::-webkit-scrollbar { display: none; }
 
   /* ── Discover grid — borderless list on mobile ── */
