@@ -51,7 +51,7 @@ function ShareBar({ name, slug }) {
 
   return (
     <div className="sp-share-bar">
-      <span className="sp-share-label">Share</span>
+      <span className="sp-share-label">Share this brief</span>
       <a
         href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`}
         target="_blank" rel="noopener noreferrer"
@@ -1041,6 +1041,29 @@ export default function StartupPublicPage({ data, slug }) {
             </section>
           )}
 
+          {/* ── Press Articles ───────────────────────────────── */}
+          {data.pressArticles?.length > 0 && (
+            <section className="sp-section">
+              <div className="sp-section-head">
+                <h2 className="sp-section-title">Press & Coverage</h2>
+              </div>
+              <div className="sp-press-list">
+                {data.pressArticles.slice(0, 6).map((a, i) => (
+                  <a key={i} href={a.url} target="_blank" rel="noopener noreferrer" className="sp-press-item"
+                    onClick={() => gaEvent("event", "press_article_clicked", { company: name })}>
+                    <div className="sp-press-title">{a.title}</div>
+                    <div className="sp-press-meta">
+                      {a.source && <span className="sp-press-source">{a.source}</span>}
+                      {a.date && (
+                        <span>{(() => { try { return new Date(a.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); } catch { return a.date; } })()}</span>
+                      )}
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* ── Analyst Verdict ──────────────────────────────── */}
           {data.analystVerdict?.summary && (
             <section className="sp-section">
@@ -1065,25 +1088,6 @@ export default function StartupPublicPage({ data, slug }) {
                     <div className="sp-verdict-value">{data.analystVerdict.watchScore}/10</div>
                   </div>
                 )}
-              </div>
-            </section>
-          )}
-
-          {/* ── Press Articles ───────────────────────────────── */}
-          {data.pressArticles?.length > 0 && (
-            <section className="sp-section">
-              <h2 className="sp-section-title">Press & Coverage</h2>
-              <div className="sp-press-list">
-                {data.pressArticles.slice(0, 6).map((a, i) => (
-                  <a key={i} href={a.url} target="_blank" rel="noopener noreferrer" className="sp-press-item"
-                    onClick={() => gaEvent("event", "press_article_clicked", { company: name })}>
-                    <div className="sp-press-title">{a.title}</div>
-                    <div className="sp-press-meta">
-                      {a.source && <span className="sp-press-source">{a.source}</span>}
-                      {a.date && <span>{a.date}</span>}
-                    </div>
-                  </a>
-                ))}
               </div>
             </section>
           )}
