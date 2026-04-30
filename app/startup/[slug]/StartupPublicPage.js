@@ -793,8 +793,12 @@ export default function StartupPublicPage({ data, slug }) {
             href={`${BASE_URL}/?q=${encodeURIComponent(name)}`}
             className="sp-research-cta"
             onClick={() => gaEvent("event", "research_deeper_clicked", { company: name })}
+            title={`Run AI research on ${name}`}
           >
-            Research {name} deeper →
+            Run AI research
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 5, verticalAlign: "middle" }}>
+              <path d="M5 12h14M13 6l6 6-6 6"/>
+            </svg>
           </a>
         </div>
       </header>
