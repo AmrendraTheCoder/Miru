@@ -772,9 +772,11 @@ export default function Home() {
 
         {tab === "discover" && (
           <div className="discover-tab-wrap">
-            {/* Discover header */}
-            <div className="feed-header" style={{ flexWrap: "wrap", gap: 8 }}>
-              <div>
+            {/* Discover header — Category tabs first, then controls */}
+            <div className="feed-header" style={{ flexWrap: "wrap", gap: 6 }}>
+
+              {/* Title + count */}
+              <div style={{ width: "100%", display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
                 <div className="feed-title">
                   {discoverTab === "yc"         && "YC Company Database"}
                   {discoverTab === "unicorn"     && "Unicorn Companies ($1B+)"}
@@ -782,43 +784,11 @@ export default function Home() {
                   {discoverTab === "tech"        && "Big Tech & MNCs"}
                   {discoverTab === "all"         && "All Companies"}
                 </div>
-                {discoverTotal > 0 && <div style={{ fontSize: 11, color: "var(--muted)" }}>{discoverTotal.toLocaleString()} companies</div>}
-              </div>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-                <input
-                  ref={discoverSearchRef}
-                  style={{ padding: "4px 8px", border: "1px solid var(--border)", borderRadius: "var(--radius)", fontFamily: "var(--font)", fontSize: 12, width: 150 }}
-                  placeholder="Filter companies..."
-                  defaultValue={discoverSearch}
-                  onKeyDown={e => { if (e.key === "Enter") handleDiscoverFilter(sectorFilter, batchFilter, e.target.value); }}
-                  onChange={e => {
-                    const val = e.target.value;
-                    clearTimeout(discoverDebounceRef.current);
-                    discoverDebounceRef.current = setTimeout(() => {
-                      handleDiscoverFilter(sectorFilter, batchFilter, val);
-                    }, 300);
-                  }}
-                />
-                {discoverTab === "yc" && (
-                  <select
-                    style={{ padding: "4px 6px", border: "1px solid var(--border)", borderRadius: "var(--radius)", fontFamily: "var(--font)", fontSize: 12 }}
-                    value={batchFilter}
-                    onChange={e => handleDiscoverFilter(sectorFilter, e.target.value, discoverSearch)}
-                  >
-                    {BATCH_OPTIONS.map(b => <option key={b}>{b}</option>)}
-                  </select>
-                )}
-                <select
-                  style={{ padding: "4px 6px", border: "1px solid var(--border)", borderRadius: "var(--radius)", fontFamily: "var(--font)", fontSize: 12 }}
-                  value={sectorFilter}
-                  onChange={e => handleDiscoverFilter(e.target.value, batchFilter, discoverSearch)}
-                >
-                  {["All", ...allSectors.slice(0, 30)].map(s => <option key={s}>{s}</option>)}
-                </select>
+                {discoverTotal > 0 && <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 400 }}>{discoverTotal.toLocaleString()}</span>}
               </div>
 
-              {/* Category tab switcher — no emojis */}
-              <div style={{ width: "100%", display: "flex", gap: 6, flexWrap: "wrap", marginTop: 2 }}>
+              {/* Category tabs */}
+              <div style={{ width: "100%", display: "flex", gap: 5, flexWrap: "wrap" }}>
                 {[
                   { id: "yc",         label: "YC Startups"    },
                   { id: "unicorn",    label: "Unicorns"        },
@@ -830,11 +800,12 @@ export default function Home() {
                     key={t.id}
                     onClick={() => setDiscoverTab(t.id)}
                     style={{
-                      padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer",
-                      border: discoverTab === t.id ? "none" : "1px solid var(--border)",
-                      background: discoverTab === t.id ? "var(--orange)" : "transparent",
+                      padding: "5px 14px", borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: "pointer",
+                      border: discoverTab === t.id ? "1.5px solid var(--orange)" : "1px solid var(--border)",
+                      background: discoverTab === t.id ? "var(--orange)" : "#fff",
                       color: discoverTab === t.id ? "#fff" : "var(--muted)",
                       transition: "all 0.15s",
+                      fontFamily: "var(--font)",
                     }}
                   >
                     {t.label}
@@ -842,8 +813,8 @@ export default function Home() {
                 ))}
               </div>
 
-              {/* Product vs Service type filter */}
-              <div style={{ width: "100%", display: "flex", gap: 6, marginTop: 6 }}>
+              {/* Type + search row */}
+              <div style={{ width: "100%", display: "flex", gap: 5, alignItems: "center", flexWrap: "wrap", marginTop: 2 }}>
                 {[
                   { id: "all",     label: "All Types" },
                   { id: "product", label: "Product" },
@@ -858,6 +829,40 @@ export default function Home() {
                     {t.label}
                   </button>
                 ))}
+              </div>
+
+              {/* Search + dropdowns */}
+              <div style={{ width: "100%", display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginTop: 2 }}>
+                <input
+                  ref={discoverSearchRef}
+                  style={{ flex: 1, minWidth: 100, padding: "5px 10px", border: "1px solid var(--border)", borderRadius: 20, fontFamily: "var(--font)", fontSize: 12, background: "#fff", outline: "none" }}
+                  placeholder="Search companies..."
+                  defaultValue={discoverSearch}
+                  onKeyDown={e => { if (e.key === "Enter") handleDiscoverFilter(sectorFilter, batchFilter, e.target.value); }}
+                  onChange={e => {
+                    const val = e.target.value;
+                    clearTimeout(discoverDebounceRef.current);
+                    discoverDebounceRef.current = setTimeout(() => {
+                      handleDiscoverFilter(sectorFilter, batchFilter, val);
+                    }, 300);
+                  }}
+                />
+                {discoverTab === "yc" && (
+                  <select
+                    style={{ padding: "5px 8px", border: "1px solid var(--border)", borderRadius: 20, fontFamily: "var(--font)", fontSize: 12, background: "#fff", color: "var(--text)" }}
+                    value={batchFilter}
+                    onChange={e => handleDiscoverFilter(sectorFilter, e.target.value, discoverSearch)}
+                  >
+                    {BATCH_OPTIONS.map(b => <option key={b}>{b}</option>)}
+                  </select>
+                )}
+                <select
+                  style={{ padding: "5px 8px", border: "1px solid var(--border)", borderRadius: 20, fontFamily: "var(--font)", fontSize: 12, background: "#fff", color: "var(--text)" }}
+                  value={sectorFilter}
+                  onChange={e => handleDiscoverFilter(e.target.value, batchFilter, discoverSearch)}
+                >
+                  {["All", ...allSectors.slice(0, 30)].map(s => <option key={s}>{s}</option>)}
+                </select>
               </div>
             </div>
 
