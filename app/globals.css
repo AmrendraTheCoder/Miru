@@ -1461,17 +1461,23 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   .header-logo     { font-size: 18px; font-weight: 800; letter-spacing: -0.4px; }
   .header-logo-box { font-size: 14px; padding: 3px 6px; border-radius: 4px; }
 
-  /* Settings: text only, absolutely right — no emoji */
-  .settings-icon  { display: none !important; }
-  .settings-label { display: inline !important; font-size: 12px; }
+  /* Settings: SVG gear icon in white circle — text hidden on mobile */
+  .settings-label { display: none !important; }
+  .settings-icon  {
+    display: block !important;
+    color: #fff !important;
+    stroke: #fff !important;
+    flex-shrink: 0;
+  }
   .settings-btn {
     position: absolute; right: 0;
-    background: rgba(255,255,255,0.2) !important;
-    border: 1px solid rgba(255,255,255,0.35) !important;
-    border-radius: 14px !important;
-    padding: 4px 12px !important;
-    font-size: 12px; font-weight: 600;
-    color: #fff; height: auto; width: auto;
+    background: rgba(255,255,255,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.3) !important;
+    border-radius: 50% !important;
+    width: 36px !important; height: 36px !important;
+    padding: 0 !important;
+    display: flex !important; align-items: center !important; justify-content: center !important;
+    color: #fff !important;
   }
 
   /* Search: full-width pill inside orange strip */
