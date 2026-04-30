@@ -1427,12 +1427,16 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   .header-nav { display: none; }   /* replaced by bottom nav on mobile */
   .header-inner { padding: 0 12px; }
 
-  /* ── Search ── */
-  .search-wrap { padding: 0 12px 10px; }
-  .search-row  { gap: 8px; }
+  /* ── Header: bigger Miru logo on mobile ── */
+  .header-logo     { font-size: 16px; }
+  .header-logo-box { font-size: 13px; padding: 2px 5px; }
+
+  /* ── Search: compact bar, no extra padding ── */
+  .search-wrap  { padding: 6px 12px 10px; }
+  .search-row   { gap: 6px; }
   /* 16px prevents iOS auto-zoom on focus */
-  .search-input { font-size: 16px !important; padding: 10px 12px; border-radius: 10px; }
-  .search-btn   { padding: 10px 14px; font-size: 13px; min-height: 44px; }
+  .search-input { font-size: 16px !important; padding: 8px 10px; border-radius: 8px; }
+  .search-btn   { padding: 8px 12px; font-size: 12px; font-weight: 700; min-height: 38px; white-space: nowrap; }
 
   /* ── Discover grid ── */
   .discover-grid { grid-template-columns: 1fr !important; padding: 0 12px; gap: 10px; }
@@ -1443,13 +1447,23 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   .startup-desc { font-size: 12px; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
 
   /* ── Feed / news ── */
-  .news-item  { padding: 10px 0; }
+  /* Collapse 2-col grid to 1-col so buttons go BELOW text, not beside it */
+  .news-item  { grid-template-columns: 1fr !important; padding: 10px 0; }
   .news-headline { font-size: 13px; }
+
+  /* Feed header: stack title on top, filters on next line */
+  .feed-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px;
+  }
+  .feed-header > div:first-child { width: 100%; }
+  .feed-header > div:last-child  { width: 100%; display: flex; gap: 6px; align-items: center; }
 
   /* ── Filter pills ── */
   .feed-filters { overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; flex-wrap: nowrap !important; }
   .feed-filters::-webkit-scrollbar { display: none; }
-  .filter-btn { flex-shrink: 0; min-height: 36px; }
+  .filter-btn { flex-shrink: 0; min-height: 34px; }
 
   /* ── Startup profile page hero ── */
   .sp-hero      { flex-direction: column !important; gap: 12px; align-items: flex-start; }
