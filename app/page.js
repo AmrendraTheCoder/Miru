@@ -876,7 +876,9 @@ export default function Home() {
             {/* Subtle divider above company list */}
             {companies.length > 0 && (
               <div className="card-list-label">
-                {discoverTotal > 0 ? `${companies.length} of ${discoverTotal.toLocaleString()}` : "Companies"}
+                {discoverTotal > 0
+                  ? <><strong style={{ color: "var(--text)", fontWeight: 500 }}>{companies.length}</strong> <span style={{ color: "var(--muted2)" }}>of</span> <strong style={{ color: "var(--text)", fontWeight: 500 }}>{discoverTotal.toLocaleString()}</strong> companies</>
+                  : "Companies"}
               </div>
             )}
 
