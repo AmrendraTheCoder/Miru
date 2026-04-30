@@ -1079,7 +1079,7 @@ export default function StartupPublicPage({ data, slug }) {
                     onClick={() => gaEvent("event", "press_article_clicked", { company: name })}>
                     <div className="sp-press-title">{a.title}</div>
                     <div className="sp-press-meta">
-                      {a.source && <span>{a.source}</span>}
+                      {a.source && <span className="sp-press-source">{a.source}</span>}
                       {a.date && <span>{a.date}</span>}
                     </div>
                   </a>
@@ -1089,10 +1089,7 @@ export default function StartupPublicPage({ data, slug }) {
           )}
 
           {/* Bottom share bar */}
-          <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px solid var(--border)" }}>
-            <p className="sp-muted" style={{ marginBottom: 8 }}>Found this useful? Share it.</p>
-            <ShareBar name={name} slug={slug} />
-          </div>
+          <ShareBar name={name} slug={slug} />
         </article>
       </main>
 

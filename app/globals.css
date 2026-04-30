@@ -792,12 +792,28 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 .sp-verdict-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 4px; }
 .sp-verdict-value { font-size: 13px; font-weight: 600; }
 
-/* Press list */
-.sp-press-list { display: flex; flex-direction: column; gap: 8px; }
-.sp-press-item { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: 10px 12px; text-decoration: none; color: var(--text); transition: border-color 0.1s; }
-.sp-press-item:hover { border-color: var(--orange); }
-.sp-press-title { font-size: 13px; font-weight: 500; margin-bottom: 3px; }
-.sp-press-meta { font-size: 11px; color: var(--muted); display: flex; gap: 10px; }
+/* Press list — clean news feed rows */
+.sp-press-list { display: flex; flex-direction: column; gap: 0; border-top: 1px solid var(--border); }
+.sp-press-item {
+  display: block;
+  padding: 12px 0 12px 14px;
+  border-left: 3px solid transparent;
+  border-bottom: 1px solid var(--border);
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color 0.15s, background 0.1s;
+  position: relative;
+  background: transparent;
+}
+.sp-press-item:last-child { border-bottom: none; }
+.sp-press-item:hover { border-left-color: var(--orange); background: #fffaf5; }
+.sp-press-title { font-size: 13px; font-weight: 500; line-height: 1.45; margin-bottom: 5px; padding-right: 20px; }
+/* Arrow indicator on press items */
+.sp-press-item::after { content: '→'; position: absolute; right: 4px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--muted2); transition: color 0.1s; }
+.sp-press-item:hover::after { color: var(--orange); }
+.sp-press-meta { font-size: 11px; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+/* Source badge */
+.sp-press-source { font-size: 10px; font-weight: 700; padding: 1px 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; color: var(--muted); }
 
 /* Interview Prep CTA Box */
 .sp-cta-box { background: #fff8f3; border: 1px solid #ffd4b3; border-radius: 4px; padding: 20px; margin: 28px 0; }
@@ -830,14 +846,24 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 /* ── Blog meta line ─────────────────────────────────────────── */
 .sp-blog-meta { font-size: 11px; color: var(--muted); margin: 6px 0 10px; display: flex; flex-wrap: wrap; gap: 4px; }
 
-/* ── Share bar ──────────────────────────────────────────────── */
-.sp-share-bar { display: flex; align-items: center; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
-.sp-share-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-.sp-share-btn { display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 2px; border: 1px solid var(--border); text-decoration: none; cursor: pointer; font-family: var(--font); transition: background 0.1s, border-color 0.1s; background: var(--surface); color: var(--text); }
-.sp-share-x { color: #000; border-color: #000; }
-.sp-share-x:hover { background: #000; color: #fff; }
-.sp-share-li { color: #0077b5; border-color: #0077b5; }
-.sp-share-li:hover { background: #0077b5; color: #fff; }
+/* ── Share bar — pill buttons ───────────────────────────────── */
+.sp-share-bar { display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: wrap; padding-top: 14px; border-top: 1px solid var(--border); }
+.sp-share-label { font-size: 11px; color: var(--muted); font-weight: 500; margin-right: 4px; }
+.sp-share-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 600;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid var(--border);
+  text-decoration: none; cursor: pointer;
+  font-family: var(--font);
+  transition: background 0.15s, border-color 0.15s;
+  background: transparent; color: var(--text);
+  min-height: 30px;
+}
+.sp-share-x   { color: #000; border-color: rgba(0,0,0,0.3); }
+.sp-share-x:hover  { background: #000; color: #fff; border-color: #000; }
+.sp-share-li  { color: #0077b5; border-color: rgba(0,119,181,0.3); }
+.sp-share-li:hover { background: #0077b5; color: #fff; border-color: #0077b5; }
 .sp-share-copy { color: var(--muted); }
 .sp-share-copy:hover { border-color: var(--text); color: var(--text); }
 
