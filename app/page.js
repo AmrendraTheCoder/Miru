@@ -250,8 +250,8 @@ function StartupCard({ s, onResearch }) {
         </div>
       </div>
       <div className="startup-desc">{s.tagline || s.description}</div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
-        <div className="startup-tags" style={{ margin: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8, gap: 8 }}>
+        <div className="startup-tags" style={{ margin: 0, flex: 1, minWidth: 0, overflow: "hidden" }}>
           {(s.sectors || []).slice(0, 2).map((t, i) => (
             <span key={i} className="startup-tag">{t}</span>
           ))}
@@ -262,9 +262,9 @@ function StartupCard({ s, onResearch }) {
         <button
           className="btn-research"
           onClick={(e) => { e.stopPropagation(); onResearch(s.name); }}
-          style={{ flexShrink: 0 }}
+          style={{ flexShrink: 0, marginRight: 2 }}
         >
-          Research →
+          Research
         </button>
       </div>
     </div>
@@ -298,7 +298,7 @@ export default function Home() {
   const [sectorFilter, setSectorFilter] = useState("All");
   const [batchFilter, setBatchFilter] = useState("All");
   const [discoverSearch, setDiscoverSearch] = useState("");
-  const [discoverTab, setDiscoverTab] = useState("yc"); // yc | unicorn | fortune500 | tech | all
+  const [discoverTab, setDiscoverTab] = useState("all"); // yc | unicorn | fortune500 | tech | all
   const [typeFilter, setTypeFilter] = useState("all");   // all | product | service
   const [allSectors, setAllSectors] = useState([]);
   const discoverSearchRef = useRef(null);
@@ -329,6 +329,17 @@ export default function Home() {
         const exa    = localExa    || status.exaKey    || "";
         const gemini = localGemini || status.geminiKey || "";
         loadNews(exa, gemini);
+
+        // ── Read ?q= from URL (from profile page "Run AI research" CTA) ──
+        const urlQ = new URLSearchParams(window.location.search).get("q");
+        if (urlQ && urlQ.trim()) {
+          setQuery(urlQ.trim());
+          setTab("research");
+          // Clean URL immediately so search bar clears after dismiss
+          window.history.replaceState({}, "", window.location.pathname);
+          // Auto-trigger research with a brief delay for state to settle
+          setTimeout(() => research(urlQ.trim(), exa, gemini), 300);
+        }
       })
       .catch(() => {
         if (localExa) loadNews(localExa, localGemini);
@@ -338,6 +349,7 @@ export default function Home() {
   /* ── Load DB companies when Discover tab opens ── */
   useEffect(() => {
     if (tab === "discover") loadCompanies(1, sectorFilter, batchFilter, discoverSearch, discoverTab);
+    if (tab !== "research") setQuery("");
   }, [tab]);
 
   // Reload when discoverTab changes
