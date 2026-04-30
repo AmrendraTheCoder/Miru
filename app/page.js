@@ -302,6 +302,7 @@ export default function Home() {
   const [typeFilter, setTypeFilter] = useState("all");   // all | product | service
   const [allSectors, setAllSectors] = useState([]);
   const discoverSearchRef = useRef(null);
+  const discoverDebounceRef = useRef(null); // Task 7 — debounce timer
 
   // Settings
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -592,7 +593,7 @@ export default function Home() {
               value={query}
               onChange={e => setQuery(e.target.value)}
               onKeyDown={e => e.key === "Enter" && !loading && research()}
-              placeholder="Research any startup — Airbnb, Stripe..."
+              placeholder="Research any startup..."
               autoComplete="off"
               spellCheck={false}
             />
@@ -605,6 +606,25 @@ export default function Home() {
       </div>
 
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} keys={userKeys} setKeys={setUserKeys} serverStatus={serverStatus} />
+
+      {/* ── Glassmorphism ticker bar — blog teaser ── */}
+      <div className="ticker-wrap" aria-label="Coming soon" role="marquee">
+        <div className="ticker-track">
+          {[
+            "Blog coming soon — founder deep-dives, funding breakdowns, and campus prep guides",
+            "Miru Insights: Breaking down the 2025 startup funding landscape",
+            "How to crack product interviews at Stripe and Airbnb — guides dropping soon",
+            "Product vs Service companies: what students need to know before placement season",
+            "YC W25 batch analysis — which companies are hiring interns?",
+          ].concat([
+            "Blog coming soon — founder deep-dives, funding breakdowns, and campus prep guides",
+            "Miru Insights: Breaking down the 2025 startup funding landscape",
+            "How to crack product interviews at Stripe and Airbnb — guides dropping soon",
+          ]).map((text, i) => (
+            <span key={i} className="ticker-item">{text}</span>
+          ))}
+        </div>
+      </div>
 
       {/* Content */}
       <div className="shell content">
@@ -771,6 +791,13 @@ export default function Home() {
                   placeholder="Filter companies..."
                   defaultValue={discoverSearch}
                   onKeyDown={e => { if (e.key === "Enter") handleDiscoverFilter(sectorFilter, batchFilter, e.target.value); }}
+                  onChange={e => {
+                    const val = e.target.value;
+                    clearTimeout(discoverDebounceRef.current);
+                    discoverDebounceRef.current = setTimeout(() => {
+                      handleDiscoverFilter(sectorFilter, batchFilter, val);
+                    }, 300);
+                  }}
                 />
                 {discoverTab === "yc" && (
                   <select
@@ -984,24 +1011,29 @@ export default function Home() {
         )}
       </div>
 
-      {/* ── Mobile bottom navigation (thumb zone, ≤430px only) ── */}
+      {/* ── Mobile bottom navigation (Feed + Discover only) ── */}
       <nav className="mobile-bottom-nav" aria-label="Main navigation">
-        {[
-          { id: "feed",        label: "Feed",       icon: "◉" },
-          { id: "discover",    label: "Discover",   icon: "⊞" },
-          { id: "research",    label: "Research",   icon: "⌕" },
-          { id: "competitors", label: "Rivals",     icon: "⇄" },
-        ].map(({ id, label, icon }) => (
-          <button
-            key={id}
-            className={`mbn-tab ${tab === id ? "active" : ""}`}
-            onClick={() => setTab(id)}
-            aria-label={label}
-          >
-            <span className="mbn-icon">{icon}</span>
-            <span className="mbn-label">{label}</span>
-          </button>
-        ))}
+        <button
+          className={`mbn-tab ${tab === "feed" ? "active" : ""}`}
+          onClick={() => setTab("feed")}
+          aria-label="Feed"
+        >
+          <svg className="mbn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 6h16M4 10h16M4 14h10"/>
+          </svg>
+          <span className="mbn-label">Feed</span>
+        </button>
+        <button
+          className={`mbn-tab ${tab === "discover" ? "active" : ""}`}
+          onClick={() => setTab("discover")}
+          aria-label="Discover"
+        >
+          <svg className="mbn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+          </svg>
+          <span className="mbn-label">Discover</span>
+        </button>
       </nav>
     </>
   );

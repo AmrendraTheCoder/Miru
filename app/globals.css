@@ -43,7 +43,7 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 .search-btn-icon  { display: none; }
 
 /* ── Search Bar ── */
-.search-wrap { background: var(--orange); padding: 0 16px 12px; margin-bottom: 0; }
+.search-wrap { background: var(--orange); padding: 0 16px 14px; margin-bottom: 0; box-shadow: 0 4px 20px rgba(0,0,0,0.22); }
 .search-inner { max-width: var(--max); margin: 0 auto; }
 .search-row { display: flex; gap: 6px; }
 .search-input { flex: 1; padding: 7px 10px; border: none; border-radius: var(--radius); font-family: var(--font); font-size: 13px; background: #fff; color: var(--text); outline: none; }
@@ -53,8 +53,45 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 .search-btn:hover { background: #f0f0f0; }
 .search-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
+/* ── Glassmorphism Ticker Bar ── */
+.ticker-wrap {
+  background: rgba(20, 20, 20, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.ticker-track {
+  display: inline-flex;
+  animation: ticker-scroll 50s linear infinite;
+  gap: 0;
+}
+.ticker-wrap:hover .ticker-track { animation-play-state: paused; }
+.ticker-item {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.75);
+  padding: 0 32px;
+  letter-spacing: 0.2px;
+  cursor: default;
+}
+.ticker-item::before {
+  content: '·';
+  margin-right: 32px;
+  color: var(--orange);
+  font-size: 16px;
+  vertical-align: middle;
+}
+@keyframes ticker-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
 /* ── Page Content ── */
-.content { padding-top: 16px; }
+.content { padding-top: 0; }
 
 /* ── Feed / Cards ── */
 .feed-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
@@ -994,28 +1031,35 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 }
 
 /* ── Culture & FAQ ── */
-.la-sub-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin: 0 0 10px; }
-.la-culture-list { display: flex; flex-direction: column; gap: 8px; }
+.la-sub-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin: 0 0 12px; }
+.la-culture-list { display: flex; flex-direction: column; gap: 10px; }
 .la-culture-quote {
-  margin: 0; padding: 10px 14px;
-  border-left: 3px solid var(--orange); background: var(--bg);
-  border-radius: 0 var(--radius) var(--radius) 0; font-size: 13px;
-  color: var(--text); line-height: 1.5;
+  margin: 0; padding: 12px 16px 12px 18px;
+  border-left: 3px solid var(--orange);
+  background: linear-gradient(90deg, rgba(232,82,42,0.05) 0%, transparent 100%);
+  border-radius: 0 8px 8px 0;
+  font-size: 13px; font-style: italic;
+  color: var(--text); line-height: 1.6;
+  position: relative;
 }
+.la-culture-quote::before { content: '\201C'; position: absolute; left: 6px; top: 6px; font-size: 20px; color: var(--orange); opacity: 0.4; font-style: normal; line-height: 1; }
 .la-culture-quote p { margin: 0; }
 
 .la-faq-item {
-  border: 1px solid var(--border); border-radius: var(--radius);
-  margin-bottom: 6px; overflow: hidden;
+  border: 1px solid var(--border); border-radius: 10px;
+  margin-bottom: 8px; overflow: hidden;
+  transition: box-shadow 0.15s;
 }
+.la-faq-item[open] { box-shadow: 0 2px 12px rgba(232,82,42,0.1); border-color: rgba(232,82,42,0.3); }
 .la-faq-q {
-  padding: 10px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+  padding: 12px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
   list-style: none; display: flex; justify-content: space-between; align-items: center;
-  color: var(--text); background: var(--bg); user-select: none;
+  color: var(--text); background: #fff; user-select: none; gap: 10px;
 }
-.la-faq-q::after { content: "▸"; font-size: 10px; color: var(--muted); transition: transform 0.15s; }
-.la-faq-item[open] .la-faq-q::after { transform: rotate(90deg); }
-.la-faq-a { padding: 10px 14px; margin: 0; font-size: 13px; color: var(--muted); line-height: 1.6; border-top: 1px solid var(--border); }
+.la-faq-item[open] .la-faq-q { color: var(--orange); }
+.la-faq-q::after { content: "+"; font-size: 18px; font-weight: 300; color: var(--muted); transition: transform 0.2s; flex-shrink: 0; }
+.la-faq-item[open] .la-faq-q::after { transform: rotate(45deg); color: var(--orange); }
+.la-faq-a { padding: 12px 16px 14px; margin: 0; font-size: 13px; color: var(--muted); line-height: 1.7; border-top: 1px solid var(--border); background: #fafafa; }
 
 /* ── Sources row ── */
 .la-sources { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
@@ -1433,26 +1477,25 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 @media (max-width: 430px) {
   .mobile-bottom-nav {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     position: fixed; bottom: 0; left: 0; right: 0;
-    background: var(--surface);
+    background: #fff;
     border-top: 1px solid var(--border);
     padding-bottom: env(safe-area-inset-bottom);
     z-index: 300;
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
   }
   .mbn-tab {
     display: flex; flex-direction: column; align-items: center;
-    gap: 2px; padding: 8px 0 6px;
-    font-size: 9px; font-weight: 700; letter-spacing: 0.3px;
-    text-transform: uppercase;
+    gap: 3px; padding: 10px 0 8px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.2px;
     color: var(--muted); background: none; border: none;
     cursor: pointer; transition: color 0.15s;
     font-family: var(--font);
-    min-height: 52px;
+    min-height: 54px;
   }
   .mbn-tab.active { color: var(--orange); }
-  .mbn-icon { font-size: 18px; line-height: 1; }
+  .mbn-icon { width: 20px; height: 20px; flex-shrink: 0; }
   .mbn-label { line-height: 1; }
 }
 
@@ -1478,8 +1521,8 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
      MOBILE HEADER — unified orange app bar
   ──────────────────────────────────────────── */
 
-  /* Header: tighter, bolder */
-  .header        { padding: 0 16px; box-shadow: 0 2px 16px rgba(0,0,0,0.18); }
+  /* ── Header: compact, NO internal shadow — shadow lives at bottom of search-wrap ── */
+  .header        { padding: 0 16px; box-shadow: none; }
   .header-inner  { height: 50px; padding: 0; position: relative; justify-content: center; }
   .header-nav    { display: none; }
 
