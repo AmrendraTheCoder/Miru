@@ -16,6 +16,9 @@ export const metadata = {
     default: "Miru",
     template: "%s | Miru",
   },
+  icons: {
+    icon: "/icon.svg",
+  },
   description:
     "Deep research on funded startups from YC, Harvard & Techstars. Founder profiles, funding timelines, competitor landscapes, and market analysis. Powered by Exa + Gemini.",
   keywords:
