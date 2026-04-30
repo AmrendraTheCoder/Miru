@@ -125,7 +125,7 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 .stage-acquired { background: #fce4ec; color: #c62828; }
 .stage-ipo { background: #fff8e1; color: #f57f17; }
 .news-action { flex-shrink: 0; }
-.btn-research { background: none; border: none; color: var(--orange); font-size: 11px; cursor: pointer; font-family: var(--font); padding: 2px 10px 2px 0; white-space: nowrap; font-weight: 500; letter-spacing: 0.1px; }
+.btn-research { background: none; border: none; color: var(--orange); font-size: 11px; cursor: pointer; font-family: var(--font); padding: 2px 0; margin-right: 2px; white-space: nowrap; font-weight: 500; letter-spacing: 0.1px; }
 .btn-research:hover { text-decoration: underline; }
 .btn-view-page { font-size: 11px; color: var(--muted); text-decoration: none; padding: 2px 0; white-space: nowrap; font-family: var(--font); }
 .btn-view-page:hover { color: var(--text); text-decoration: underline; }
@@ -1626,7 +1626,7 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
     border-radius: 0 !important;
     border-bottom: 1px solid var(--border) !important;
     box-shadow: none !important;
-    padding: 12px 16px !important;
+    padding: 12px 20px 12px 16px !important;
   }
   .discover-card:last-child { border-bottom: none !important; }
   .discover-card:hover { background: #fffaf5 !important; }
@@ -1759,7 +1759,7 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   /* ── Action buttons ── */
   .sp-find-btn   { width: 100%; text-align: center; padding: 12px; font-size: 14px; min-height: 44px; }
   .sp-refresh-btn { min-height: 36px; }
-  .btn-research   { min-height: 36px; padding: 6px 12px; }
+  .btn-research   { min-height: 36px; padding: 4px 0; margin-right: 4px; }
 
   /* ── Research panel (bottom sheet) ── */
   .panel {
