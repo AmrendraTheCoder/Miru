@@ -1454,24 +1454,24 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 
   /* Header: tighter, bolder */
   .header        { padding: 0 16px; box-shadow: 0 2px 16px rgba(0,0,0,0.18); }
-  .header-inner  { height: 50px; padding: 0; }
+  .header-inner  { height: 50px; padding: 0; position: relative; justify-content: center; }
   .header-nav    { display: none; }
 
-  /* Logo: bigger and bolder */
+  /* Logo: centered, bigger and bolder */
   .header-logo     { font-size: 18px; font-weight: 800; letter-spacing: -0.4px; }
   .header-logo-box { font-size: 14px; padding: 3px 6px; border-radius: 4px; }
 
-  /* Settings: show ⚙ icon only, hide text */
-  .settings-label { display: none; }
-  .settings-icon  { display: inline; font-size: 18px; opacity: 0.9; }
+  /* Settings: text only, absolutely right — no emoji */
+  .settings-icon  { display: none !important; }
+  .settings-label { display: inline !important; font-size: 12px; }
   .settings-btn {
-    background: rgba(255,255,255,0.18) !important;
-    border: none !important;
-    border-radius: 50% !important;
-    width: 34px; height: 34px;
-    display: flex; align-items: center; justify-content: center;
-    padding: 0 !important;
-    font-size: 18px;
+    position: absolute; right: 0;
+    background: rgba(255,255,255,0.2) !important;
+    border: 1px solid rgba(255,255,255,0.35) !important;
+    border-radius: 14px !important;
+    padding: 4px 12px !important;
+    font-size: 12px; font-weight: 600;
+    color: #fff; height: auto; width: auto;
   }
 
   /* Search: full-width pill inside orange strip */
