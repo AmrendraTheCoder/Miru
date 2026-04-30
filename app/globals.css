@@ -1444,9 +1444,33 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   .search-input { font-size: 16px !important; padding: 8px 10px; border-radius: 8px; }
   .search-btn   { padding: 8px 12px; font-size: 12px; font-weight: 700; min-height: 38px; white-space: nowrap; }
 
-  /* ── Discover grid ── */
-  .discover-grid { grid-template-columns: 1fr !important; padding: 0 12px; gap: 10px; }
-  .discover-card { border-radius: 12px; }
+  /* ── Discover grid — borderless list on mobile ── */
+  /* Remove the boxed grid look; cards become seamless list rows */
+  .discover-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+  }
+  .discover-card {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    border-bottom: 1px solid var(--border) !important;
+    box-shadow: none !important;
+    padding: 12px 16px !important;
+  }
+  .discover-card:last-child { border-bottom: none !important; }
+  .discover-card:hover { background: #fffaf5 !important; }
+
+  /* Hide repeated hint text — same on every product card, adds clutter */
+  .ctype-hint { display: none !important; }
+
+  /* Flatten the section heading — no heavy border */
+  .section-head { border-bottom: none !important; margin-bottom: 4px !important; font-size: 12px !important; color: var(--muted) !important; font-weight: 600 !important; margin-left: 16px !important; }
+  .section-badge { display: none !important; }
 
   /* ── Company card content ── */
   .startup-name { font-size: 14px; }
