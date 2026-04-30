@@ -1574,15 +1574,90 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   .feed-filters::-webkit-scrollbar { display: none; }
   .filter-btn { flex-shrink: 0; min-height: 34px; }
 
-  /* ── Startup profile page hero ── */
-  .sp-hero      { flex-direction: column !important; gap: 12px; align-items: flex-start; }
-  .sp-hero-logo { width: 52px !important; height: 52px !important; }
-  .sp-hero-name { font-size: 22px !important; }
-  .sp-blog-meta { flex-wrap: wrap; gap: 4px; font-size: 11px; }
+  /* ══════════════════════════════════════════════════════
+     STARTUP PROFILE PAGE — mobile-first polish
+     ══════════════════════════════════════════════════════ */
 
-  /* ── StartupPublicPage main content ── */
-  .sp-main { padding: 0 14px !important; }
-  .sp-section { margin-bottom: 20px; padding-bottom: 20px; }
+  /* Root: clean white page */
+  .sp-root { background: #fff !important; }
+  .sp-main { padding: 0 16px 100px !important; }
+
+  /* Header: compact sticky bar */
+  .sp-header { padding: 0 14px; }
+  .sp-header-inner { height: 48px; }
+  .sp-research-cta {
+    font-size: 11px !important;
+    padding: 5px 10px !important;
+    border-radius: 20px !important;
+    white-space: nowrap;
+  }
+
+  /* Breadcrumb: smaller, tighter */
+  .sp-breadcrumb { font-size: 11px; margin-bottom: 14px; margin-top: 14px; }
+
+  /* Hero: logo + name stacked cleanly */
+  .sp-hero {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 14px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+  }
+  .sp-hero-logo { width: 48px !important; height: 48px !important; border-radius: 10px !important; }
+  .sp-hero-name { font-size: 20px !important; letter-spacing: -0.03em; }
+  .sp-hero-tagline { font-size: 13px !important; margin-bottom: 8px !important; }
+
+  /* Blog meta: condense */
+  .sp-blog-meta { flex-wrap: wrap; gap: 3px; font-size: 10px !important; margin: 4px 0 8px; }
+
+  /* Tags: pill style for readability */
+  .sp-tag { border-radius: 20px !important; font-size: 11px; }
+  .sp-hero-meta { gap: 4px; }
+
+  /* Section headings: subtler on mobile */
+  .sp-section-title {
+    font-size: 11px !important;
+    letter-spacing: 0.8px !important;
+    color: var(--muted) !important;
+  }
+  .sp-section { margin-bottom: 20px !important; padding-bottom: 18px !important; }
+
+  /* Body text: slightly more readable */
+  .sp-body { font-size: 14px !important; line-height: 1.7 !important; }
+  .sp-muted { font-size: 13px !important; }
+
+  /* CTA box: cleaner mobile card */
+  .sp-cta-box { border-radius: 12px !important; padding: 16px !important; margin: 20px 0 !important; }
+  .sp-cta-btn { display: block !important; text-align: center; padding: 12px !important; border-radius: 8px !important; font-size: 14px !important; }
+
+  /* Big action buttons: full width */
+  .sp-find-btn { width: 100% !important; justify-content: center; padding: 13px !important; font-size: 14px !important; border-radius: 8px !important; min-height: 44px !important; }
+
+  /* Verdict grid: 2-col on mobile */
+  .sp-verdict-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+  .sp-verdict-item { border-radius: 8px !important; padding: 12px !important; }
+  .sp-verdict-value { font-size: 15px !important; font-weight: 700 !important; }
+
+  /* Press cards: cleaner */
+  .sp-press-item { border-radius: 8px !important; }
+  .sp-press-title { font-size: 13px !important; line-height: 1.4; }
+
+  /* Founder cards: flat borderless on mobile */
+  .sp-founder-card { border-radius: 10px !important; }
+  .sp-founder-name { font-size: 15px !important; }
+
+  /* Employee grid: single col */
+  .sp-employee-grid { grid-template-columns: 1fr !important; }
+
+  /* Timeline: tighter columns */
+  .sp-tl-row { grid-template-columns: 72px 10px 1fr !important; gap: 8px; }
+  .sp-tl-event { font-size: 13px !important; }
+
+  /* Share bar */
+  .sp-share-bar { margin-top: 8px; }
+
+  /* Footer */
+  .sp-footer { padding: 14px 16px; }
 
   /* ── Life at Company tabs ── */
   .la-tabs { overflow-x: auto !important; scrollbar-width: none !important; -webkit-overflow-scrolling: touch !important; flex-wrap: nowrap !important; }
