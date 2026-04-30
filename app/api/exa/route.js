@@ -21,6 +21,10 @@ import { NextResponse } from "next/server";
 
 const EXA_BASE = "https://api.exa.ai";
 
+// Extend Vercel function timeout beyond the default 10s
+// Hobby plan supports up to 60s; Pro supports 300s
+export const maxDuration = 55;
+
 export async function POST(request) {
   let path, body, apiKey;
   try {
@@ -33,7 +37,7 @@ export async function POST(request) {
   const key = apiKey || process.env.EXA_API_KEY || "";
   if (!key) {
     return NextResponse.json(
-      { error: "No Exa API key. Add EXA_API_KEY to .env or provide one in Settings." },
+      { error: "No Exa API key. Add EXA_API_KEY to Vercel Environment Variables." },
       { status: 401 }
     );
   }
@@ -42,28 +46,31 @@ export async function POST(request) {
     return NextResponse.json({ error: "Invalid path" }, { status: 400 });
   }
 
-  const attempt = () =>
-    fetch(`${EXA_BASE}${path}`, {
+  // Hard 8s timeout per attempt — leaves room for retry before Vercel kills us
+  const attempt = () => {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    return fetch(`${EXA_BASE}${path}`, {
       method: "POST",
-      headers: {
-        "x-api-key": key,
-        "Content-Type": "application/json",
-      },
+      headers: { "x-api-key": key, "Content-Type": "application/json" },
       body: JSON.stringify(body),
-    });
+      signal: ctrl.signal,
+    }).finally(() => clearTimeout(timer));
+  };
 
   try {
     let res = await attempt();
 
-    // One retry on rate limit
+    // One retry on rate limit — no sleep, just retry immediately
     if (res.status === 429) {
-      await new Promise((r) => setTimeout(r, 1500));
+      console.warn("[exa] 429 rate limit — retrying once");
       res = await attempt();
     }
 
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
+      console.error(`[exa] ${path} HTTP ${res.status}:`, data?.error?.message);
       return NextResponse.json(
         { error: data?.error?.message || `Exa ${path} failed (HTTP ${res.status})` },
         { status: res.status }
@@ -72,6 +79,11 @@ export async function POST(request) {
 
     return NextResponse.json(data);
   } catch (e) {
-    return NextResponse.json({ error: e.message }, { status: 502 });
+    const isTimeout = e.name === "AbortError";
+    console.error(`[exa] ${path} ${isTimeout ? "timeout" : "network error"}:`, e.message);
+    return NextResponse.json(
+      { error: isTimeout ? "Exa request timed out — try again" : e.message },
+      { status: 502 }
+    );
   }
 }

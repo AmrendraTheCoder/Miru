@@ -14,6 +14,8 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServer } from "@/lib/supabase";
 
+export const maxDuration = 55;
+
 const EXA_KEY = process.env.EXA_API_KEY;
 const CACHE_HOURS = 48;
 

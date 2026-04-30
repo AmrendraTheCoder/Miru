@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServer } from "@/lib/supabase";
 
+export const maxDuration = 55;
+
 /**
  * News Cache Strategy:
  * - FRESH window : 24h  — serve from cache instantly
