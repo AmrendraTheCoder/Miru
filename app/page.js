@@ -167,11 +167,11 @@ function CompanyLogo({ name, logoUrl, website }) {
     ? website.replace(/^https?:\/\//, "").replace(/\/$/, "").split("/")[0]
     : null;
 
-  // Decide starting src: logoUrl → icon.horse (only with a real domain) → null (go straight to initial)
+  // Decide starting src: logoUrl → Google Favicon (only with a real domain) → null (go straight to initial)
   const initialSrc = logoUrl
     ? logoUrl
     : domain
-      ? `https://icon.horse/icon/${domain}`
+      ? `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
       : null;
 
   const [src, setSrc]       = useState(initialSrc);
@@ -186,12 +186,9 @@ function CompanyLogo({ name, logoUrl, website }) {
   })();
 
   const handleError = () => {
-    if (src?.includes("icon.horse") && domain) {
-      // icon.horse failed → try Google favicon
-      setSrc(`https://www.google.com/s2/favicons?domain=${domain}&sz=64`);
-    } else {
-      setFailed(true);
-    }
+    // If the Google favicon or initial logoUrl fails, just show the letter initial.
+    // We no longer fallback from icon.horse to avoid 404s in the network tab.
+    setFailed(true);
   };
 
   if (failed) {

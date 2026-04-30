@@ -49,7 +49,7 @@ export async function POST(request) {
   // Hard 8s timeout per attempt — leaves room for retry before Vercel kills us
   const attempt = () => {
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 8000);
+    const timer = setTimeout(() => ctrl.abort(), 20000); // Bumped to 20s to avoid 502 timeouts
     return fetch(`${EXA_BASE}${path}`, {
       method: "POST",
       headers: { "x-api-key": key, "Content-Type": "application/json" },

@@ -615,7 +615,7 @@ function HeroLogo({ name, logoUrl, domain }) {
   const initial = logoUrl
     ? logoUrl
     : realDomain
-      ? `https://icon.horse/icon/${realDomain}`
+      ? `https://www.google.com/s2/favicons?domain=${realDomain}&sz=128`
       : null;
 
   const [src, setSrc]     = useState(initial);
@@ -629,9 +629,7 @@ function HeroLogo({ name, logoUrl, domain }) {
   })();
 
   const handleError = () => {
-    if (src?.includes("icon.horse") && realDomain) {
-      setSrc(`https://www.google.com/s2/favicons?domain=${realDomain}&sz=128`);
-    } else setFailed(true);
+    setFailed(true);
   };
 
   if (failed) {
