@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import ResearchReport from "./components/ResearchReport";
 import { exaStartupResearch, exaDailyStartupNews } from "@/lib/exa";
 import { analyseCompetitor, analyseNewsItems } from "@/lib/analyzer";
@@ -339,8 +340,9 @@ function StartupCard({ s, onResearch }) {
 }
 
 
-export default function Home() {
-  const [tab, setTab] = useState("feed");
+export default function Home({ initialTab = "feed" }) {
+  const router = useRouter();
+  const [tab, setTab] = useState(initialTab);
   const [query, setQuery] = useState("");
 
   // Research state
@@ -656,8 +658,8 @@ export default function Home() {
             Miru
           </a>
           <nav className="header-nav">
-            {[["feed","Feed"],["discover","Discover"],["research","Research"],["competitors","Competitors"],["jobs","Jobs 🆕"]].map(([id, label]) => (
-              <button key={id} className={`nav-tab ${tab === id ? "active" : ""}`} onClick={() => setTab(id)}>
+            {[["/feed","feed","Feed"],["/discover","discover","Discover"],["/research","research","Research"],["/competitors","competitors","Competitors"],["/jobs","jobs","Jobs 🆕"]].map(([href, id, label]) => (
+              <button key={id} className={`nav-tab ${tab === id ? "active" : ""}`} onClick={() => { setTab(id); router.push(href); }}>
                 {label}{id === "discover" && discoverTotal > 0 && <span style={{ fontSize: 10, opacity: 0.7, marginLeft: 4 }}>({discoverTotal})</span>}
               </button>
             ))}
@@ -1344,7 +1346,7 @@ export default function Home() {
       <nav className="mobile-bottom-nav" aria-label="Main navigation">
         <button
           className={`mbn-tab ${tab === "feed" ? "active" : ""}`}
-          onClick={() => setTab("feed")}
+          onClick={() => { setTab("feed"); router.push("/feed"); }}
           aria-label="Feed"
         >
           <svg className="mbn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1354,7 +1356,7 @@ export default function Home() {
         </button>
         <button
           className={`mbn-tab ${tab === "discover" ? "active" : ""}`}
-          onClick={() => setTab("discover")}
+          onClick={() => { setTab("discover"); router.push("/discover"); }}
           aria-label="Discover"
         >
           <svg className="mbn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1365,7 +1367,7 @@ export default function Home() {
         </button>
         <button
           className={`mbn-tab ${tab === "jobs" ? "active" : ""}`}
-          onClick={() => setTab("jobs")}
+          onClick={() => { setTab("jobs"); router.push("/jobs"); }}
           aria-label="Jobs"
         >
           <svg className="mbn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
