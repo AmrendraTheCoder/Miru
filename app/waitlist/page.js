@@ -114,12 +114,40 @@ export default function WaitlistPage() {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                   </div>
                   <div className="wlp-success-t">You're on the list.</div>
-                  <div className="wlp-success-b">Check your inbox. You'll be first when Miru V1 ships.</div>
+                  <div className="wlp-success-b">Check your inbox. You'll be among the first when Miru V1 ships.</div>
                 </div>
               ) : (
                 <>
-                  <div className="wlp-form-t">Reserve Your Spot</div>
-                  <div className="wlp-form-s">Free, always. First in line before placement season.</div>
+                  {/* Social proof */}
+                  <div className="wlp-social-proof">
+                    <div className="wlp-avatars">
+                      {[["#e8522a","A"],["#1a1a2e","R"],["#2d6a4f","S"],["#6a0dad","P"]].map(([bg,l])=>(
+                        <div key={l} className="wlp-avatar" style={{background:bg}}>{l}</div>
+                      ))}
+                    </div>
+                    <div className="wlp-proof-text">
+                      <strong>142 students</strong> joined this week
+                    </div>
+                  </div>
+
+                  <div className="wlp-form-t">Get early access — free.</div>
+
+                  {/* Benefit bullets */}
+                  <div className="wlp-form-perks">
+                    {[
+                      "First to access placement data before your seniors",
+                      "Real interview questions, not generic prep sheets",
+                      "AI salary estimate from your exact resume",
+                    ].map(p => (
+                      <div key={p} className="wlp-perk">
+                        <span className="wlp-perk-dot">
+                          <svg viewBox="0 0 24 24" fill="none" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        {p}
+                      </div>
+                    ))}
+                  </div>
+
                   <form onSubmit={submit}>
                     <label className="wlp-label">I am a</label>
                     <select className="wlp-select" value={role} onChange={e => setRole(e.target.value)}>
@@ -129,14 +157,18 @@ export default function WaitlistPage() {
                     <label className="wlp-label">Email address</label>
                     <input className="wlp-input" type="email" placeholder="you@college.edu" value={email} onChange={e => setEmail(e.target.value)} required />
                     <button className="wlp-submit" type="submit" disabled={status === "loading"}>
-                      {status === "loading" ? "Joining…" : "Claim My Spot →"}
+                      {status === "loading" ? "Joining…" : "Claim My Free Spot →"}
                     </button>
                     {status === "error" && <div className="wlp-msg-err">{msg}</div>}
                   </form>
-                  <div className="wlp-privacy">No spam. Unsubscribe anytime.</div>
+                  <div className="wlp-privacy">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                    No spam. Cancel anytime.
+                  </div>
                 </>
               )}
             </div>
+
           </div>
 
           {/* Right: hero image */}
