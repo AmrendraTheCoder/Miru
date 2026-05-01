@@ -78,7 +78,7 @@ function SettingsModal({ open, onClose, keys, setKeys, serverStatus }) {
           </div>
 
           {/* Security note */}
-          <div style={{
+          {/* <div style={{
             marginTop: 12,
             background: "rgba(234,179,8,0.06)", border: "1px solid rgba(234,179,8,0.18)",
             borderRadius: 6, padding: "9px 12px", display: "flex", gap: 8, alignItems: "flex-start",
@@ -90,7 +90,7 @@ function SettingsModal({ open, onClose, keys, setKeys, serverStatus }) {
             <div style={{ fontSize: 10, color: "#92400e", lineHeight: 1.55 }}>
               <strong>Keys stay in your browser only</strong> — never sent to our servers. Server-side keys (shown Active above) are never exposed to the client. Clear keys on shared machines.
             </div>
-          </div>
+          </div> */}
 
           {/* Waitlist promo */}
           <div style={{
