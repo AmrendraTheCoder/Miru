@@ -2050,19 +2050,103 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 }
 
 .floating-nav-bar {
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
   border-radius: 100px;
   padding: 8px 12px 8px 24px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
   cursor: pointer;
   overflow: hidden;
   width: max-content;
+}
+
+.floating-nav-content {
+  position: relative;
+  z-index: 2; /* ABOVE the animated background */
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* ══════════════════════════════════════════════════════
+   FLOATING NAV - INTERACTIVE GLASS GRADIENT
+   ══════════════════════════════════════════════════════ */
+:root {
+  --fn-bg1: rgba(10, 10, 10, 0.5);
+  --fn-bg2: rgba(15, 12, 10, 0.5);
+  --fn-c1: 150, 50, 20;
+  --fn-c2: 120, 40, 10;
+  --fn-c3: 180, 60, 25;
+  --fn-c4: 100, 30, 5;
+  --fn-c5: 140, 45, 15;
+  --fn-int: 200, 70, 30;
+  --fn-size: 150px;
+  --fn-blend: hard-light;
+}
+
+@keyframes fnMoveInCircle { 0% { transform: rotate(0deg); } 50% { transform: rotate(180deg); } 100% { transform: rotate(360deg); } }
+@keyframes fnMoveVertical { 0% { transform: translateY(-25%); } 50% { transform: translateY(25%); } 100% { transform: translateY(-25%); } }
+@keyframes fnMoveHorizontal { 0% { transform: translateX(-25%) translateY(-10%); } 50% { transform: translateX(25%) translateY(10%); } 100% { transform: translateX(-25%) translateY(-10%); } }
+
+.nav-gradients-container {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  border-radius: 100px;
+  background: linear-gradient(40deg, var(--fn-bg1), var(--fn-bg2));
+  filter: url(#goo) blur(20px);
+  z-index: 0;
+}
+
+.nav-noiseBg {
+  position: absolute;
+  width: 100%; height: 100%; top: 0; left: 0;
+  z-index: 1; mix-blend-mode: soft-light; opacity: 0.3; pointer-events: none;
+  border-radius: 100px;
+}
+
+.nav-g1, .nav-g2, .nav-g3, .nav-g4, .nav-g5, .nav-interactive {
+  position: absolute;
+  mix-blend-mode: var(--fn-blend);
+}
+
+.nav-g1 {
+  background: radial-gradient(circle at center, rgba(var(--fn-c1), 0.8) 0, rgba(var(--fn-c1), 0) 50%) no-repeat;
+  width: var(--fn-size); height: var(--fn-size);
+  top: calc(50% - var(--fn-size) / 2); left: calc(50% - var(--fn-size) / 2);
+  transform-origin: center center; animation: fnMoveVertical 15s ease infinite;
+}
+.nav-g2 {
+  background: radial-gradient(circle at center, rgba(var(--fn-c2), 0.8) 0, rgba(var(--fn-c2), 0) 50%) no-repeat;
+  width: var(--fn-size); height: var(--fn-size);
+  top: calc(50% - var(--fn-size) / 2); left: calc(50% - var(--fn-size) / 2);
+  transform-origin: calc(50% - 50px); animation: fnMoveInCircle 10s reverse infinite;
+}
+.nav-g3 {
+  background: radial-gradient(circle at center, rgba(var(--fn-c3), 0.8) 0, rgba(var(--fn-c3), 0) 50%) no-repeat;
+  width: var(--fn-size); height: var(--fn-size);
+  top: calc(50% - var(--fn-size) / 2); left: calc(50% - var(--fn-size) / 2 - 50px);
+  transform-origin: calc(50% + 50px); animation: fnMoveInCircle 20s linear infinite;
+}
+.nav-g4 {
+  background: radial-gradient(circle at center, rgba(var(--fn-c4), 0.8) 0, rgba(var(--fn-c4), 0) 50%) no-repeat;
+  width: var(--fn-size); height: var(--fn-size);
+  top: calc(50% - var(--fn-size) / 2); left: calc(50% - var(--fn-size) / 2);
+  transform-origin: calc(50% - 50px); animation: fnMoveHorizontal 20s ease infinite; opacity: 0.7;
+}
+.nav-g5 {
+  background: radial-gradient(circle at center, rgba(var(--fn-c5), 0.8) 0, rgba(var(--fn-c5), 0) 50%) no-repeat;
+  width: calc(var(--fn-size) * 1.5); height: calc(var(--fn-size) * 1.5);
+  top: calc(50% - var(--fn-size) * 0.75); left: calc(50% - var(--fn-size) * 0.75);
+  transform-origin: calc(50% - 100px) calc(50% + 50px); animation: fnMoveInCircle 10s ease infinite;
+}
+.nav-interactive {
+  background: radial-gradient(circle at center, rgba(var(--fn-int), 0.8) 0, rgba(var(--fn-int), 0) 50%) no-repeat;
+  width: var(--fn-size); height: var(--fn-size);
+  top: calc(-1 * var(--fn-size) / 2); left: calc(-1 * var(--fn-size) / 2);
+  opacity: 0.7;
 }
 
 .floating-nav-text {

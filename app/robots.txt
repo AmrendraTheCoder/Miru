@@ -1,0 +1,26 @@
+User-agent: *
+Allow: /
+
+# Explicitly allow AI crawlers (GEO Optimization)
+User-agent: Googlebot
+Allow: /
+User-agent: Bingbot
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: ChatGPT-User
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: anthropic-ai
+Allow: /
+User-agent: GPTBot
+Allow: /
+
+Disallow: /api/
+Disallow: /_next/
+Disallow: /api/exa
+Disallow: /api/news
+Disallow: /api/settings
+
+Sitemap: https://miru-1.vercel.app/sitemap.xml

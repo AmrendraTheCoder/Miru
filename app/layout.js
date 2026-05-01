@@ -22,7 +22,7 @@ export const metadata = {
   description:
     "Deep research on funded startups from YC, Harvard & Techstars. Founder profiles, funding timelines, competitor landscapes, and market analysis. Powered by Exa + Gemini.",
   keywords:
-    "Y Combinator, startup research, founder profiles, venture capital, competitor analysis, startup funding, LeetCode interview prep, startup jobs",
+    "Y Combinator, startup research, founder profiles, venture capital, competitor analysis, startup funding, real CTC, off-campus hiring, startup jobs for freshers, B.Tech placements, seed funded startups, startup intelligence",
   authors: [{ name: "Miru", url: "https://miru-1.vercel.app" }],
   creator: "Miru Intelligence",
   verification: {
@@ -54,6 +54,36 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={dmSans.variable} suppressHydrationWarning>
       <body suppressHydrationWarning>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@graph": [
+                {
+                  "@type": "WebSite",
+                  "@id": "https://miru-1.vercel.app/#website",
+                  "url": "https://miru-1.vercel.app/",
+                  "name": "Miru",
+                  "description": "Deep research on funded startups, founder profiles, and real CTC placement insights.",
+                  "potentialAction": {
+                    "@type": "SearchAction",
+                    "target": "https://miru-1.vercel.app/?q={search_term_string}",
+                    "query-input": "required name=search_term_string"
+                  }
+                },
+                {
+                  "@type": "Organization",
+                  "@id": "https://miru-1.vercel.app/#organization",
+                  "name": "Miru Intelligence",
+                  "url": "https://miru-1.vercel.app/",
+                  "logo": "https://miru-1.vercel.app/icon.svg",
+                  "sameAs": []
+                }
+              ]
+            })
+          }}
+        />
         {children}
         {gaId && <GoogleAnalytics gaId={gaId} />}
       </body>
