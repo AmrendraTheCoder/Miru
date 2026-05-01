@@ -2,28 +2,61 @@
 import { useState, useEffect, useRef } from "react";
 import "./waitlist.css";
 
-const TICKERS = ["Campus Placement Data","Interview Intelligence","AI Salary Predictor","Culture Tracker","Auto-Pilot Applications","Recruiter Merit Portal","YC Research","Funding Intel"];
+const TICKERS = [
+  "Campus Placement Time-Machine", "Verified Interview Intel", "AI Salary Predictor",
+  "Inside Reality Tracker", "Auto-Pilot Applications", "Recruiter Merit Portal",
+  "5-Year Placement Data", "Get In Before Placement Season",
+];
 
-const FEATURES = [
-  { t: "Campus Placement Time-Machine", d: "5-year placement history by college — PPOs, placed, and unplaced ratios on verified timelines.", icon: <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg> },
-  { t: "Inside Reality Tracker", d: "Anonymous, area-wise employee reviews and a secure bias-reporting system. Know what it's actually like.", icon: <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> },
-  { t: "Verified Interview Intel", d: "Crowdsourced, recently asked questions with structure and depth so you walk in knowing exactly what to expect.", icon: <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg> },
-  { t: "AI Salary Predictor", d: "Upload your resume. AI maps your skills against live market data to project your salary trajectory.", icon: <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg> },
-  { t: "Auto-Pilot Applications", d: "Curated job feeds matched to your profile. One-click AI-generated answers for descriptive form fields.", icon: <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> },
-  { t: "Recruiter Merit Showcase", d: "Top job seekers spotlighted directly to recruiters with verified skillsets and meritocracy scores.", icon: <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg> },
+const BENTO = [
+  {
+    span: "wlp-span-7", tag: "Campus Intel",
+    title: "5-Year Placement Time-Machine",
+    desc: "Placement history by college — PPOs, placed, unplaced ratios, and which companies actually showed up.",
+    img: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=700&q=80&auto=format&fit=crop",
+    imgAlt: "College campus students",
+    tall: true,
+  },
+  {
+    span: "wlp-span-5", tag: "Reality Check", orange: true,
+    title: "Know what it's really like before you sign.",
+    desc: "Anonymous bias reports and area-wise culture reviews from real employees — not filtered LinkedIn posts.",
+  },
+  {
+    span: "wlp-span-4", tag: "Interview Prep",
+    title: "Verified Interview Intel",
+    desc: "Crowdsourced questions from recent candidates — real structure, real depth.",
+    img: "https://images.unsplash.com/photo-1565688534245-05d6b5be184a?w=600&q=80&auto=format&fit=crop",
+    imgAlt: "Interview in progress",
+  },
+  {
+    span: "wlp-span-8", tag: "AI Salary Predictor",
+    title: "Your resume → Your salary projection",
+    desc: "Upload your resume. AI maps your skills to live market data and projects your starting salary and growth curve.",
+    img: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=700&q=80&auto=format&fit=crop",
+    imgAlt: "Salary analytics dashboard",
+  },
+  {
+    span: "wlp-span-6", tag: "Auto-Pilot",
+    title: "Applications on auto-pilot",
+    desc: "Curated job feeds matched to your resume. AI-generated descriptive answers, one click.",
+    img: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=600&q=80&auto=format&fit=crop",
+    imgAlt: "Person filling job application",
+  },
+  {
+    span: "wlp-span-6", tag: "Recruiter Portal",
+    title: "Meritocracy, not connections.",
+    desc: "Top job seekers showcased directly to recruiters with verified skillsets and honest performance scores.",
+    img: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600&q=80&auto=format&fit=crop",
+    imgAlt: "Team collaboration",
+  },
 ];
 
 const STATS = [
-  { v: "5,600+", l: "Companies" },
+  { v: "5,600+", l: "Companies Tracked" },
   { v: "200+",   l: "YC Startups" },
   { v: "12K+",   l: "Research Queries" },
-  { v: "Free",   l: "Forever" },
-];
-
-const BULLETS = [
-  "5-year campus placement data by college",
-  "Real interview questions from recent candidates",
-  "AI salary projections from your resume",
+  { v: "Free",   l: "Always" },
 ];
 
 export default function WaitlistPage() {
@@ -31,45 +64,28 @@ export default function WaitlistPage() {
   const [role, setRole]     = useState("Student / Professional");
   const [status, setStatus] = useState("idle");
   const [msg, setMsg]       = useState("");
-  const formRef  = useRef(null);
-  const featRef  = useRef(null);
-  const aboutRef = useRef(null);
-  const ctaRef   = useRef(null);
+  const formRef = useRef(null);
+  const bentoRef = useRef(null);
 
   useEffect(() => {
     let ctx;
     (async () => {
-      const { gsap }         = await import("gsap");
+      const { gsap }          = await import("gsap");
       const { ScrollTrigger } = await import("gsap/ScrollTrigger");
       gsap.registerPlugin(ScrollTrigger);
-
       ctx = gsap.context(() => {
-        // Hero entrance
-        gsap.from([".wl-hero-tag",".wl-h1",".wl-hero-sub",".wl-bullets"], {
-          y: 30, opacity: 0, stagger: 0.1, duration: 0.85, ease: "power3.out", delay: 0.1
+        gsap.from([".wlp-season-badge",".wlp-h1",".wlp-hero-sub",".wlp-urgency"], {
+          y: 24, opacity: 0, stagger: 0.09, duration: 0.7, ease: "power3.out", delay: 0.1,
         });
-        gsap.from(".wl-form-wrap", {
-          y: 30, opacity: 0, duration: 0.9, ease: "power3.out", delay: 0.3
+        gsap.from(".wlp-form-card", { y: 28, opacity: 0, duration: 0.75, ease: "power3.out", delay: 0.25 });
+        gsap.from(".wlp-hero-img-wrap", { scale: 0.97, opacity: 0, duration: 0.75, ease: "power3.out", delay: 0.3 });
+        gsap.from(".wlp-bento-card", {
+          scrollTrigger: { trigger: bentoRef.current, start: "top 78%" },
+          y: 32, opacity: 0, stagger: 0.06, duration: 0.6, ease: "power2.out",
         });
-        // Stats
-        gsap.from(".wl-stat", {
-          scrollTrigger: { trigger: ".wl-stats-inner", start: "top 85%" },
-          y: 20, opacity: 0, stagger: 0.08, duration: 0.55, ease: "power2.out"
-        });
-        // Features
-        gsap.from(".wl-feat", {
-          scrollTrigger: { trigger: featRef.current, start: "top 75%" },
-          y: 30, opacity: 0, stagger: 0.05, duration: 0.6, ease: "power2.out"
-        });
-        // About
-        gsap.from([".wl-about-h",".wl-about-p",".wl-mission"], {
-          scrollTrigger: { trigger: aboutRef.current, start: "top 80%" },
-          y: 24, opacity: 0, stagger: 0.1, duration: 0.7, ease: "power2.out"
-        });
-        // CTA
-        gsap.from([".wl-cta-h",".wl-cta-p",".wl-cta-action"], {
-          scrollTrigger: { trigger: ctaRef.current, start: "top 80%" },
-          y: 24, opacity: 0, stagger: 0.1, duration: 0.6, ease: "power2.out"
+        gsap.from(".wlp-stat", {
+          scrollTrigger: { trigger: ".wlp-stats-row", start: "top 85%" },
+          scale: 0.88, opacity: 0, stagger: 0.08, duration: 0.5, ease: "back.out(1.4)",
         });
       });
     })();
@@ -81,214 +97,187 @@ export default function WaitlistPage() {
     if (!email || !email.includes("@")) return;
     setStatus("loading");
     try {
-      const res  = await fetch("/api/waitlist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, role }),
-      });
+      const res  = await fetch("/api/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, role }) });
       const data = await res.json();
       if (res.ok) { setStatus("success"); setEmail(""); }
-      else { setStatus("error"); setMsg(data.error || "Something went wrong."); }
+      else         { setStatus("error"); setMsg(data.error || "Something went wrong."); }
     } catch { setStatus("error"); setMsg("Network error. Please try again."); }
   };
 
   const scrollForm = () => formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
 
-  const CheckIcon = () => (
-    <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-  const ArrowIcon = () => (
-    <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 12h14M12 5l7 7-7 7"/>
-    </svg>
-  );
-
   return (
-    <div className="wl-root">
+    <div className="wlp-root">
 
-      {/* HEADER */}
-      <header className="wl-header">
-        <a href="/" className="wl-logo">
-          <span className="wl-logo-box">M</span>
-          <span className="wl-logo-text">Miru</span>
-          <span className="wl-logo-v2">V2</span>
-        </a>
-        <nav className="wl-nav">
-          <a href="/#discover" className="wl-nav-a">Explore V1</a>
-          <a href="#features" className="wl-nav-a">Features</a>
-          <button className="wl-nav-btn" onClick={scrollForm}>Join Waitlist</button>
-        </nav>
+      {/* ── HEADER (exact Miru style) ── */}
+      <header className="header">
+        <div className="header-inner">
+          <a href="/" className="header-logo">
+            <span className="header-logo-box">M</span>
+            Miru
+          </a>
+          <div style={{ flex: 1 }} />
+          <div className="header-actions">
+            <button className="wlp-join-btn" onClick={scrollForm}>Join Waitlist</button>
+          </div>
+        </div>
       </header>
 
-      {/* TICKER */}
-      <div className="wl-ticker" style={{marginTop:56}} aria-hidden="true">
-        <div className="wl-ticker-track">
-          {[...TICKERS,...TICKERS].map((t,i)=>(
-            <span key={i} className="wl-ti"><span className="wl-ti-sep">✦</span>{t}</span>
+      {/* ── TICKER (exact Miru style) ── */}
+      <div className="ticker-wrap" aria-hidden="true">
+        <div className="ticker-track">
+          {[...TICKERS, ...TICKERS].map((t, i) => (
+            <span key={i} className="ticker-item">{t}</span>
           ))}
         </div>
       </div>
 
-      {/* HERO */}
-      <section className="wl-hero">
-        <div>
-          <div className="wl-hero-tag">
-            <span className="wl-hero-dot"/>
-            Early Access — Limited Spots
-          </div>
-          <h1 className="wl-h1">Career Intelligence,<br/><em>Finally Honest.</em></h1>
-          <p className="wl-hero-sub">Miru V2 decodes campus placements, company culture, and interview realities — with human-verified data and AI precision.</p>
-          <div className="wl-bullets">
-            {BULLETS.map(b=>(
-              <div key={b} className="wl-bullet">
-                <span className="wl-bullet-check"><CheckIcon/></span>
-                {b}
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* ── HERO ── */}
+      <div className="wlp-section">
+        <div className="wlp-hero" style={{ padding: 0 }}>
 
-        {/* FORM */}
-        <div ref={formRef}>
-          <div className="wl-form-wrap">
-            {status==="success" ? (
-              <div className="wl-success">
-                <div className="wl-success-ico"><CheckIcon/></div>
-                <div className="wl-success-t">You're on the list.</div>
-                <div className="wl-success-b">We sent a confirmation to your inbox. You'll be first to access Miru V2.</div>
-              </div>
-            ) : (
-              <>
-                <div className="wl-form-title">Reserve Early Access</div>
-                <div className="wl-form-sub">Be the first to unlock every V2 feature — free.</div>
-                <form onSubmit={submit}>
-                  <label className="wl-label">I am a</label>
-                  <select className="wl-select" value={role} onChange={e=>setRole(e.target.value)}>
-                    <option>Student / Professional</option>
-                    <option>Recruiter / Talent Acq.</option>
-                  </select>
-                  <label className="wl-label">Email address</label>
-                  <input className="wl-input" type="email" placeholder="you@college.edu" value={email} onChange={e=>setEmail(e.target.value)} required/>
-                  <button type="submit" className="wl-submit" disabled={status==="loading"}>
-                    {status==="loading" ? "Joining…" : <><span>Claim My Spot</span><ArrowIcon/></>}
-                  </button>
-                  {status==="error" && <div className="wl-msg-err">{msg}</div>}
-                </form>
-                <div className="wl-privacy">
-                  <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                  No spam. Unsubscribe anytime.
+          {/* Left: text + form */}
+          <div>
+            <span className="wlp-season-badge">Get in before placement season begins</span>
+            <h1 className="wlp-h1">Your next offer letter<br /><span>starts here.</span></h1>
+            <p className="wlp-hero-sub">
+              Miru decodes campus placements, company culture, and interview realities — with human-verified data and AI precision. Built for students who want the truth.
+            </p>
+            <div className="wlp-urgency">
+              <span className="wlp-urgency-dot" />
+              Limited early access — Placement season is close.
+            </div>
+
+            {/* Form */}
+            <div className="wlp-form-card" ref={formRef}>
+              {status === "success" ? (
+                <div className="wlp-success">
+                  <div className="wlp-success-ico">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
+                  <div className="wlp-success-t">You're on the list.</div>
+                  <div className="wlp-success-b">Check your inbox for confirmation. You'll be first when Miru V1 ships.</div>
                 </div>
-              </>
-            )}
+              ) : (
+                <>
+                  <div className="wlp-form-t">Reserve Your Spot</div>
+                  <div className="wlp-form-s">Free, always. Be first when features drop before placement season.</div>
+                  <form onSubmit={submit}>
+                    <label className="wlp-label">I am a</label>
+                    <select className="wlp-select" value={role} onChange={e => setRole(e.target.value)}>
+                      <option>Student / Professional</option>
+                      <option>Recruiter / Talent Acq.</option>
+                    </select>
+                    <label className="wlp-label">Email address</label>
+                    <input className="wlp-input" type="email" placeholder="you@college.edu" value={email} onChange={e => setEmail(e.target.value)} required />
+                    <button className="wlp-submit" type="submit" disabled={status === "loading"}>
+                      {status === "loading" ? "Joining…" : "Claim My Spot →"}
+                    </button>
+                    {status === "error" && <div className="wlp-msg-err">{msg}</div>}
+                  </form>
+                  <div className="wlp-privacy">🔒 No spam. Unsubscribe anytime.</div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Right: image */}
+          <div className="wlp-hero-img-wrap">
+            <img
+              src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=900&q=85&auto=format&fit=crop"
+              alt="Students collaborating on campus"
+            />
+            <span className="wlp-hero-img-label">Campus · Placement · Career</span>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* STATS */}
-      <div className="wl-stats-wrap">
-        <div className="wl-stats-inner">
-          {STATS.map(s=>(
-            <div key={s.l} className="wl-stat">
-              <div className="wl-stat-v">{s.v}</div>
-              <div className="wl-stat-l">{s.l}</div>
+      {/* ── STATS BAR ── */}
+      <div style={{ background: "var(--orange)", padding: "14px 16px" }}>
+        <div className="wlp-stats-row" style={{ maxWidth: 960, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 1 }}>
+          {STATS.map(s => (
+            <div key={s.l} className="wlp-stat" style={{ textAlign: "center", color: "#fff" }}>
+              <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-1px" }}>{s.v}</div>
+              <div style={{ fontSize: 10, opacity: 0.75, textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: 600 }}>{s.l}</div>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="wl-hr"/>
+      <div className="wlp-hr" />
 
-      {/* ABOUT */}
-      <section className="wl-about" ref={aboutRef}>
-        <div>
-          <div className="wl-section-tag">About Miru</div>
-          <div className="wl-about-h">Built for students who ask the uncomfortable questions.</div>
-          <p className="wl-about-p">Miru started as an AI research terminal for funded startups. V2 goes deeper — human-collected campus placement data, verified interview structures, and an AI layer that maps your exact skill trajectory to real salary outcomes.</p>
-          <p className="wl-about-p">No filtered LinkedIn posts. No vague Glassdoor ratings. Just raw, verified intelligence for students who want the truth before they sign the offer letter.</p>
-          <a href="/" className="wl-about-link">Explore Miru V1 →</a>
-        </div>
-        <div className="wl-mission">
-          <div className="wl-mission-accent"/>
-          <h3>Our Mission</h3>
-          <p>Campus recruitment in India is opaque by design. Every student deserves the same insider information the well-connected already have — placement timelines, real interview questions, salary benchmarks, and honest company culture data.</p>
-        </div>
-      </section>
+      {/* ── BENTO GRID ── */}
+      <div className="wlp-section" ref={bentoRef}>
+        <div className="wlp-section-label">What's coming in V1</div>
+        <h2 className="wlp-section-h">Six tools. One terminal.</h2>
+        <p className="wlp-section-sub">Everything a student needs before, during, and after placement season.</p>
 
-      <div className="wl-hr"/>
-
-      {/* FEATURES */}
-      <section className="wl-features" id="features" ref={featRef}>
-        <div className="wl-features-head">
-          <div className="wl-section-tag">What's Coming in V2</div>
-          <div className="wl-features-h2">Six tools. One terminal.<br/>Zero compromises.</div>
-          <p className="wl-features-sub">Joining the waitlist locks in early access the moment any feature ships.</p>
-        </div>
-        <div className="wl-feat-grid">
-          {FEATURES.map(f=>(
-            <div key={f.t} className="wl-feat">
-              <div className="wl-feat-ico">{f.icon}</div>
-              <div className="wl-feat-t">{f.t}</div>
-              <div className="wl-feat-d">{f.d}</div>
-              <span className="wl-feat-pill">V2 Feature</span>
+        <div className="wlp-bento">
+          {BENTO.map((b, i) => (
+            <div key={i} className={`wlp-bento-card ${b.span} ${b.orange ? "wlp-bento-orange" : ""}`}>
+              {b.img && (
+                <img className={`wlp-bento-img${b.tall ? " tall" : ""}`} src={b.img} alt={b.imgAlt} loading="lazy" />
+              )}
+              <div className="wlp-bento-body">
+                <span className="wlp-bento-tag">{b.tag}</span>
+                <div className="wlp-bento-t">{b.title}</div>
+                <div className="wlp-bento-d">{b.desc}</div>
+              </div>
             </div>
           ))}
         </div>
-      </section>
+      </div>
 
-      {/* BOTTOM CTA */}
-      <section className="wl-cta" ref={ctaRef}>
-        <div className="wl-cta-inner">
-          <div className="wl-section-tag" style={{textAlign:"center",marginBottom:14}}>Don't Wait</div>
-          <div className="wl-cta-h">Your next offer letter<br/>starts here.</div>
-          <p className="wl-cta-p">Early access is free, always. Get in before the queue closes.</p>
-          <button className="wl-cta-action" onClick={scrollForm}>
-            Join the Waitlist <ArrowIcon/>
-          </button>
-        </div>
-      </section>
+      <div className="wlp-hr" />
 
-      {/* FOOTER */}
-      <footer className="wl-footer">
-        <div className="wl-fticker" aria-hidden="true">
-          <div className="wl-fticker-track">
-            {[...TICKERS,...TICKERS,...TICKERS].map((t,i)=>(
-              <span key={i} className="wl-fticker-item">{t}</span>
-            ))}
-          </div>
-        </div>
-        <div className="wl-footer-body">
-          <div>
-            <div className="wl-fbrand-logo">
-              <span className="wl-logo-box">M</span>
-              <span className="wl-fbrand-name">Miru</span>
-            </div>
-            <p className="wl-fbrand-tag">The intelligence terminal for the next generation of career-focused students and job seekers.</p>
-          </div>
-          <div>
-            <div className="wl-fcol-t">Product</div>
-            <div className="wl-flinks">
-              <a href="/" className="wl-flink">Miru V1</a>
-              <a href="/waitlist" className="wl-flink">V2 Waitlist</a>
-              <a href="/#discover" className="wl-flink">Discover Startups</a>
+      {/* ── BOTTOM CTA BAND ── */}
+      <div className="wlp-cta-band">
+        <h2>Don't miss the season.</h2>
+        <p>Placement season comes once a year. Get in now — it's free, always.</p>
+        <button className="wlp-cta-band-btn" onClick={scrollForm}>
+          Join the Waitlist →
+        </button>
+      </div>
+
+      {/* ── FOOTER ── */}
+      <footer className="wlp-footer">
+        <div className="wlp-footer-inner">
+          <div className="wlp-fmarquee-wrap" aria-hidden="true">
+            <div className="wlp-fmarquee-track">
+              {[...TICKERS, ...TICKERS, ...TICKERS].map((t, i) => (
+                <span key={i} className="wlp-fmarquee-item">{t}</span>
+              ))}
             </div>
           </div>
-          <div>
-            <div className="wl-fcol-t">Legal</div>
-            <div className="wl-flinks">
-              <a href="#" className="wl-flink">Privacy Policy</a>
-              <a href="#" className="wl-flink">Terms of Service</a>
+          <div className="wlp-fgrid">
+            <div>
+              <div className="wlp-flogo">
+                <span className="wlp-flogo-box">M</span>
+                <span className="wlp-flogo-text">Miru</span>
+              </div>
+              <p className="wlp-ftagline">The intelligence terminal for India's next generation of job seekers.</p>
+            </div>
+            <div>
+              <div className="wlp-fcol-t">Product</div>
+              <div className="wlp-flinks">
+                <a href="/" className="wlp-flink">Miru Home</a>
+                <a href="/#discover" className="wlp-flink">Discover Startups</a>
+                <a href="/waitlist" className="wlp-flink">Join Waitlist</a>
+              </div>
+            </div>
+            <div>
+              <div className="wlp-fcol-t">Legal</div>
+              <div className="wlp-flinks">
+                <a href="#" className="wlp-flink">Privacy Policy</a>
+                <a href="#" className="wlp-flink">Terms of Service</a>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="wl-footer-bottom">
-          <span className="wl-fcopy">© 2026 Miru Intelligence. All rights reserved.</span>
-          <span className="wl-fmade">Made with <span className="wl-fheart">♥</span> in India</span>
-          <button className="wl-backtop" onClick={()=>window.scrollTo({top:0,behavior:"smooth"})}>
-            <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 15l7-7 7 7"/></svg>
-            Back to top
-          </button>
+          <div className="wlp-fbot">
+            <span className="wlp-fcopy">© 2026 Miru Intelligence. All rights reserved.</span>
+            <span className="wlp-fcopy">Made with <span className="wlp-fheart">♥</span> in India</span>
+            <button className="wlp-backtop" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>↑ Back to top</button>
+          </div>
         </div>
       </footer>
     </div>
