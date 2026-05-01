@@ -3,34 +3,32 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import BlogDrawer from "@/app/components/BlogDrawer";
 
-// react-markdown is optional — render plain text fallback if not installed
-let ReactMarkdown;
-try { ReactMarkdown = require("react-markdown").default; } catch {}
-
 export default function BlogPostClient({ blog, sectionsParam }) {
   const router = useRouter();
-  const [selectedSectionIds, setSelectedSectionIds] = useState([]);
+  const [selectedIndices, setSelectedIndices] = useState([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
+  // Parse sections param on mount / change
   useEffect(() => {
-    if (sectionsParam) {
-      setSelectedSectionIds(sectionsParam.split(",").filter(Boolean));
+    if (!blog) return;
+    if (!sectionsParam || sectionsParam === "all") {
+      // All sections
+      setSelectedIndices(blog.sections.map((_, i) => i));
     } else {
-      setSelectedSectionIds(blog.sections.map((s) => s.id));
+      const parsed = sectionsParam
+        .split(",")
+        .map(Number)
+        .filter((n) => !isNaN(n) && n >= 0 && n < blog.sections.length);
+      setSelectedIndices(parsed.length > 0 ? parsed : blog.sections.map((_, i) => i));
     }
-  }, [sectionsParam, blog.id]);
+  }, [sectionsParam, blog?.id]);
 
-  const totalReadTime = blog.sections.reduce(
-    (acc, curr) => acc + curr.readTime,
-    0
-  );
-  const selectedSections = blog.sections.filter((s) =>
-    selectedSectionIds.includes(s.id)
-  );
-  const personalizedReadTime = selectedSections.reduce(
-    (acc, curr) => acc + curr.readTime,
-    0
-  );
+  if (!blog) return null;
+
+  const totalReadTime = blog.sections.reduce((a, s) => a + s.readTimeMinutes, 0);
+  const selectedSections = blog.sections.filter((_, i) => selectedIndices.includes(i));
+  const personalizedReadTime = selectedSections.reduce((a, s) => a + s.readTimeMinutes, 0);
+  const allSelected = selectedIndices.length === blog.sections.length;
 
   return (
     <div className="sp-root">
@@ -42,80 +40,81 @@ export default function BlogPostClient({ blog, sectionsParam }) {
             Miru
           </a>
           <nav className="header-nav">
-            <button
-              className="nav-tab"
-              onClick={() => router.push("/blogs")}
-            >
-              ← All Blogs
-            </button>
-            <button className="nav-tab" onClick={() => router.push("/")}>
-              Back to App
-            </button>
+            <button className="nav-tab" onClick={() => router.push("/blogs")}>← Blogs</button>
           </nav>
         </div>
       </div>
 
-      <div className="blog-page-wrap">
+      <article className="blog-page-wrap">
+        {/* Hero image */}
         <img
           src={blog.image}
           alt={blog.headline}
           className="blog-page-img"
         />
 
+        {/* Title */}
         <h1 className="blog-page-title">{blog.headline}</h1>
 
+        {/* Personalized read time */}
         <div className="blog-read-time">
-          {personalizedReadTime < totalReadTime ? (
-            <>
-              <span className="blog-read-time-strike">
-                {totalReadTime} min read
-              </span>
-              <span className="blog-read-time-actual">
-                {personalizedReadTime} min personalized read
-              </span>
-            </>
+          {allSelected ? (
+            <span className="blog-read-actual">{totalReadTime} min read</span>
           ) : (
-            <span className="blog-read-time-actual">
-              {totalReadTime} min read
-            </span>
+            <>
+              <span className="blog-read-strike">{totalReadTime} min read</span>
+              <span className="blog-read-actual">{personalizedReadTime} min personalized read</span>
+            </>
           )}
         </div>
 
-        <div className="blog-section-content">
-          {selectedSections.map((section) => (
-            <div key={section.id}>
-              {ReactMarkdown ? (
-                <ReactMarkdown>{section.content}</ReactMarkdown>
-              ) : (
-                <p style={{ whiteSpace: "pre-wrap" }}>{section.content}</p>
-              )}
-            </div>
+        {/* Selected section tags */}
+        <div className="blog-section-tags">
+          {blog.sections.map((s, i) => (
+            <span
+              key={i}
+              className={`blog-section-tag ${selectedIndices.includes(i) ? "active" : "inactive"}`}
+            >
+              {s.title}
+            </span>
           ))}
         </div>
 
-        {selectedSections.length === 0 && (
-          <div className="empty-wrap">
-            <div className="empty-title">No sections selected</div>
-            <div className="empty-desc">
-              Click &quot;Change Preferences&quot; to pick what you want to
-              read.
+        {/* Content sections — only selected ones */}
+        <div className="blog-content">
+          {selectedSections.length === 0 ? (
+            <div className="blog-empty">
+              <p>No sections selected.</p>
+              <button className="drawer-go-btn" onClick={() => setIsDrawerOpen(true)}>
+                Pick Sections
+              </button>
             </div>
-          </div>
-        )}
+          ) : (
+            selectedSections.map((section, i) => (
+              <section key={i} className="blog-section">
+                <h2 className="blog-section-title">{section.title}</h2>
+                <p className="blog-section-body">{section.content}</p>
+                <div className="blog-section-readtime">{section.readTimeMinutes} min read</div>
+              </section>
+            ))
+          )}
+        </div>
 
+        {/* Change preferences button */}
         <button
-          className="blog-preferences-btn"
+          className="blog-prefs-btn"
           onClick={() => setIsDrawerOpen(true)}
+          aria-label="Change reading preferences"
         >
-          Change Preferences
+          ✦ Change Preferences
         </button>
-      </div>
+      </article>
 
+      {/* Preference drawer */}
       <BlogDrawer
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         blog={blog}
-        initialSections={selectedSectionIds}
       />
     </div>
   );

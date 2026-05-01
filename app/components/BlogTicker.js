@@ -1,82 +1,147 @@
 "use client";
-import { useState, useEffect } from "react";
-import { dummyBlogs } from "@/lib/blogs";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { blogs } from "@/lib/blogs";
 
 export default function BlogTicker({ onBlogClick }) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [animState, setAnimState] = useState("active"); // "enter", "active", "exit"
+  const [animState, setAnimState] = useState("active"); // "active" | "exit-left" | "exit-right" | "enter-right" | "enter-left"
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  // Drag/swipe state
+  const dragStartX = useRef(null);
+  const isDragging = useRef(false);
+  const timerRef = useRef(null);
+
+  const goTo = useCallback((nextIndex, direction = "left") => {
+    if (isAnimating) return;
+    setIsAnimating(true);
+
+    // Exit current slide in the specified direction
+    setAnimState(direction === "left" ? "exit-left" : "exit-right");
+
+    setTimeout(() => {
+      setCurrentIndex(nextIndex);
+      setAnimState(direction === "left" ? "enter-right" : "enter-left");
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setAnimState("active");
+          setTimeout(() => setIsAnimating(false), 500);
+        });
+      });
+    }, 450);
+  }, [isAnimating]);
+
+  const goNext = useCallback(() => {
+    const next = (currentIndex + 1) % blogs.length;
+    goTo(next, "left");
+  }, [currentIndex, goTo]);
+
+  const goPrev = useCallback(() => {
+    const prev = (currentIndex - 1 + blogs.length) % blogs.length;
+    goTo(prev, "right");
+  }, [currentIndex, goTo]);
+
+  // Auto-advance timer
+  const resetTimer = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      goNext();
+    }, 5000);
+  }, [goNext]);
 
   useEffect(() => {
-    // 5 second cycle:
-    // 0s -> "active" (headline is visible)
-    // 4.4s -> "exit" (starts sliding out)
-    // 5.0s -> increment index, set to "enter" (starts sliding in)
-    // 5.1s -> "active" (slides into view)
+    resetTimer();
+    return () => clearInterval(timerRef.current);
+  }, [resetTimer]);
 
-    const cycleInterval = setInterval(() => {
-      setAnimState("exit");
-      
-      setTimeout(() => {
-        setCurrentIndex(prev => (prev + 1) % dummyBlogs.length);
-        setAnimState("enter");
-        
-        // Small delay to allow React to render the "enter" state before moving to "active"
-        setTimeout(() => {
-          setAnimState("active");
-        }, 50);
-      }, 600); // 600ms matches the CSS transition duration
-      
-    }, 5000);
+  // Touch handlers
+  const handleTouchStart = (e) => {
+    dragStartX.current = e.touches[0].clientX;
+    isDragging.current = true;
+  };
 
-    return () => clearInterval(cycleInterval);
-  }, []);
+  const handleTouchEnd = (e) => {
+    if (!isDragging.current || dragStartX.current === null) return;
+    const delta = dragStartX.current - e.changedTouches[0].clientX;
+    isDragging.current = false;
+    dragStartX.current = null;
+
+    if (Math.abs(delta) > 40) {
+      resetTimer();
+      delta > 0 ? goNext() : goPrev();
+    }
+  };
+
+  // Mouse drag handlers (desktop)
+  const handleMouseDown = (e) => {
+    dragStartX.current = e.clientX;
+    isDragging.current = true;
+  };
+
+  const handleMouseUp = (e) => {
+    if (!isDragging.current || dragStartX.current === null) return;
+    const delta = dragStartX.current - e.clientX;
+    isDragging.current = false;
+    dragStartX.current = null;
+
+    if (Math.abs(delta) > 40) {
+      resetTimer();
+      delta > 0 ? goNext() : goPrev();
+    }
+  };
+
+  const handleMouseLeave = () => {
+    isDragging.current = false;
+    dragStartX.current = null;
+  };
+
+  const handleClick = (e) => {
+    // Only fire click if not a drag
+    if (Math.abs(dragStartX.current) > 0) return;
+    onBlogClick?.(blogs[currentIndex]);
+  };
+
+  const blog = blogs[currentIndex];
 
   return (
-    <div className="ticker-wrap" aria-label="Blog Ticker">
-      <div className="blog-ticker-track">
-        {dummyBlogs.map((blog, idx) => {
-          // Determine class based on index
-          let className = "blog-ticker-item";
-          if (idx === currentIndex) {
-            className += ` ${animState}`;
-          } else if (
-            (idx === currentIndex - 1) || 
-            (currentIndex === 0 && idx === dummyBlogs.length - 1)
-          ) {
-            // Previous item might still be exiting
-            if (animState === "enter") {
-              className += " exit";
-            } else {
-               className += " exit"; // Just keep it off-screen left
-               // Actually we want it to stay out of sight unless it's the active one exiting.
-               // Let's rely on standard 'enter' / 'exit' classes
-            }
-          } else {
-             // By default, non-active items should just be in 'enter' state (off-screen right)
-             // to prepare for when they become active.
-             className += " enter";
-          }
+    <div className="ticker-wrap">
+      {/* Slide track */}
+      <div
+        className="ticker-track"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
+      >
+        <div
+          className={`ticker-headline ${animState}`}
+          onClick={handleClick}
+          role="button"
+          tabIndex={0}
+          aria-label={`Read blog: ${blog.headline}`}
+          onKeyDown={(e) => e.key === "Enter" && onBlogClick?.(blog)}
+        >
+          <span className="ticker-label">Miru Insights</span>
+          <span className="ticker-text">{blog.headline}</span>
+          <span className="ticker-cta">Read →</span>
+        </div>
+      </div>
 
-          // A simpler approach for the classes:
-          let itemClass = "blog-ticker-item";
-          if (idx === currentIndex) {
-            itemClass += ` ${animState}`;
-          } else if (idx === (currentIndex === 0 ? dummyBlogs.length - 1 : currentIndex - 1)) {
-            itemClass += " exit"; // Previous item stays on the left
-          } else {
-            itemClass += " enter"; // Next items wait on the right
-          }
-
-          return (
-            <div 
-              key={blog.id} 
-              className={itemClass}
-              onClick={() => onBlogClick(blog)}
-            >
-              {blog.headline}
-            </div>
-          );
-        })}
+      {/* Dot indicators */}
+      <div className="ticker-dots" aria-hidden="true">
+        {blogs.map((_, i) => (
+          <button
+            key={i}
+            className={`ticker-dot ${i === currentIndex ? "active" : ""}`}
+            onClick={() => {
+              resetTimer();
+              goTo(i, i > currentIndex ? "left" : "right");
+            }}
+            aria-label={`Go to blog ${i + 1}`}
+          />
+        ))}
       </div>
     </div>
   );

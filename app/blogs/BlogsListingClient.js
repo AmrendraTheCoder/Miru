@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import BlogDrawer from "@/app/components/BlogDrawer";
 
@@ -8,9 +8,13 @@ export default function BlogsListingClient({ blogs }) {
   const [selectedBlog, setSelectedBlog] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  const handleBlogClick = (blog) => {
+  const openDrawer = (blog) => {
     setSelectedBlog(blog);
     setIsDrawerOpen(true);
+  };
+
+  const closeDrawer = () => {
+    setIsDrawerOpen(false);
   };
 
   return (
@@ -23,31 +27,34 @@ export default function BlogsListingClient({ blogs }) {
             Miru
           </a>
           <nav className="header-nav">
-            <button className="nav-tab active" onClick={() => router.push("/blogs")}>Blogs</button>
-            <button className="nav-tab" onClick={() => router.push("/")}>Back to App</button>
+            <button className="nav-tab" onClick={() => router.push("/")}>← App</button>
           </nav>
         </div>
       </div>
 
       <div className="blog-list-wrap">
-        <h1 className="blog-list-title">Explore Miru Insights</h1>
+        <div className="blog-list-header">
+          <h1 className="blog-list-title">Miru Insights</h1>
+          <p className="blog-list-subtitle">
+            Deep-dive reads on startup funding, founder playbooks, and market intelligence.
+          </p>
+        </div>
 
         <div className="blog-list-grid">
           {blogs.map((blog) => {
             const totalReadTime = blog.sections.reduce(
-              (acc, curr) => acc + curr.readTime,
-              0
+              (acc, s) => acc + s.readTimeMinutes, 0
             );
 
             return (
               <article
                 key={blog.id}
                 className="blog-card"
-                onClick={() => handleBlogClick(blog)}
+                onClick={() => openDrawer(blog)}
                 role="button"
                 tabIndex={0}
-                aria-label={`Read: ${blog.headline}`}
-                onKeyDown={(e) => e.key === "Enter" && handleBlogClick(blog)}
+                aria-label={`Preview: ${blog.headline}`}
+                onKeyDown={(e) => e.key === "Enter" && openDrawer(blog)}
               >
                 <img
                   src={blog.image}
@@ -58,8 +65,9 @@ export default function BlogsListingClient({ blogs }) {
                 <div className="blog-card-body">
                   <h2 className="blog-card-title">{blog.headline}</h2>
                   <p className="blog-card-desc">{blog.description}</p>
-                  <div className="blog-card-meta">
-                    {totalReadTime} min total read
+                  <div className="blog-card-footer">
+                    <span className="blog-card-meta">{totalReadTime} min read</span>
+                    <span className="blog-card-sections">{blog.sections.length} sections</span>
                   </div>
                 </div>
               </article>
@@ -70,7 +78,7 @@ export default function BlogsListingClient({ blogs }) {
 
       <BlogDrawer
         isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
+        onClose={closeDrawer}
         blog={selectedBlog}
       />
     </div>
