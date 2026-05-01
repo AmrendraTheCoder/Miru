@@ -1,12 +1,15 @@
 /**
- * Dynamic Sitemap — tells Google about every startup page on Miru.
+ * Dynamic Sitemap — tells Google about every page on Miru.
  * Sources:
  *   1. startup_reports — deeply researched companies (highest priority)
  *   2. yc_companies    — all 2000+ YC companies (base coverage)
- *   3. Trending news companies (hardcoded seeds for crawl bootstrap)
+ *   3. blogs           — all blog posts (static, from lib/blogs.js)
+ *   4. Static tab routes — feed, discover, jobs, waitlist
+ *   5. Trending seed companies (hardcoded bootstrap)
  */
 
 import { getSupabaseServer } from "@/lib/supabase";
+import { dummyBlogs } from "@/lib/blogs";
 
 const BASE_URL = "https://miru-1.vercel.app";
 
@@ -14,8 +17,7 @@ function toSlug(name = "") {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
-// Seed list — ensures Google crawls these high-traffic company pages
-// even before they get researched by a user
+// Seed list — ensures Google crawls high-traffic company pages
 const SEED_COMPANIES = [
   "Airbnb", "Stripe", "Coinbase", "DoorDash", "Dropbox", "Brex", "Gusto",
   "Scale AI", "OpenAI", "Anthropic", "Notion", "Linear", "Figma", "Vercel",
@@ -27,12 +29,23 @@ export default async function sitemap() {
   const db = getSupabaseServer();
   const now = new Date().toISOString();
 
-  // ── Static pages ──────────────────────────────────────────────
+  // ── Static / tab pages ────────────────────────────────────────
   const staticPages = [
-    { url: BASE_URL, priority: 1.0, changeFrequency: "daily" },
-    { url: `${BASE_URL}/#discover`, priority: 0.8, changeFrequency: "weekly" },
-    { url: `${BASE_URL}/#feed`, priority: 0.8, changeFrequency: "daily" },
+    { url: BASE_URL,                        priority: 1.0, changeFrequency: "daily"  },
+    { url: `${BASE_URL}/feed`,              priority: 0.9, changeFrequency: "daily"  },
+    { url: `${BASE_URL}/discover`,          priority: 0.9, changeFrequency: "weekly" },
+    { url: `${BASE_URL}/jobs`,              priority: 0.8, changeFrequency: "daily"  },
+    { url: `${BASE_URL}/blogs`,             priority: 0.8, changeFrequency: "weekly" },
+    { url: `${BASE_URL}/waitlist`,          priority: 0.5, changeFrequency: "monthly"},
   ];
+
+  // ── Blog post pages (from lib/blogs.js) ───────────────────────
+  const blogPages = dummyBlogs.map((b) => ({
+    url: `${BASE_URL}/blogs/${b.id}`,
+    lastModified: now,
+    priority: 0.7,
+    changeFrequency: "weekly",
+  }));
 
   // ── Deeply researched startup pages (highest priority) ────────
   let reportPages = [];
@@ -81,7 +94,7 @@ export default async function sitemap() {
 
   // Merge: reports override yc_companies override seeds
   // Higher-priority sources first so dedup keeps them
-  const allPages = [...staticPages, ...reportPages, ...seedPages, ...companyPages];
+  const allPages = [...staticPages, ...blogPages, ...reportPages, ...seedPages, ...companyPages];
   const seen = new Set();
   const deduplicated = allPages.filter((p) => {
     if (seen.has(p.url)) return false;

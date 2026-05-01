@@ -1,67 +1,64 @@
-"use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { dummyBlogs } from "@/lib/blogs";
-import BlogDrawer from "@/app/components/BlogDrawer";
+import BlogsListingClient from "./BlogsListingClient";
 
-export default function BlogsListing() {
-  const router = useRouter();
-  const [selectedBlog, setSelectedBlog] = useState(null);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+const BASE_URL = "https://miru-1.vercel.app";
 
-  const handleBlogClick = (blog) => {
-    setSelectedBlog(blog);
-    setIsDrawerOpen(true);
+export const metadata = {
+  title: "Miru Insights — Startup Blogs, Funding Breakdowns & Founder Guides",
+  description:
+    "In-depth startup blogs on funding landscapes, founder playbooks, product interview prep, and YC batch breakdowns. Personalized reading for builders and students.",
+  keywords:
+    "startup blog, YC startups, founder insights, funding breakdown, product interview prep, Miru insights, startup news",
+  openGraph: {
+    title: "Miru Insights — Startup Blogs & Founder Guides",
+    description:
+      "Deep-dive blogs on startup funding, founders, and how to crack product interviews at top companies.",
+    url: `${BASE_URL}/blogs`,
+    type: "website",
+    siteName: "Miru",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Miru Insights — Startup Blogs",
+    description:
+      "Funding breakdowns, founder guides, placement prep — personalized for you.",
+  },
+  alternates: { canonical: `${BASE_URL}/blogs` },
+};
+
+// JSON-LD: BlogPosting list → helps Google show sitelinks
+function BlogListJsonLd() {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    name: "Miru Insights",
+    description:
+      "Startup intelligence blogs — funding, founders, and placement guides.",
+    url: `${BASE_URL}/blogs`,
+    blogPost: dummyBlogs.map((b) => ({
+      "@type": "BlogPosting",
+      headline: b.headline,
+      description: b.description,
+      url: `${BASE_URL}/blogs/${b.id}`,
+      image: b.image,
+      timeRequired: `PT${b.sections.reduce((a, s) => a + s.readTime, 0)}M`,
+    })),
   };
 
   return (
-    <div className="sp-root">
-      {/* Header */}
-      <div className="header">
-        <div className="header-inner">
-          <a className="header-logo" href="/">
-            <span className="header-logo-box">M</span>
-            Miru
-          </a>
-          <nav className="header-nav">
-            <button className="nav-tab active" onClick={() => router.push("/blogs")}>Blogs</button>
-            <button className="nav-tab" onClick={() => router.push("/")}>Back to App</button>
-          </nav>
-        </div>
-      </div>
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
 
-      <div className="blog-list-wrap">
-        <h1 className="blog-list-title">Explore Miru Insights</h1>
-        
-        <div className="blog-list-grid">
-          {dummyBlogs.map(blog => {
-            const totalReadTime = blog.sections.reduce((acc, curr) => acc + curr.readTime, 0);
-            
-            return (
-              <div 
-                key={blog.id} 
-                className="blog-card"
-                onClick={() => handleBlogClick(blog)}
-              >
-                <img src={blog.image} alt={blog.headline} className="blog-card-img" />
-                <div className="blog-card-body">
-                  <h2 className="blog-card-title">{blog.headline}</h2>
-                  <p className="blog-card-desc">{blog.description}</p>
-                  <div className="blog-card-meta">
-                    {totalReadTime} min total read
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <BlogDrawer 
-        isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        blog={selectedBlog}
-      />
-    </div>
+// Server component — renders the JSON-LD + hands off to client for interactivity
+export default function BlogsPage() {
+  return (
+    <>
+      <BlogListJsonLd />
+      <BlogsListingClient blogs={dummyBlogs} />
+    </>
   );
 }
