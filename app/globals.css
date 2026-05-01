@@ -2022,7 +2022,7 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 /* ── Floating Nav ── */
 .floating-nav-wrap {
   position: fixed;
-  bottom: 24px;
+  bottom: 74px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 90;
@@ -2072,7 +2072,7 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   left: auto;
   right: 24px;
   transform: none;
-  bottom: 24px;
+  bottom: 74px;
 }
 
 .floating-nav-icon {

@@ -1,99 +1,145 @@
-"use client";
-import { useState, useEffect } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+/**
+ * /blogs/[id] — Server-rendered personalized blog page
+ * 
+ * SEO features:
+ *  - generateMetadata: unique title/description/OG per blog
+ *  - generateStaticParams: pre-render all blog IDs at build time
+ *  - JSON-LD: BlogPosting + BreadcrumbList schema
+ *  - ISR: revalidate every 24h
+ */
+
 import { dummyBlogs } from "@/lib/blogs";
-import BlogDrawer from "@/app/components/BlogDrawer";
-import ReactMarkdown from 'react-markdown';
+import { notFound } from "next/navigation";
+import BlogPostClient from "./BlogPostClient";
 
-export default function BlogPost() {
-  const params = useParams();
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  
-  const [blog, setBlog] = useState(null);
-  const [selectedSectionIds, setSelectedSectionIds] = useState([]);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+const BASE_URL = "https://miru-1.vercel.app";
 
-  useEffect(() => {
-    if (!params.id) return;
-    
-    const foundBlog = dummyBlogs.find(b => b.id === params.id);
-    if (!foundBlog) {
-      router.push("/blogs");
-      return;
-    }
-    
-    setBlog(foundBlog);
-    
-    const sectionsParam = searchParams.get("sections");
-    if (sectionsParam) {
-      setSelectedSectionIds(sectionsParam.split(","));
-    } else {
-      // Default to all if none provided
-      setSelectedSectionIds(foundBlog.sections.map(s => s.id));
-    }
-  }, [params.id, searchParams]);
+// ── Pre-render all blog IDs at build time ────────────────────────
+export function generateStaticParams() {
+  return dummyBlogs.map((b) => ({ id: b.id }));
+}
 
-  if (!blog) return null;
+// ── Unique metadata per blog ─────────────────────────────────────
+export async function generateMetadata({ params }) {
+  const { id } = await params;
+  const blog = dummyBlogs.find((b) => b.id === id);
+  if (!blog) return { title: "Blog Not Found | Miru" };
 
-  const totalReadTime = blog.sections.reduce((acc, curr) => acc + curr.readTime, 0);
-  const selectedSections = blog.sections.filter(s => selectedSectionIds.includes(s.id));
-  const personalizedReadTime = selectedSections.reduce((acc, curr) => acc + curr.readTime, 0);
+  const totalReadTime = blog.sections.reduce((a, s) => a + s.readTime, 0);
+
+  return {
+    title: `${blog.headline} | Miru Insights`,
+    description: blog.description,
+    keywords: [
+      "startup blog",
+      "Miru insights",
+      blog.headline,
+      ...blog.sections.map((s) => s.label),
+    ]
+      .filter(Boolean)
+      .join(", "),
+    openGraph: {
+      title: blog.headline,
+      description: blog.description,
+      url: `${BASE_URL}/blogs/${id}`,
+      type: "article",
+      siteName: "Miru",
+      images: blog.image ? [{ url: blog.image, alt: blog.headline }] : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: blog.headline,
+      description: blog.description,
+    },
+    alternates: { canonical: `${BASE_URL}/blogs/${id}` },
+    other: {
+      "article:published_time": new Date().toISOString(),
+      "article:section": "Startup Intelligence",
+    },
+  };
+}
+
+// ── JSON-LD: BlogPosting + BreadcrumbList ─────────────────────────
+function BlogPostJsonLd({ blog }) {
+  const totalReadTime = blog.sections.reduce((a, s) => a + s.readTime, 0);
+
+  const article = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: blog.headline,
+    description: blog.description,
+    image: blog.image,
+    url: `${BASE_URL}/blogs/${blog.id}`,
+    datePublished: new Date().toISOString(),
+    dateModified: new Date().toISOString(),
+    timeRequired: `PT${totalReadTime}M`,
+    publisher: {
+      "@type": "Organization",
+      name: "Miru",
+      url: BASE_URL,
+      logo: {
+        "@type": "ImageObject",
+        url: `${BASE_URL}/apple-icon.svg`,
+      },
+    },
+    author: {
+      "@type": "Organization",
+      name: "Miru Insights Team",
+      url: BASE_URL,
+    },
+    keywords: blog.sections.map((s) => s.label).join(", "),
+  };
+
+  const breadcrumb = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Miru", item: BASE_URL },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Blogs",
+        item: `${BASE_URL}/blogs`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: blog.headline,
+        item: `${BASE_URL}/blogs/${blog.id}`,
+      },
+    ],
+  };
 
   return (
-    <div className="sp-root">
-      {/* Header */}
-      <div className="header">
-        <div className="header-inner">
-          <a className="header-logo" href="/">
-            <span className="header-logo-box">M</span>
-            Miru
-          </a>
-          <nav className="header-nav">
-            <button className="nav-tab active" onClick={() => router.push("/blogs")}>Blogs</button>
-            <button className="nav-tab" onClick={() => router.push("/")}>Back to App</button>
-          </nav>
-        </div>
-      </div>
-
-      <div className="blog-page-wrap">
-        <img src={blog.image} alt={blog.headline} className="blog-page-img" />
-        
-        <h1 className="blog-page-title">{blog.headline}</h1>
-        
-        <div className="blog-read-time">
-          {personalizedReadTime < totalReadTime ? (
-            <>
-              <span className="blog-read-time-strike">{totalReadTime} min read</span>
-              <span className="blog-read-time-actual">{personalizedReadTime} min personalized read</span>
-            </>
-          ) : (
-            <span className="blog-read-time-actual">{totalReadTime} min read</span>
-          )}
-        </div>
-
-        <div className="blog-section-content">
-          {selectedSections.map(section => (
-            <div key={section.id}>
-              <ReactMarkdown>{section.content}</ReactMarkdown>
-            </div>
-          ))}
-        </div>
-
-        <button 
-          className="blog-preferences-btn"
-          onClick={() => setIsDrawerOpen(true)}
-        >
-          Change Preferences
-        </button>
-      </div>
-
-      <BlogDrawer 
-        isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        blog={blog}
-        initialSections={selectedSectionIds}
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(article) }}
       />
-    </div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }}
+      />
+    </>
   );
 }
+
+// ── Page component (server) ──────────────────────────────────────
+export default async function BlogPostPage({ params, searchParams }) {
+  const { id } = await params;
+  const blog = dummyBlogs.find((b) => b.id === id);
+
+  if (!blog) notFound();
+
+  const sp = await searchParams;
+  const sectionsParam = sp?.sections || null;
+
+  return (
+    <>
+      <BlogPostJsonLd blog={blog} />
+      <BlogPostClient blog={blog} sectionsParam={sectionsParam} />
+    </>
+  );
+}
+
+export const revalidate = 86400; // ISR — revalidate every 24h
