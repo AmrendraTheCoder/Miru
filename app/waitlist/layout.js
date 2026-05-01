@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Miru V2 Early Access | The Future of Career Intelligence",
+  title: "V2.0",
   description: "Join the exclusive waitlist for Miru V2. Access 5-year campus placement trends, anonymous reality trackers, verified interview intel, and AI salary predictors.",
   openGraph: {
     title: "Miru V2 Early Access",
