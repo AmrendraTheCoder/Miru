@@ -2074,14 +2074,14 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
    FLOATING NAV - INTERACTIVE GLASS GRADIENT
    ══════════════════════════════════════════════════════ */
 :root {
-  --fn-bg1: rgba(10, 10, 10, 0.5);
-  --fn-bg2: rgba(15, 12, 10, 0.5);
-  --fn-c1: 150, 50, 20;
-  --fn-c2: 120, 40, 10;
-  --fn-c3: 180, 60, 25;
-  --fn-c4: 100, 30, 5;
-  --fn-c5: 140, 45, 15;
-  --fn-int: 200, 70, 30;
+  --fn-bg1: rgba(20, 15, 10, 0.6);
+  --fn-bg2: rgba(30, 15, 5, 0.6);
+  --fn-c1: 220, 80, 40;
+  --fn-c2: 255, 120, 50;
+  --fn-c3: 200, 60, 20;
+  --fn-c4: 255, 150, 80;
+  --fn-c5: 180, 50, 10;
+  --fn-int: 255, 100, 40;
   --fn-size: 150px;
   --fn-blend: hard-light;
 }
@@ -2180,7 +2180,10 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 }
 
 .floating-nav-icon {
-  background: var(--orange);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
   color: #fff;
   width: 56px;
   height: 56px;
@@ -2188,7 +2191,7 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 32px rgba(255, 102, 0, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.3);
   cursor: pointer;
   font-weight: 600;
   font-size: 12px;

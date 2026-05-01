@@ -93,8 +93,24 @@ export default function FloatingBlogNav() {
   return (
     <div className={`floating-nav-wrap ${isCollapsed ? "floating-nav-icon-mode" : ""}`}>
       {isCollapsed ? (
-        <div className="floating-nav-icon" onClick={expand}>
-          Blogs
+        <div className="floating-nav-icon" ref={navRef} onClick={expand}>
+          {/* Animated Background Elements */}
+          <div className="nav-gradients-container">
+            <div className="nav-g1"></div>
+            <div className="nav-g2"></div>
+            <div className="nav-g3"></div>
+            <div className="nav-g4"></div>
+            <div className="nav-g5"></div>
+            <div className="nav-interactive" ref={interBubbleRef}></div>
+          </div>
+          <svg className="nav-noiseBg" viewBox="0 0 100 100" xmlns='http://www.w3.org/2000/svg' preserveAspectRatio="none">
+            <rect width='100%' height='100%' filter='url(#noiseFilterBg)' />
+          </svg>
+          
+          {/* Nav Content */}
+          <div className="floating-nav-content">
+            Blogs
+          </div>
         </div>
       ) : (
         <div className="floating-nav-bar" ref={navRef} onClick={navigateToBlogs}>
@@ -113,15 +129,6 @@ export default function FloatingBlogNav() {
             </filter>
             <rect width='100%' height='100%' filter='url(#noiseFilterBg)' />
           </svg>
-          <svg xmlns="http://www.w3.org/2000/svg" className="nav-svgBlur" style={{ display: 'none' }}>
-            <defs>
-              <filter id="goo">
-                <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
-                <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -8" result="goo" />
-                <feBlend in="SourceGraphic" in2="goo" />
-              </filter>
-            </defs>
-          </svg>
           
           {/* Nav Content */}
           <div className="floating-nav-content">
@@ -129,6 +136,17 @@ export default function FloatingBlogNav() {
           </div>
         </div>
       )}
+      
+      {/* SVG Filters (Must always be in DOM) */}
+      <svg xmlns="http://www.w3.org/2000/svg" className="nav-svgBlur" style={{ display: 'none' }}>
+        <defs>
+          <filter id="goo">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+            <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -8" result="goo" />
+            <feBlend in="SourceGraphic" in2="goo" />
+          </filter>
+        </defs>
+      </svg>
     </div>
   );
 }
