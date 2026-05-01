@@ -23,79 +23,106 @@ function StatusDot({ active }) {
 
 function SettingsModal({ open, onClose, keys, setKeys, serverStatus }) {
   if (!open) return null;
+
+  const blocks = [
+    { label: "Exa API",    active: serverStatus.hasExaKey    || !!keys.exa },
+    { label: "Gemini API", active: serverStatus.hasGeminiKey || !!keys.gemini },
+    { label: "Supabase",   active: serverStatus.hasSupabase },
+  ];
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
+
         <div className="modal-header">
-          <span className="modal-title">API Keys & Settings</span>
+          <span className="modal-title">API Keys &amp; Settings</span>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
-        <div className="modal-body">
-          <div>
-            <div className="settings-label">Server Status</div>
-            <div className="status-row"><StatusDot active={serverStatus.hasExaKey} /><span>Exa API Key</span><span className="status-tag">{serverStatus.hasExaKey ? "configured" : "not set"}</span></div>
-            <div className="status-row"><StatusDot active={serverStatus.hasGeminiKey} /><span>Gemini API Key</span><span className="status-tag">{serverStatus.hasGeminiKey ? "configured" : "not set"}</span></div>
-            <div className="status-row"><StatusDot active={serverStatus.hasSupabase} /><span>Supabase</span><span className="status-tag">{serverStatus.hasSupabase ? "connected" : "not set"}</span></div>
-          </div>
-          <div>
-            <div className="settings-label">Override Keys (stored locally)</div>
-            <div className="input-group">
-              <label className="settings-label" style={{ textTransform: "none", fontSize: 12 }}>Exa API Key</label>
-              <input className="settings-input" type="password" value={keys.exa} onChange={e => setKeys(p => ({ ...p, exa: e.target.value }))} placeholder="exa-xxxx" />
-              <div className="input-help">Free at <a href="https://dashboard.exa.ai" target="_blank" rel="noopener noreferrer">dashboard.exa.ai</a></div>
-            </div>
-            <div className="input-group" style={{ marginTop: 10 }}>
-              <label className="settings-label" style={{ textTransform: "none", fontSize: 12 }}>Gemini API Key</label>
-              <input className="settings-input" type="password" value={keys.gemini} onChange={e => setKeys(p => ({ ...p, gemini: e.target.value }))} placeholder="AIzaSy..." />
-              <div className="input-help">Free at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">aistudio.google.com</a></div>
-            </div>
-          </div>
-        </div>
 
-        {/* ── Miru V1 Waitlist promo ── */}
-        <div style={{
-          margin: "0 16px 14px",
-          background: "linear-gradient(135deg, rgba(232,82,42,0.07) 0%, rgba(232,82,42,0.02) 100%)",
-          border: "1px solid rgba(232,82,42,0.2)",
-          borderRadius: 8,
-          padding: "14px 16px",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
-            <span style={{
-              background: "var(--orange)", color: "#fff",
-              fontSize: 9, fontWeight: 700, letterSpacing: "0.5px",
-              textTransform: "uppercase", padding: "2px 7px", borderRadius: 3,
-            }}>Coming Soon</span>
-            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text)" }}>Miru V1 — Early Access</span>
+        <div className="modal-body">
+
+          {/* Status blocks */}
+          <div className="settings-label" style={{ marginBottom: 7 }}>Connection Status</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 18 }}>
+            {blocks.map(b => (
+              <div key={b.label} style={{
+                background: b.active ? "rgba(5,150,105,0.07)" : "rgba(0,0,0,0.03)",
+                border: `1px solid ${b.active ? "rgba(5,150,105,0.2)" : "#e4e4e4"}`,
+                borderRadius: 6, padding: "8px 10px",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 3 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, background: b.active ? "#059669" : "#d1d5db" }} />
+                  <span style={{ fontSize: 9, fontWeight: 700, color: b.active ? "#059669" : "#bbb", textTransform: "uppercase", letterSpacing: "0.4px" }}>
+                    {b.active ? "Active" : "Not Set"}
+                  </span>
+                </div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text)" }}>{b.label}</div>
+              </div>
+            ))}
           </div>
-          <p style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.6, margin: "0 0 12px" }}>
-            Be part of the next version that could change how you see career opportunities — placement data, interview intel &amp; AI salary insights.
-          </p>
-          <a
-            href="/waitlist"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
+
+          {/* Keys */}
+          <div className="settings-label" style={{ marginBottom: 7 }}>
+            Override Keys
+            <span style={{ fontWeight: 400, color: "var(--muted)", textTransform: "none", letterSpacing: 0, marginLeft: 4 }}>— saved in your browser</span>
+          </div>
+          <div className="input-group">
+            <label className="settings-label" style={{ textTransform: "none", fontSize: 11 }}>Exa API Key</label>
+            <input className="settings-input" type="password" value={keys.exa} onChange={e => setKeys(p => ({ ...p, exa: e.target.value }))} placeholder="exa-xxxx" autoComplete="off" />
+            <div className="input-help">Free at <a href="https://dashboard.exa.ai" target="_blank" rel="noopener noreferrer">dashboard.exa.ai</a></div>
+          </div>
+          <div className="input-group" style={{ marginTop: 10 }}>
+            <label className="settings-label" style={{ textTransform: "none", fontSize: 11 }}>Gemini API Key</label>
+            <input className="settings-input" type="password" value={keys.gemini} onChange={e => setKeys(p => ({ ...p, gemini: e.target.value }))} placeholder="AIzaSy..." autoComplete="off" />
+            <div className="input-help">Free at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">aistudio.google.com</a></div>
+          </div>
+
+          {/* Security note */}
+          <div style={{
+            marginTop: 12,
+            background: "rgba(234,179,8,0.06)", border: "1px solid rgba(234,179,8,0.18)",
+            borderRadius: 6, padding: "9px 12px", display: "flex", gap: 8, alignItems: "flex-start",
+          }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <div style={{ fontSize: 10, color: "#92400e", lineHeight: 1.55 }}>
+              <strong>Keys stay in your browser only</strong> — never sent to our servers. Server-side keys (shown Active above) are never exposed to the client. Clear keys on shared machines.
+            </div>
+          </div>
+
+          {/* Waitlist promo */}
+          <div style={{
+            marginTop: 12,
+            background: "linear-gradient(135deg, rgba(232,82,42,0.07) 0%, rgba(232,82,42,0.02) 100%)",
+            border: "1px solid rgba(232,82,42,0.2)", borderRadius: 8, padding: "12px 14px",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6 }}>
+              <span style={{ background: "var(--orange)", color: "#fff", fontSize: 9, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", padding: "2px 7px", borderRadius: 3 }}>Coming Soon</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text)" }}>Miru V1 — Early Access</span>
+            </div>
+            <p style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.55, margin: "0 0 10px" }}>
+              Placement data, interview intel &amp; AI salary insights — all in one terminal.
+            </p>
+            <a href="/waitlist" target="_blank" rel="noopener noreferrer" style={{
               display: "inline-flex", alignItems: "center", gap: 5,
-              background: "var(--orange)", color: "#fff",
-              fontSize: 11, fontWeight: 700,
-              padding: "6px 14px", borderRadius: 4,
-              textDecoration: "none",
-            }}
-          >
-            Join the Waitlist →
-          </a>
+              background: "var(--orange)", color: "#fff", fontSize: 11, fontWeight: 700,
+              padding: "5px 13px", borderRadius: 4, textDecoration: "none",
+            }}>Join the Waitlist →</a>
+          </div>
+
         </div>
 
         <div className="modal-footer">
           <button className="btn btn-sm" onClick={() => { setKeys({ exa: "", gemini: "" }); try { localStorage.removeItem("user_exa_key"); localStorage.removeItem("user_gemini_key"); } catch {} }}>Clear</button>
           <button className="btn btn-sm btn-primary" onClick={() => { try { localStorage.setItem("user_exa_key", keys.exa); localStorage.setItem("user_gemini_key", keys.gemini); } catch {} onClose(); }}>Save</button>
-
         </div>
       </div>
     </div>
   );
 }
+
 
 function RadarLoader({ message, score, strategy }) {
   return (
@@ -341,10 +368,10 @@ export default function Home() {
   // Settings
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [userKeys, setUserKeys] = useState({ exa: "", gemini: "" });
-  const [serverStatus, setServerStatus] = useState({ hasExaKey: false, hasGeminiKey: false, hasSupabase: false, exaKey: null, geminiKey: null });
+  const [serverStatus, setServerStatus] = useState({ hasExaKey: false, hasGeminiKey: false, hasSupabase: false });
 
-  const exaKey    = userKeys.exa    || serverStatus.exaKey    || "";
-  const geminiKey = userKeys.gemini || serverStatus.geminiKey || "";
+  const exaKey    = userKeys.exa    || "";
+  const geminiKey = userKeys.gemini || "";
 
   /* ── Init ── */
   useEffect(() => {
