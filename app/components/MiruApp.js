@@ -1,10 +1,13 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import ResearchReport from "./components/ResearchReport";
+import ResearchReport from "./ResearchReport";
 import { exaStartupResearch, exaDailyStartupNews } from "@/lib/exa";
 import { analyseCompetitor, analyseNewsItems } from "@/lib/analyzer";
 import { SearchEngine, getMemoryStats } from "@/lib/searchEngine";
+import BlogTicker from "./BlogTicker";
+import BlogDrawer from "./BlogDrawer";
+import FloatingBlogNav from "./FloatingBlogNav";
 
 /* ── Fallback static list ── */
 const STATIC_STARTUPS = [
@@ -353,6 +356,15 @@ export default function MiruApp({ initialTab = "feed" }) {
   const [loadingComps, setLoadingComps] = useState(false);
   const [error, setError] = useState("");
 
+  // Blogs state
+  const [selectedBlog, setSelectedBlog] = useState(null);
+  const [isBlogDrawerOpen, setIsBlogDrawerOpen] = useState(false);
+
+  const handleBlogClick = (blog) => {
+    setSelectedBlog(blog);
+    setIsBlogDrawerOpen(true);
+  };
+
   // Feed state
   const [news, setNews] = useState([]);
   const [newsFilter, setNewsFilter] = useState("All");
@@ -700,25 +712,8 @@ export default function MiruApp({ initialTab = "feed" }) {
 
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} keys={userKeys} setKeys={setUserKeys} serverStatus={serverStatus} />
 
-
       {/* ── Glassmorphism ticker bar — blog teaser ── */}
-      <div className="ticker-wrap" aria-label="Coming soon" role="marquee">
-        <div className="ticker-track">
-          {[
-            "Blog coming soon — founder deep-dives, funding breakdowns, and campus prep guides",
-            "Miru Insights: Breaking down the 2025 startup funding landscape",
-            "How to crack product interviews at Stripe and Airbnb — guides dropping soon",
-            "Product vs Service companies: what students need to know before placement season",
-            "YC W25 batch analysis — which companies are hiring interns?",
-          ].concat([
-            "Blog coming soon — founder deep-dives, funding breakdowns, and campus prep guides",
-            "Miru Insights: Breaking down the 2025 startup funding landscape",
-            "How to crack product interviews at Stripe and Airbnb — guides dropping soon",
-          ]).map((text, i) => (
-            <span key={i} className="ticker-item">{text}</span>
-          ))}
-        </div>
-      </div>
+      <BlogTicker onBlogClick={handleBlogClick} />
 
       {/* Content */}
       <div className="shell content">
@@ -1377,6 +1372,12 @@ export default function MiruApp({ initialTab = "feed" }) {
           <span className="mbn-label">Jobs</span>
         </button>
       </nav>
+      <BlogDrawer 
+        isOpen={isBlogDrawerOpen} 
+        onClose={() => setIsBlogDrawerOpen(false)} 
+        blog={selectedBlog} 
+      />
+      <FloatingBlogNav />
     </>
   );
 }

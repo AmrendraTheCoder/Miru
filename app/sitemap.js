@@ -31,12 +31,12 @@ export default async function sitemap() {
 
   // ── Static / tab pages ────────────────────────────────────────
   const staticPages = [
-    { url: BASE_URL,                        priority: 1.0, changeFrequency: "daily"  },
-    { url: `${BASE_URL}/feed`,              priority: 0.9, changeFrequency: "daily"  },
-    { url: `${BASE_URL}/discover`,          priority: 0.9, changeFrequency: "weekly" },
-    { url: `${BASE_URL}/jobs`,              priority: 0.8, changeFrequency: "daily"  },
-    { url: `${BASE_URL}/blogs`,             priority: 0.8, changeFrequency: "weekly" },
-    { url: `${BASE_URL}/waitlist`,          priority: 0.5, changeFrequency: "monthly"},
+    { url: BASE_URL,                        priority: 1.0, changeFrequency: "daily",   lastModified: now },
+    { url: `${BASE_URL}/feed`,              priority: 1.0, changeFrequency: "daily",   lastModified: now },
+    { url: `${BASE_URL}/discover`,          priority: 0.9, changeFrequency: "daily",   lastModified: now },
+    { url: `${BASE_URL}/jobs`,              priority: 0.9, changeFrequency: "hourly",  lastModified: now },
+    { url: `${BASE_URL}/blogs`,             priority: 0.8, changeFrequency: "weekly",  lastModified: now },
+    { url: `${BASE_URL}/waitlist`,          priority: 0.7, changeFrequency: "monthly", lastModified: now },
   ];
 
   // ── Blog post pages (from lib/blogs.js) ───────────────────────

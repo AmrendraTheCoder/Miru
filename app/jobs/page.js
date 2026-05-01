@@ -1,25 +1,30 @@
-import Home from "../page";
-
-const BASE_URL = "https://miru-1.vercel.app";
+import MiruApp from "../components/MiruApp";
 
 export const metadata = {
-  title: "Jobs & Internships — Miru | Remote Jobs, Freelance & Campus Roles",
+  title: "Remote Jobs, Internships & Freelance — Global Listings",
   description:
-    "Verified job listings, remote internships, and freelance gigs from Remotive, RemoteOK, Wellfound, and Internshala. Freshness-checked daily for students and builders.",
+    "Verified remote job listings, internships, and freelance gigs from Remotive, RemoteOK, and Wellfound. Freshness-checked daily. Built for students targeting startup careers.",
   keywords:
-    "remote jobs, internships, freelance gigs, startup jobs, campus placement, Remotive, RemoteOK, Wellfound, Internshala, tech jobs 2025",
+    "remote jobs, startup jobs, remote internships, freelance gigs, work from home, YC startup jobs, startup internships India, remote work 2025",
+  alternates: {
+    canonical: "https://miru-1.vercel.app/jobs",
+  },
   openGraph: {
-    title: "Jobs & Internships — Miru",
-    description:
-      "Daily-updated remote jobs, internships and freelance gigs. Global listings verified and freshness-checked.",
-    url: `${BASE_URL}/jobs`,
     type: "website",
+    url: "https://miru-1.vercel.app/jobs",
+    title: "Remote Jobs & Startup Internships | Miru",
+    description:
+      "Verified remote job listings, internships and freelance gigs. Sourced from Remotive, RemoteOK & Wellfound. Freshness-checked daily.",
     siteName: "Miru",
   },
-  twitter: { card: "summary", title: "Jobs & Internships — Miru" },
-  alternates: { canonical: `${BASE_URL}/jobs` },
+  twitter: {
+    card: "summary_large_image",
+    title: "Remote Jobs & Startup Internships | Miru",
+    description:
+      "Verified remote jobs, internships and freelance gigs. Sourced globally, checked daily.",
+  },
 };
 
 export default function JobsPage() {
-  return <Home initialTab="jobs" />;
+  return <MiruApp initialTab="jobs" />;
 }

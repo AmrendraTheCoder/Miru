@@ -1,25 +1,30 @@
-import Home from "../page";
-
-const BASE_URL = "https://miru-1.vercel.app";
+import MiruApp from "../components/MiruApp";
 
 export const metadata = {
-  title: "Startup News Feed — Miru | Daily Funding Rounds & Launch News",
+  title: "Startup News Feed — Daily Funding & Founder Updates",
   description:
-    "Daily curated startup news — funding rounds, acquisitions, IPOs, and product launches from TechCrunch, Bloomberg, Reuters and more. Powered by Exa AI.",
+    "Your daily curated startup news: YC funding rounds, founder moves, product launches and market shifts. Powered by real-time intelligence from Miru.",
   keywords:
-    "startup news, daily funding news, series A series B, startup acquisitions, tech news feed, Miru feed",
+    "startup news, YC funding, founder updates, venture capital news, startup funding rounds, daily startup intelligence",
+  alternates: {
+    canonical: "https://miru-1.vercel.app/feed",
+  },
   openGraph: {
-    title: "Startup News Feed — Miru",
-    description:
-      "Daily startup intelligence — funding, acquisitions, IPOs and launches curated in real time.",
-    url: `${BASE_URL}/feed`,
     type: "website",
+    url: "https://miru-1.vercel.app/feed",
+    title: "Startup News Feed | Miru",
+    description:
+      "Daily curated startup news: YC funding rounds, founder moves, and market shifts. Real-time intelligence.",
     siteName: "Miru",
   },
-  twitter: { card: "summary", title: "Startup News Feed — Miru" },
-  alternates: { canonical: `${BASE_URL}/feed` },
+  twitter: {
+    card: "summary_large_image",
+    title: "Startup News Feed | Miru",
+    description:
+      "Daily curated startup news: YC funding, founder moves, market shifts.",
+  },
 };
 
 export default function FeedPage() {
-  return <Home initialTab="feed" />;
+  return <MiruApp initialTab="feed" />;
 }
