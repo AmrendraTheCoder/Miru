@@ -51,9 +51,46 @@ function SettingsModal({ open, onClose, keys, setKeys, serverStatus }) {
             </div>
           </div>
         </div>
+
+        {/* ── Miru V1 Waitlist promo ── */}
+        <div style={{
+          margin: "0 16px 14px",
+          background: "linear-gradient(135deg, rgba(232,82,42,0.07) 0%, rgba(232,82,42,0.02) 100%)",
+          border: "1px solid rgba(232,82,42,0.2)",
+          borderRadius: 8,
+          padding: "14px 16px",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
+            <span style={{
+              background: "var(--orange)", color: "#fff",
+              fontSize: 9, fontWeight: 700, letterSpacing: "0.5px",
+              textTransform: "uppercase", padding: "2px 7px", borderRadius: 3,
+            }}>Coming Soon</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text)" }}>Miru V1 — Early Access</span>
+          </div>
+          <p style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.6, margin: "0 0 12px" }}>
+            Be part of the next version that could change how you see career opportunities — placement data, interview intel &amp; AI salary insights.
+          </p>
+          <a
+            href="/waitlist"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 5,
+              background: "var(--orange)", color: "#fff",
+              fontSize: 11, fontWeight: 700,
+              padding: "6px 14px", borderRadius: 4,
+              textDecoration: "none",
+            }}
+          >
+            Join the Waitlist →
+          </a>
+        </div>
+
         <div className="modal-footer">
           <button className="btn btn-sm" onClick={() => { setKeys({ exa: "", gemini: "" }); try { localStorage.removeItem("user_exa_key"); localStorage.removeItem("user_gemini_key"); } catch {} }}>Clear</button>
           <button className="btn btn-sm btn-primary" onClick={() => { try { localStorage.setItem("user_exa_key", keys.exa); localStorage.setItem("user_gemini_key", keys.gemini); } catch {} onClose(); }}>Save</button>
+
         </div>
       </div>
     </div>
