@@ -178,12 +178,18 @@ function NewsLoader() {
     return () => clearInterval(t);
   }, [firstTime]);
 
-  // Returning users — just show a tiny inline loading bar
+  // Returning users — skeleton news cards
   if (!firstTime) {
     return (
-      <div style={{ padding: "24px 0", textAlign: "center" }}>
-        <div className="spinner" style={{ display: "inline-block", marginBottom: 8 }} />
-        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6 }}>Refreshing news…</div>
+      <div style={{ padding: "12px 0" }}>
+        {[...Array(4)].map((_,i) => (
+          <div key={i} className="news-skeleton-card">
+            <div className="skeleton news-skel-tag" />
+            <div className="skeleton news-skel-title" />
+            <div className="skeleton news-skel-title news-skel-title-short" />
+            <div className="skeleton news-skel-meta" />
+          </div>
+        ))}
       </div>
     );
   }
@@ -953,9 +959,16 @@ export default function Home() {
             </div>
 
             {discoverLoading && companies.length === 0 && (
-              <div className="loading-wrap" style={{ padding: "24px 0" }}>
-                <div className="spinner" style={{ marginBottom: 8 }} />
-                <div className="loading-text">Loading from database...</div>
+              <div className="discover-grid">
+                {[...Array(6)].map((_,i) => (
+                  <div key={i} className="skeleton-card">
+                    <div className="skeleton skel-logo" />
+                    <div className="skeleton skel-name" />
+                    <div className="skeleton skel-tag" />
+                    <div className="skeleton skel-line" />
+                    <div className="skeleton skel-line skel-line-short" />
+                  </div>
+                ))}
               </div>
             )}
 

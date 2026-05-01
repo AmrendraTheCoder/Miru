@@ -393,6 +393,39 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 @keyframes sp-dot-pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.7); } }
 @keyframes stripe-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(400%); } }
 
+/* ── Global skeleton base (reused across tabs) ── */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e4e4e4 50%, #f0f0f0 75%);
+  background-size: 600px 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: 4px;
+}
+
+/* Discover skeleton card — matches startup card layout */
+.skeleton-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.skel-logo  { width: 36px; height: 36px; border-radius: 6px; }
+.skel-name  { width: 55%; height: 14px; }
+.skel-tag   { width: 38%; height: 12px; }
+.skel-line  { width: 90%; height: 11px; }
+.skel-line-short { width: 65%; }
+
+/* News skeleton card — matches news article layout */
+.news-skeleton-card {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.news-skel-tag   { width: 70px; height: 16px; border-radius: 3px; }
+.news-skel-title { width: 85%; height: 14px; }
+.news-skel-title-short { width: 60%; }
+.news-skel-meta  { width: 45%; height: 11px; }
+
 /* ── Research Status Banners ── */
 .sp-banner {
   padding: 10px 20px;
@@ -1817,7 +1850,7 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 .job-skel-btn    { width: 70px; height: 28px; border-radius: 4px; }
 
 /* Wrap */
-.jobs-wrap { padding: 0 0 120px; }
+.jobs-wrap { padding: 0 14px 120px; max-width: var(--max); margin: 0 auto; }
 
 /* Header */
 .jobs-header {
