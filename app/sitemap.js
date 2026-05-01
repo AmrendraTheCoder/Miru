@@ -29,9 +29,10 @@ export default async function sitemap() {
 
   // ── Static pages ──────────────────────────────────────────────
   const staticPages = [
-    { url: BASE_URL, priority: 1.0, changeFrequency: "daily" },
-    { url: `${BASE_URL}/#discover`, priority: 0.8, changeFrequency: "weekly" },
-    { url: `${BASE_URL}/#feed`, priority: 0.8, changeFrequency: "daily" },
+    { url: `${BASE_URL}/feed`,     priority: 1.0, changeFrequency: "daily",   lastModified: now },
+    { url: `${BASE_URL}/discover`, priority: 0.9, changeFrequency: "daily",   lastModified: now },
+    { url: `${BASE_URL}/jobs`,     priority: 0.9, changeFrequency: "hourly",  lastModified: now },
+    { url: `${BASE_URL}/waitlist`, priority: 0.7, changeFrequency: "monthly", lastModified: now },
   ];
 
   // ── Deeply researched startup pages (highest priority) ────────
