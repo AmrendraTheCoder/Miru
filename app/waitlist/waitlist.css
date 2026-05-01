@@ -201,13 +201,15 @@
 .wlp-bento-card {
   background: #fff;
   border: 1px solid #e8e8e8;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
-  transition: box-shadow 0.2s, transform 0.2s;
+  transition: box-shadow 0.22s, transform 0.22s;
+  display: flex;
+  flex-direction: column;
 }
 .wlp-bento-card:hover {
-  box-shadow: 0 6px 24px rgba(0,0,0,0.09);
-  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.1);
+  transform: translateY(-3px);
 }
 
 /* Span presets for desktop */
@@ -220,9 +222,74 @@
   .wlp-span-12 { grid-column: span 12; }
 }
 
-.wlp-bento-img { width: 100%; height: 160px; object-fit: cover; display: block; }
-.wlp-bento-img.tall { height: 200px; }
-.wlp-bento-body { padding: 18px 16px; }
+/* Visual panel (top of card) */
+.wlp-bento-visual {
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.wlp-bento-visual img {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+.wlp-bento-visual-h { height: 180px; }
+.wlp-bento-visual-xl { height: 220px; }
+
+/* CSS visual panels (no image) */
+.wlp-visual-orange {
+  background: linear-gradient(135deg, #e8522a 0%, #c23e1a 100%);
+  min-height: 140px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+}
+.wlp-visual-orange::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 80% 20%, rgba(255,255,255,0.12) 0%, transparent 55%);
+}
+.wlp-visual-dark {
+  background: linear-gradient(135deg, #111 0%, #222 100%);
+  min-height: 140px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+}
+.wlp-visual-dark::before {
+  content: '';
+  position: absolute;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,102,0,0.3);
+  top: -40px; right: -40px;
+}
+.wlp-visual-cream {
+  background: linear-gradient(135deg, #fff8f4 0%, #ffeedd 100%);
+  min-height: 140px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+}
+
+/* Big stat inside visual panel */
+.wlp-visual-stat {
+  text-align: center;
+  position: relative; z-index: 1;
+}
+.wlp-visual-stat-num { font-size: 52px; font-weight: 900; letter-spacing: -3px; line-height: 1; margin-bottom: 4px; }
+.wlp-visual-stat-lbl { font-size: 10px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; opacity: 0.7; }
+
+/* Mini data row inside visual */
+.wlp-mini-data { display: flex; flex-direction: column; gap: 6px; width: 100%; padding: 18px; position: relative; z-index: 1; }
+.wlp-mini-row { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.08); border-radius: 5px; padding: 7px 10px; }
+.wlp-mini-row-light { background: rgba(0,0,0,0.05); border-radius: 5px; padding: 7px 10px; display: flex; align-items: center; justify-content: space-between; }
+.wlp-mini-label { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.7); }
+.wlp-mini-label-dark { font-size: 10px; font-weight: 600; color: #666; }
+.wlp-mini-val { font-size: 11px; font-weight: 800; color: #fff; }
+.wlp-mini-val-orange { font-size: 11px; font-weight: 800; color: var(--orange); }
+.wlp-mini-bar-wrap { width: 60px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; overflow: hidden; }
+.wlp-mini-bar { height: 100%; background: #fff; border-radius: 2px; }
+.wlp-mini-bar-orange { height: 4px; background: var(--orange); border-radius: 2px; width: 100%; height: 4px; }
+
+/* Body */
+.wlp-bento-body { padding: 18px 16px; flex: 1; }
 .wlp-bento-tag {
   display: inline-block;
   font-size: 9px; font-weight: 700;
@@ -233,20 +300,15 @@
   padding: 2px 7px; border-radius: 3px;
   margin-bottom: 8px;
 }
-.wlp-bento-t { font-size: 14px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.3px; }
+.wlp-bento-t { font-size: 14px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.3px; color: #000; }
 .wlp-bento-d { font-size: 12px; color: #666; line-height: 1.55; }
 
-/* Wide horizontal card (no image) */
-.wlp-bento-wide { display: flex; align-items: center; gap: 20px; padding: 22px 20px; }
-.wlp-bento-wide-num { font-size: 48px; font-weight: 900; color: #f0f0f0; letter-spacing: -3px; flex-shrink: 0; line-height: 1; }
-.wlp-bento-wide-text {}
-
-/* Orange accent card */
-.wlp-bento-orange { background: var(--orange) !important; border-color: var(--orange) !important; color: #fff; }
-.wlp-bento-orange .wlp-bento-body { padding: 22px 18px; }
-.wlp-bento-orange .wlp-bento-t { color: #fff; font-size: 16px; }
-.wlp-bento-orange .wlp-bento-d { color: rgba(255,255,255,0.78); }
-.wlp-bento-orange .wlp-bento-tag { background: rgba(255,255,255,0.2); color: #fff; border-color: rgba(255,255,255,0.3); }
+/* Orange body card (no visual panel, full-card orange) */
+.wlp-bento-orange { background: var(--orange) !important; border-color: var(--orange) !important; }
+.wlp-bento-orange .wlp-bento-body { padding: 26px 20px; }
+.wlp-bento-orange .wlp-bento-t { color: #fff; font-size: 16px; line-height: 1.25; }
+.wlp-bento-orange .wlp-bento-d { color: rgba(255,255,255,0.75); }
+.wlp-bento-orange .wlp-bento-tag { background: rgba(255,255,255,0.18); color: #fff; border-color: rgba(255,255,255,0.25); }
 
 /* ── Divider ── */
 .wlp-hr { height: 1px; background: #e8e8e8; margin: 0; }
