@@ -2060,6 +2060,10 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   cursor: pointer;
   overflow: hidden;
   width: max-content;
+  
+  /* Force WebKit to clip children properly */
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  isolation: isolate;
 }
 
 .floating-nav-content {
@@ -2197,6 +2201,10 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   font-size: 12px;
   transition: transform 0.2s;
   border: 1px solid rgba(255,255,255,0.2);
+  
+  /* Force WebKit to clip children properly */
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  isolation: isolate;
 }
 .floating-nav-icon:hover {
   transform: scale(1.05);
