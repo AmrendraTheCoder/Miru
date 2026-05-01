@@ -345,14 +345,6 @@ export default function Home() {
   const [loadingComps, setLoadingComps] = useState(false);
   const [error, setError] = useState("");
 
-  // Scroll — sticky search bar
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 120);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   // Feed state
   const [news, setNews] = useState([]);
   const [newsFilter, setNewsFilter] = useState("All");
@@ -372,6 +364,18 @@ export default function Home() {
   const [allSectors, setAllSectors] = useState([]);
   const discoverSearchRef = useRef(null);
   const discoverDebounceRef = useRef(null); // Task 7 — debounce timer
+
+  // Jobs state
+  const [jobs, setJobs] = useState([]);
+  const [jobsLoading, setJobsLoading] = useState(false);
+  const [jobTypeFilter, setJobTypeFilter] = useState("all");   // all | job | internship | freelance
+  const [jobSourceFilter, setJobSourceFilter] = useState("all");
+  const [jobSearch, setJobSearch] = useState("");
+  const [jobPage, setJobPage] = useState(1);
+  const [jobsHasMore, setJobsHasMore] = useState(false);
+  const [jobsScraping, setJobsScraping] = useState(false);
+  const [jobsScrapeMsg, setJobsScrapeMsg] = useState("");
+
 
   // Settings
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -646,7 +650,7 @@ export default function Home() {
             Miru
           </a>
           <nav className="header-nav">
-            {[["feed","Feed"],["discover","Discover"],["research","Research"],["competitors","Competitors"]].map(([id, label]) => (
+            {[["feed","Feed"],["discover","Discover"],["research","Research"],["competitors","Competitors"],["jobs","Jobs 🆕"]].map(([id, label]) => (
               <button key={id} className={`nav-tab ${tab === id ? "active" : ""}`} onClick={() => setTab(id)}>
                 {label}{id === "discover" && discoverTotal > 0 && <span style={{ fontSize: 10, opacity: 0.7, marginLeft: 4 }}>({discoverTotal})</span>}
               </button>
@@ -686,43 +690,8 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Floating sticky search — appears on scroll */}
-      <div style={{
-        position: "fixed", top: 0, left: 0, right: 0, zIndex: 200,
-        background: "var(--orange)",
-        padding: "8px 16px",
-        boxShadow: "0 4px 20px rgba(0,0,0,0.25)",
-        transform: scrolled ? "translateY(0)" : "translateY(-110%)",
-        transition: "transform 0.28s cubic-bezier(0.4,0,0.2,1)",
-        display: "flex", alignItems: "center", gap: 8,
-      }}>
-        <span style={{ color: "#fff", fontWeight: 800, fontSize: 13, whiteSpace: "nowrap", marginRight: 4 }}>Miru</span>
-        <div style={{ flex: 1, display: "flex", gap: 6 }}>
-          <input
-            type="text"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && !loading && research()}
-            placeholder="Research any startup..."
-            autoComplete="off" spellCheck={false}
-            style={{
-              flex: 1, padding: "7px 12px", border: "none", borderRadius: "var(--radius)",
-              fontFamily: "var(--font)", fontSize: 13, background: "#fff", color: "var(--text)", outline: "none",
-            }}
-          />
-          <button
-            onClick={() => research()} disabled={loading}
-            style={{
-              background: "rgba(0,0,0,0.22)", color: "#fff", border: "none",
-              padding: "7px 16px", borderRadius: "var(--radius)",
-              fontFamily: "var(--font)", fontSize: 13, fontWeight: 700, cursor: "pointer",
-              whiteSpace: "nowrap", flexShrink: 0,
-            }}
-          >{loading ? "…" : "Research →"}</button>
-        </div>
-      </div>
-
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} keys={userKeys} setKeys={setUserKeys} serverStatus={serverStatus} />
+
 
       {/* ── Glassmorphism ticker bar — blog teaser ── */}
       <div className="ticker-wrap" aria-label="Coming soon" role="marquee">
@@ -1133,9 +1102,216 @@ export default function Home() {
             )}
           </div>
         )}
+
+        {/* ── JOBS TAB ── */}
+        {tab === "jobs" && (
+          <div className="jobs-wrap">
+
+            {/* Header row */}
+            <div className="jobs-header">
+              <div>
+                <div className="jobs-title">Job &amp; Freelance Board</div>
+                <div className="jobs-sub">Live listings · global remote · verified freshness</div>
+              </div>
+              <button
+                className="jobs-scrape-btn"
+                disabled={jobsScraping}
+                onClick={async () => {
+                  setJobsScraping(true);
+                  setJobsScrapeMsg("Fetching from Remotive, RemoteOK, Wellfound…");
+                  try {
+                    const r = await fetch("/api/scrape/jobs", { method: "POST" });
+                    const d = await r.json();
+                    if (d.success) {
+                      setJobsScrapeMsg(`✓ ${d.scraped} listings synced`);
+                      // reload jobs
+                      const res = await fetch(`/api/jobs?type=${jobTypeFilter}&source=${jobSourceFilter}&q=${jobSearch}&page=1`);
+                      const jd = await res.json();
+                      setJobs(jd.jobs || []);
+                      setJobPage(1);
+                      setJobsHasMore(jd.hasMore);
+                    } else {
+                      setJobsScrapeMsg("Sync failed — check console");
+                    }
+                  } catch { setJobsScrapeMsg("Network error"); }
+                  finally { setJobsScraping(false); }
+                }}
+              >
+                {jobsScraping ? "Syncing…" : "↻ Sync Jobs"}
+              </button>
+            </div>
+            {jobsScrapeMsg && <div className="jobs-scrape-msg">{jobsScrapeMsg}</div>}
+
+            {/* Type filter */}
+            <div className="jobs-filters">
+              {[["all","All"],["job","Jobs"],["internship","Internships"],["freelance","Freelance"]].map(([v,l]) => (
+                <button key={v}
+                  className={`jobs-filter-btn ${jobTypeFilter === v ? "active" : ""}`}
+                  onClick={() => {
+                    setJobTypeFilter(v);
+                    setJobPage(1);
+                    setJobs([]);
+                    fetch(`/api/jobs?type=${v}&source=${jobSourceFilter}&q=${jobSearch}&page=1`)
+                      .then(r => r.json()).then(d => { setJobs(d.jobs||[]); setJobsHasMore(d.hasMore); });
+                  }}
+                >{l}</button>
+              ))}
+            </div>
+
+            {/* Source chips */}
+            <div className="jobs-sources">
+              {[["all","All Sources"],["remotive","Remotive"],["remoteok","RemoteOK"],["wellfound","Wellfound"],["internshala","Internshala"]].map(([v,l]) => (
+                <button key={v}
+                  className={`jobs-source-chip ${jobSourceFilter === v ? "active" : ""}`}
+                  onClick={() => {
+                    setJobSourceFilter(v);
+                    setJobPage(1);
+                    setJobs([]);
+                    fetch(`/api/jobs?type=${jobTypeFilter}&source=${v}&q=${jobSearch}&page=1`)
+                      .then(r => r.json()).then(d => { setJobs(d.jobs||[]); setJobsHasMore(d.hasMore); });
+                  }}
+                >{l}</button>
+              ))}
+            </div>
+
+            {/* Search */}
+            <div className="jobs-search-row">
+              <input
+                className="jobs-search-input"
+                type="text"
+                placeholder="Search by role, company, skill…"
+                value={jobSearch}
+                onChange={e => setJobSearch(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === "Enter") {
+                    setJobPage(1); setJobs([]);
+                    fetch(`/api/jobs?type=${jobTypeFilter}&source=${jobSourceFilter}&q=${e.target.value}&page=1`)
+                      .then(r => r.json()).then(d => { setJobs(d.jobs||[]); setJobsHasMore(d.hasMore); });
+                  }
+                }}
+              />
+            </div>
+
+            {/* Initial load */}
+            {jobs.length === 0 && !jobsLoading && (
+              <div className="jobs-empty">
+                <div className="jobs-empty-icon">
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2"/>
+                    <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                    <line x1="12" y1="12" x2="12" y2="16"/>
+                    <line x1="10" y1="14" x2="14" y2="14"/>
+                  </svg>
+                </div>
+                <div className="jobs-empty-t">No listings yet</div>
+                <div className="jobs-empty-s">Click <strong>↻ Sync Jobs</strong> to pull live listings from Remotive, RemoteOK and Wellfound.</div>
+              </div>
+            )}
+
+            {/* Loading */}
+            {jobsLoading && (
+              <div className="jobs-loading">
+                <div className="spinner" style={{ display: "inline-block" }} />
+                <span>Loading listings…</span>
+              </div>
+            )}
+
+            {/* Job cards */}
+            <div className="jobs-list">
+              {jobs.map(j => (
+                <div key={j.id} className="job-card">
+                  <div className="job-card-top">
+                    {/* Status dot */}
+                    <span className={`job-status-dot ${j.status}`} title={j.status} />
+
+                    {/* Type badge */}
+                    <span className={`job-type-badge ${j.type}`}>
+                      {j.type === "job" ? "Job" : j.type === "internship" ? "Intern" : "Freelance"}
+                    </span>
+
+                    {/* Source pill */}
+                    <span className="job-source-pill">{j.source}</span>
+
+                    {/* Closing date */}
+                    {j.closes_at && (
+                      <span className="job-closes">
+                        Closes {new Date(j.closes_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Main info */}
+                  <div className="job-card-body">
+                    <div className="job-company-row">
+                      {j.logo_url && (
+                        <img src={j.logo_url} alt={j.company} className="job-logo"
+                          onError={e => e.target.style.display = "none"} />
+                      )}
+                      <div>
+                        <div className="job-title">{j.title}</div>
+                        <div className="job-company">{j.company} · {j.location}</div>
+                      </div>
+                    </div>
+
+                    {j.salary && <div className="job-salary">{j.salary}</div>}
+
+                    {/* Skills */}
+                    {j.skills && j.skills.length > 0 && (
+                      <div className="job-skills">
+                        {j.skills.slice(0, 6).map(s => (
+                          <span key={s} className="job-skill-chip">{s}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Footer */}
+                  <div className="job-card-footer">
+                    <span className="job-posted">
+                      {new Date(j.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                    </span>
+                    <a
+                      href={j.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="job-apply-btn"
+                    >
+                      Apply →
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Load more */}
+            {jobsHasMore && (
+              <button className="jobs-load-more"
+                onClick={() => {
+                  const next = jobPage + 1;
+                  setJobsLoading(true);
+                  fetch(`/api/jobs?type=${jobTypeFilter}&source=${jobSourceFilter}&q=${jobSearch}&page=${next}`)
+                    .then(r => r.json())
+                    .then(d => { setJobs(prev => [...prev, ...(d.jobs||[])]); setJobPage(next); setJobsHasMore(d.hasMore); })
+                    .finally(() => setJobsLoading(false));
+                }}
+              >Load more listings</button>
+            )}
+
+            {/* Waitlist CTA */}
+            <div className="jobs-waitlist-cta">
+              <div className="jobs-wl-text">
+                <strong>Want campus placement intel too?</strong>
+                <span>Miru V1 brings verified interview Qs, salary data &amp; company culture reviews.</span>
+              </div>
+              <a href="/waitlist" className="jobs-wl-btn">Join Waitlist →</a>
+            </div>
+
+          </div>
+        )}
+
       </div>
 
-      {/* ── Mobile bottom navigation (Feed + Discover only) ── */}
+      {/* ── Mobile bottom navigation ── */}
       <nav className="mobile-bottom-nav" aria-label="Main navigation">
         <button
           className={`mbn-tab ${tab === "feed" ? "active" : ""}`}
@@ -1157,6 +1333,17 @@ export default function Home() {
             <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
           </svg>
           <span className="mbn-label">Discover</span>
+        </button>
+        <button
+          className={`mbn-tab ${tab === "jobs" ? "active" : ""}`}
+          onClick={() => setTab("jobs")}
+          aria-label="Jobs"
+        >
+          <svg className="mbn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="7" width="20" height="14" rx="2"/>
+            <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+          </svg>
+          <span className="mbn-label">Jobs</span>
         </button>
       </nav>
     </>
