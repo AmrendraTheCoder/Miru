@@ -345,6 +345,14 @@ export default function Home() {
   const [loadingComps, setLoadingComps] = useState(false);
   const [error, setError] = useState("");
 
+  // Scroll — sticky search bar
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 120);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   // Feed state
   const [news, setNews] = useState([]);
   const [newsFilter, setNewsFilter] = useState("All");
@@ -675,6 +683,42 @@ export default function Home() {
               <span className="search-btn-icon">{loading ? "…" : "→"}</span>
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Floating sticky search — appears on scroll */}
+      <div style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 200,
+        background: "var(--orange)",
+        padding: "8px 16px",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.25)",
+        transform: scrolled ? "translateY(0)" : "translateY(-110%)",
+        transition: "transform 0.28s cubic-bezier(0.4,0,0.2,1)",
+        display: "flex", alignItems: "center", gap: 8,
+      }}>
+        <span style={{ color: "#fff", fontWeight: 800, fontSize: 13, whiteSpace: "nowrap", marginRight: 4 }}>Miru</span>
+        <div style={{ flex: 1, display: "flex", gap: 6 }}>
+          <input
+            type="text"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && !loading && research()}
+            placeholder="Research any startup..."
+            autoComplete="off" spellCheck={false}
+            style={{
+              flex: 1, padding: "7px 12px", border: "none", borderRadius: "var(--radius)",
+              fontFamily: "var(--font)", fontSize: 13, background: "#fff", color: "var(--text)", outline: "none",
+            }}
+          />
+          <button
+            onClick={() => research()} disabled={loading}
+            style={{
+              background: "rgba(0,0,0,0.22)", color: "#fff", border: "none",
+              padding: "7px 16px", borderRadius: "var(--radius)",
+              fontFamily: "var(--font)", fontSize: 13, fontWeight: 700, cursor: "pointer",
+              whiteSpace: "nowrap", flexShrink: 0,
+            }}
+          >{loading ? "…" : "Research →"}</button>
         </div>
       </div>
 
