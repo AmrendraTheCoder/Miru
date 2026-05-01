@@ -333,7 +333,6 @@ export default function WaitlistPage() {
           </div>
           <div className="wlp-fbot">
             <span className="wlp-fcopy">© 2026 Miru Intelligence. All rights reserved.</span>
-            <span className="wlp-fcopy">Made with ♥ in India</span>
             <button className="wlp-backtop" onClick={()=>window.scrollTo({top:0,behavior:"smooth"})}>↑ Back to top</button>
           </div>
         </div>
