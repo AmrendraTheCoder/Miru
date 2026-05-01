@@ -117,7 +117,7 @@ export default function WaitlistPage() {
                   {/* Social proof */}
                   <div className="wlp-social-proof">
                     <div className="wlp-avatars">
-                      {[["#e8522a","A"],["#1a1a2e","R"],["#2d6a4f","S"],["#6a0dad","P"]].map(([bg,l])=>(
+                      {[["#e8522a","M"],["#1a1a2e","I"],["#d4461f","R"],["#111","U"]].map(([bg,l])=>(
                         <div key={l} className="wlp-avatar" style={{background:bg}}>{l}</div>
                       ))}
                     </div>
@@ -131,9 +131,9 @@ export default function WaitlistPage() {
                   {/* Benefit bullets */}
                   <div className="wlp-form-perks">
                     {[
-                      "First to access placement data before your seniors",
-                      "Real interview questions, not generic prep sheets",
-                      "AI salary estimate from your exact resume",
+                      "Placement data before your seniors get it",
+                      "Real interview Qs, not generic prep",
+                      "AI salary estimate from your resume",
                     ].map(p => (
                       <div key={p} className="wlp-perk">
                         <span className="wlp-perk-dot">
