@@ -1142,33 +1142,31 @@ export default function Home() {
             </div>
             {jobsScrapeMsg && <div className="jobs-scrape-msg">{jobsScrapeMsg}</div>}
 
-            {/* Type filter */}
-            <div className="jobs-filters">
+            {/* Type filter — underline tab style, single line */}
+            <div className="jobs-filters-row">
               {[["all","All"],["job","Jobs"],["internship","Internships"],["freelance","Freelance"]].map(([v,l]) => (
                 <button key={v}
                   className={`jobs-filter-btn ${jobTypeFilter === v ? "active" : ""}`}
                   onClick={() => {
-                    setJobTypeFilter(v);
-                    setJobPage(1);
-                    setJobs([]);
+                    setJobTypeFilter(v); setJobPage(1); setJobs([]); setJobsLoading(true);
                     fetch(`/api/jobs?type=${v}&source=${jobSourceFilter}&q=${jobSearch}&page=1`)
-                      .then(r => r.json()).then(d => { setJobs(d.jobs||[]); setJobsHasMore(d.hasMore); });
+                      .then(r => r.json()).then(d => { setJobs(d.jobs||[]); setJobsHasMore(d.hasMore); })
+                      .finally(() => setJobsLoading(false));
                   }}
                 >{l}</button>
               ))}
             </div>
 
-            {/* Source chips */}
-            <div className="jobs-sources">
+            {/* Source chips — pill style, single scrolling line */}
+            <div className="jobs-sources-row">
               {[["all","All Sources"],["remotive","Remotive"],["remoteok","RemoteOK"],["wellfound","Wellfound"],["internshala","Internshala"]].map(([v,l]) => (
                 <button key={v}
                   className={`jobs-source-chip ${jobSourceFilter === v ? "active" : ""}`}
                   onClick={() => {
-                    setJobSourceFilter(v);
-                    setJobPage(1);
-                    setJobs([]);
+                    setJobSourceFilter(v); setJobPage(1); setJobs([]); setJobsLoading(true);
                     fetch(`/api/jobs?type=${jobTypeFilter}&source=${v}&q=${jobSearch}&page=1`)
-                      .then(r => r.json()).then(d => { setJobs(d.jobs||[]); setJobsHasMore(d.hasMore); });
+                      .then(r => r.json()).then(d => { setJobs(d.jobs||[]); setJobsHasMore(d.hasMore); })
+                      .finally(() => setJobsLoading(false));
                   }}
                 >{l}</button>
               ))}
@@ -1184,15 +1182,40 @@ export default function Home() {
                 onChange={e => setJobSearch(e.target.value)}
                 onKeyDown={e => {
                   if (e.key === "Enter") {
-                    setJobPage(1); setJobs([]);
+                    setJobPage(1); setJobs([]); setJobsLoading(true);
                     fetch(`/api/jobs?type=${jobTypeFilter}&source=${jobSourceFilter}&q=${e.target.value}&page=1`)
-                      .then(r => r.json()).then(d => { setJobs(d.jobs||[]); setJobsHasMore(d.hasMore); });
+                      .then(r => r.json()).then(d => { setJobs(d.jobs||[]); setJobsHasMore(d.hasMore); })
+                      .finally(() => setJobsLoading(false));
                   }
                 }}
               />
             </div>
 
-            {/* Initial load */}
+            {/* Skeleton loading — 5 shimmer cards */}
+            {jobsLoading && (
+              <div className="jobs-list">
+                {[...Array(5)].map((_,i) => (
+                  <div key={i} className="job-skeleton-card">
+                    <div className="job-skel-top">
+                      <div className="skeleton job-skel-dot" />
+                      <div className="skeleton job-skel-badge" />
+                      <div className="skeleton job-skel-source" />
+                    </div>
+                    <div className="skeleton job-skel-title" />
+                    <div className="skeleton job-skel-co" />
+                    <div className="job-skel-chips">
+                      {[...Array(3)].map((_,j) => <div key={j} className="skeleton job-skel-chip" />)}
+                    </div>
+                    <div className="job-skel-foot">
+                      <div className="skeleton job-skel-date" />
+                      <div className="skeleton job-skel-btn" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Empty state — only when not loading */}
             {jobs.length === 0 && !jobsLoading && (
               <div className="jobs-empty">
                 <div className="jobs-empty-icon">
@@ -1208,13 +1231,6 @@ export default function Home() {
               </div>
             )}
 
-            {/* Loading */}
-            {jobsLoading && (
-              <div className="jobs-loading">
-                <div className="spinner" style={{ display: "inline-block" }} />
-                <span>Loading listings…</span>
-              </div>
-            )}
 
             {/* Job cards */}
             <div className="jobs-list">
