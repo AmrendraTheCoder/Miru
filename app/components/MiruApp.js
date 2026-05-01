@@ -589,6 +589,54 @@ export default function MiruApp({ initialTab = "feed" }) {
     loadCompanies(1, sectorFilter, batchFilter, discoverSearch, discoverTab, dtype);
   };
 
+  /* ── Jobs Load & Cache (50 mins) ── */
+  const loadJobs = useCallback(async (page = 1, type = jobTypeFilter, source = jobSourceFilter, search = jobSearch, forceFetch = false) => {
+    const cacheKey = `miru_jobs_${type}_${source}_${search}`;
+    
+    // Check cache if page 1 and not forced
+    if (page === 1 && !forceFetch) {
+      try {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          const { data, timestamp } = JSON.parse(cached);
+          if (Date.now() - timestamp < 3000000) { // 50 mins
+            setJobs(data.jobs || []);
+            setJobsHasMore(data.hasMore);
+            return;
+          }
+        }
+      } catch (e) { console.warn("Jobs cache error", e); }
+    }
+
+    setJobsLoading(true);
+    try {
+      const res = await fetch(`/api/jobs?type=${type}&source=${source}&q=${search}&page=${page}`).then(r => r.json());
+      if (page === 1) {
+        setJobs(res.jobs || []);
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify({
+            data: { jobs: res.jobs || [], hasMore: res.hasMore },
+            timestamp: Date.now()
+          }));
+        } catch (e) {}
+      } else {
+        setJobs(prev => [...prev, ...(res.jobs || [])]);
+      }
+      setJobsHasMore(res.hasMore);
+    } catch (e) {
+      console.warn("Jobs fetch error", e);
+    }
+    setJobsLoading(false);
+  }, [jobTypeFilter, jobSourceFilter, jobSearch]);
+
+  // Auto-fetch when tab is opened
+  useEffect(() => {
+    if (tab === "jobs" && jobs.length === 0) {
+      loadJobs(1, jobTypeFilter, jobSourceFilter, jobSearch);
+    }
+  }, [tab]);
+
+
   /* ── Research (with 7-day cache) ── */
   const research = useCallback(async (startupName) => {
     const name = (startupName || query).trim();
@@ -653,9 +701,17 @@ export default function MiruApp({ initialTab = "feed" }) {
     setLoadingComps(false);
   };
 
-  const filteredNews = newsFilter === "All" ? news : news.filter(n =>
-    n.stage?.toLowerCase().includes(newsFilter.toLowerCase())
-  );
+  const filteredNews = newsFilter === "All" ? news : news.filter(n => {
+    const textToSearch = ((n.title || "") + " " + (n.summary || "") + " " + (n.stage || "")).toLowerCase();
+    const filterLower = newsFilter.toLowerCase();
+    
+    if (filterLower === "series a") return textToSearch.includes("series a") || textToSearch.includes("series-a");
+    if (filterLower === "seed") return textToSearch.includes("seed") || textToSearch.includes("pre-seed");
+    if (filterLower === "acquired") return textToSearch.includes("acquired") || textToSearch.includes("acquisition") || textToSearch.includes("buys");
+    if (filterLower === "ipo") return textToSearch.includes("ipo") || textToSearch.includes("public");
+    
+    return textToSearch.includes(filterLower);
+  });
 
   /* ── Discover sectors/batches available for filter ── */
   const BATCH_OPTIONS = ["All","P26","W25","S24","W24","S23","W23","S22","W22"];
@@ -670,7 +726,7 @@ export default function MiruApp({ initialTab = "feed" }) {
             Miru
           </a>
           <nav className="header-nav">
-            {[["/feed","feed","Feed"],["/discover","discover","Discover"],["/research","research","Research"],["/competitors","competitors","Competitors"],["/jobs","jobs","Jobs 🆕"]].map(([href, id, label]) => (
+            {[["/feed","feed","Feed"],["/discover","discover","Discover"],["/jobs","jobs","Jobs"]].map(([href, id, label]) => (
               <button key={id} className={`nav-tab ${tab === id ? "active" : ""}`} onClick={() => { setTab(id); router.push(href); }}>
                 {label}{id === "discover" && discoverTotal > 0 && <span style={{ fontSize: 10, opacity: 0.7, marginLeft: 4 }}>({discoverTotal})</span>}
               </button>
@@ -763,25 +819,13 @@ export default function MiruApp({ initialTab = "feed" }) {
                   };
 
                   const renderItems = (items, offset = 0) => items.map((item, i) => {
-                    const companyName = item.startup || item.researchQuery || item.title || "";
-                    const companySlug = toSlug(companyName);
+                    const companyName = item.startup || item.researchQuery || "";
+                    const companySlug = toSlug(companyName || item.title || "startup");
                     return (
                       <div className="news-item" key={`${offset}-${i}`}>
                         <div style={{ display: "flex", gap: 8 }}>
                           <span className="news-rank">{offset + i + 1}.</span>
                           <div className="news-main">
-                            {/* Company name chip → /startup/[slug] */}
-                            {companyName && (
-                              <span
-                                className="news-company-chip"
-                                onClick={(e) => { e.stopPropagation(); window.location.href = `/startup/${companySlug}`; }}
-                                title={`Open ${companyName} intelligence page`}
-                                role="link"
-                                style={{ cursor: "pointer" }}
-                              >
-                                {companyName} ↗
-                              </span>
-                            )}
                             {/* Headline → inline research */}
                             <div
                               className="news-headline"
@@ -1134,12 +1178,9 @@ export default function MiruApp({ initialTab = "feed" }) {
                     const d = await r.json();
                     if (d.success) {
                       setJobsScrapeMsg(`✓ ${d.scraped} listings synced`);
-                      // reload jobs
-                      const res = await fetch(`/api/jobs?type=${jobTypeFilter}&source=${jobSourceFilter}&q=${jobSearch}&page=1`);
-                      const jd = await res.json();
-                      setJobs(jd.jobs || []);
+                      // force fetch to bypass cache
+                      loadJobs(1, jobTypeFilter, jobSourceFilter, jobSearch, true);
                       setJobPage(1);
-                      setJobsHasMore(jd.hasMore);
                     } else {
                       setJobsScrapeMsg("Sync failed — check console");
                     }
@@ -1158,10 +1199,8 @@ export default function MiruApp({ initialTab = "feed" }) {
                 <button key={v}
                   className={`jobs-filter-btn ${jobTypeFilter === v ? "active" : ""}`}
                   onClick={() => {
-                    setJobTypeFilter(v); setJobPage(1); setJobs([]); setJobsLoading(true);
-                    fetch(`/api/jobs?type=${v}&source=${jobSourceFilter}&q=${jobSearch}&page=1`)
-                      .then(r => r.json()).then(d => { setJobs(d.jobs||[]); setJobsHasMore(d.hasMore); })
-                      .finally(() => setJobsLoading(false));
+                    setJobTypeFilter(v); setJobPage(1); setJobs([]); 
+                    loadJobs(1, v, jobSourceFilter, jobSearch);
                   }}
                 >{l}</button>
               ))}
@@ -1173,10 +1212,8 @@ export default function MiruApp({ initialTab = "feed" }) {
                 <button key={v}
                   className={`jobs-source-chip ${jobSourceFilter === v ? "active" : ""}`}
                   onClick={() => {
-                    setJobSourceFilter(v); setJobPage(1); setJobs([]); setJobsLoading(true);
-                    fetch(`/api/jobs?type=${jobTypeFilter}&source=${v}&q=${jobSearch}&page=1`)
-                      .then(r => r.json()).then(d => { setJobs(d.jobs||[]); setJobsHasMore(d.hasMore); })
-                      .finally(() => setJobsLoading(false));
+                    setJobSourceFilter(v); setJobPage(1); setJobs([]); 
+                    loadJobs(1, jobTypeFilter, v, jobSearch);
                   }}
                 >{l}</button>
               ))}
@@ -1192,10 +1229,8 @@ export default function MiruApp({ initialTab = "feed" }) {
                 onChange={e => setJobSearch(e.target.value)}
                 onKeyDown={e => {
                   if (e.key === "Enter") {
-                    setJobPage(1); setJobs([]); setJobsLoading(true);
-                    fetch(`/api/jobs?type=${jobTypeFilter}&source=${jobSourceFilter}&q=${e.target.value}&page=1`)
-                      .then(r => r.json()).then(d => { setJobs(d.jobs||[]); setJobsHasMore(d.hasMore); })
-                      .finally(() => setJobsLoading(false));
+                    setJobPage(1); setJobs([]); 
+                    loadJobs(1, jobTypeFilter, jobSourceFilter, e.target.value);
                   }
                 }}
               />
@@ -1314,11 +1349,8 @@ export default function MiruApp({ initialTab = "feed" }) {
               <button className="jobs-load-more"
                 onClick={() => {
                   const next = jobPage + 1;
-                  setJobsLoading(true);
-                  fetch(`/api/jobs?type=${jobTypeFilter}&source=${jobSourceFilter}&q=${jobSearch}&page=${next}`)
-                    .then(r => r.json())
-                    .then(d => { setJobs(prev => [...prev, ...(d.jobs||[])]); setJobPage(next); setJobsHasMore(d.hasMore); })
-                    .finally(() => setJobsLoading(false));
+                  loadJobs(next, jobTypeFilter, jobSourceFilter, jobSearch);
+                  setJobPage(next);
                 }}
               >Load more listings</button>
             )}

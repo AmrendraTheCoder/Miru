@@ -37,7 +37,7 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 .settings-btn:hover { background: rgba(255,255,255,0.15); border-color: #fff; }
 /* Icon version hidden on desktop, shown on mobile */
 .settings-icon { display: none; }
-.settings-label { display: inline; }
+.settings-btn .settings-label { display: inline; color: #ffffff; }
 /* Search btn: label shown on desktop, icon shown on mobile */
 .search-btn-label { display: inline; }
 .search-btn-icon  { display: none; }
@@ -129,8 +129,28 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 .btn-research:hover { text-decoration: underline; }
 .btn-view-page { font-size: 11px; color: var(--muted); text-decoration: none; padding: 2px 0; white-space: nowrap; font-family: var(--font); }
 .btn-view-page:hover { color: var(--text); text-decoration: underline; }
-.news-company-chip { display: inline-block; font-size: 10px; font-weight: 700; color: var(--orange); text-decoration: none; letter-spacing: 0.2px; margin-bottom: 2px; }
-.news-company-chip:hover { text-decoration: underline; }
+.news-company-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--orange);
+  background: rgba(255, 102, 0, 0.08);
+  padding: 3px 8px;
+  border-radius: 12px;
+  text-decoration: none;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 102, 0, 0.2);
+  transition: all 0.2s;
+}
+.news-company-chip:hover {
+  background: var(--orange);
+  color: #fff;
+  border-color: var(--orange);
+}
 .news-summary { font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.5; }
 /* Date group labels in news feed */
 .news-group-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); padding: 6px 12px 4px; background: var(--bg); border-bottom: 1px solid var(--border); }
@@ -1530,7 +1550,7 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
    ════════════════════════════════════════════════════════════ */
 .mobile-bottom-nav { display: none; }
 
-@media (max-width: 430px) {
+@media (max-width: 450px) {
   .mobile-bottom-nav {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -1557,9 +1577,9 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 
 
 /* ════════════════════════════════════════════════════════════
-   MOBILE-FIRST RESPONSIVE OVERHAUL  (≤430px)
+   MOBILE-FIRST RESPONSIVE OVERHAUL  (≤450px)
    ════════════════════════════════════════════════════════════ */
-@media (max-width: 430px) {
+@media (max-width: 450px) {
 
   /* Push page content above the bottom nav */
   .content { padding-bottom: calc(60px + env(safe-area-inset-bottom)) !important; }
@@ -1602,7 +1622,7 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
     width: 36px !important; height: 36px !important;
     padding: 0 !important;
     display: flex !important; align-items: center !important; justify-content: center !important;
-    color: #fff !important;
+    color: #ffffff !important;
   }
 
   /* Search: full-width pill inside orange strip */
@@ -2030,11 +2050,11 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 }
 
 .floating-nav-bar {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(0,0,0,0.08);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
   border-radius: 100px;
   padding: 8px 12px 8px 24px;
   display: flex;
@@ -2048,7 +2068,7 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 .floating-nav-text {
   font-size: 14px;
   font-weight: 600;
-  color: var(--text);
+  color: #ffffff;
   white-space: nowrap;
 }
 
@@ -2475,3 +2495,40 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   transition: background 0.15s;
 }
 .jobs-wl-btn:hover { background: #d4461f; }
+
+/* ══════════════════════════════════════════════════════
+   TABLET / SPLIT-SCREEN RESPONSIVE (max-width: 850px)
+   ══════════════════════════════════════════════════════ */
+@media (max-width: 850px) {
+  /* Feed header: stack title on top, filters on next line */
+  .feed-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px;
+  }
+  .feed-header > div:last-child {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  .feed-filters {
+    flex-wrap: wrap !important;
+  }
+  
+  /* Collapse 2-col grid to 1-col so buttons go BELOW text */
+  .news-item {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+  
+  /* Reduce text size slightly */
+  .news-headline {
+    font-size: 13px !important;
+  }
+  .btn-research, .btn-view-page {
+    font-size: 11px !important;
+    padding: 3px 8px !important;
+  }
+}
