@@ -101,10 +101,6 @@ export default function WaitlistPage() {
             <p className="wlp-hero-sub">
               Miru decodes campus placements, company culture, and interview realities — human-verified data and AI precision. Built for students who want the truth.
             </p>
-            <div className="wlp-urgency">
-              <span className="wlp-urgency-dot" />
-              Limited early access — Placement season is close.
-            </div>
 
             {/* Form */}
             <div className="wlp-form-card" ref={formRef}>
