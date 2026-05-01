@@ -1,366 +1,375 @@
 "use client";
-
 import { useState, useEffect, useRef } from "react";
+import "./waitlist.css";
+
+const TICKERS = ["Campus Placement Data","Interview Intelligence","AI Salary Predictor","Culture Reality Tracker","Auto-Pilot Applications","Recruiter Merit Portal","YC Startup Research","Funding Intelligence"];
 
 const FEATURES = [
-  { icon: "📊", label: "Campus Time-Machine", desc: "5-year placement history broken down by college — PPOs, placed, and unplaced ratios on a timeline." },
-  { icon: "🕵️", label: "Inside Reality Tracker", desc: "Anonymous, area-wise employee reviews and a secure bias-reporting system. Know what it's really like after day one." },
-  { icon: "🎤", label: "Verified Interview Intel", desc: "Crowdsourced, recently asked interview questions — so you walk in knowing what to actually expect." },
-  { icon: "💰", label: "AI Salary Predictor", desc: "Upload your resume; our AI projects your starting salary and peak earning potential with real market data." },
-  { icon: "⚡", label: "Auto-Pilot Applications", desc: "Curated job feeds matched to your profile, plus one-click AI-generated answers for descriptive questions." },
-  { icon: "🏆", label: "Recruiter Merit Showcase", desc: "Top job seekers spotlighted directly to recruiters with verified skillsets and insider guidelines." },
+  {
+    title: "Campus Placement Time-Machine",
+    desc: "5-year placement history by college — PPOs, placed, and unplaced ratios on verified timelines.",
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+  },
+  {
+    title: "Inside Reality Tracker",
+    desc: "Anonymous, area-wise employee reviews and a secure bias-reporting system. Know what it's actually like.",
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+  },
+  {
+    title: "Verified Interview Intel",
+    desc: "Crowdsourced, recently asked questions — structure and depth — so you walk in knowing exactly what to expect.",
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+  },
+  {
+    title: "AI Salary Predictor",
+    desc: "Upload your resume. Our AI maps your skills against live market data to project your salary trajectory.",
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+  },
+  {
+    title: "Auto-Pilot Applications",
+    desc: "Curated job feeds matched to your profile. One-click AI-generated answers for descriptive form fields.",
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+  },
+  {
+    title: "Recruiter Merit Showcase",
+    desc: "Top job seekers spotlighted directly to recruiters with verified skillsets, insider guidelines, and meritocracy scores.",
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+  },
 ];
 
 const STATS = [
-  { value: "5,600+", label: "Companies Tracked" },
-  { value: "200+", label: "YC Startups" },
-  { value: "12K+", label: "Research Queries" },
-  { value: "Free", label: "Always" },
+  { val: "5,600+", lbl: "Companies Tracked" },
+  { val: "200+",   lbl: "YC Startups" },
+  { val: "12K+",   lbl: "Research Queries" },
+  { val: "Free",   lbl: "Forever" },
 ];
 
-const TICKER_ITEMS = [
-  "Campus Placement Time-Machine",
-  "Verified Interview Intel",
-  "AI Salary Predictor",
-  "Inside Reality Tracker",
-  "Auto-Pilot Applications",
-  "Recruiter Merit Showcase",
-  "YC Startup Research",
-  "Funding Intelligence",
+const BULLETS = [
+  "5-year campus placement data by college",
+  "Real interview questions from recent candidates",
+  "AI salary predictions from your resume",
 ];
 
 export default function WaitlistPage() {
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState("Student / Professional");
+  const [email, setEmail]   = useState("");
+  const [role, setRole]     = useState("Student / Professional");
   const [status, setStatus] = useState("idle");
-  const [msg, setMsg] = useState("");
-  const formRef = useRef(null);
+  const [msg, setMsg]       = useState("");
+  const formRef   = useRef(null);
+  const heroRef   = useRef(null);
+  const featRef   = useRef(null);
+  const aboutRef  = useRef(null);
+  const ctaRef    = useRef(null);
+
+  /* ── GSAP on mount ── */
+  useEffect(() => {
+    let ctx;
+    (async () => {
+      const { gsap } = await import("gsap");
+      const { ScrollTrigger } = await import("gsap/ScrollTrigger");
+      gsap.registerPlugin(ScrollTrigger);
+
+      ctx = gsap.context(() => {
+        /* Hero entrance */
+        gsap.from(".gsap-hero-line", {
+          y: 80, opacity: 0, stagger: 0.12, duration: 1,
+          ease: "power4.out", delay: 0.2
+        });
+        gsap.from(".wl-form-glass", {
+          x: 60, opacity: 0, duration: 1.1, ease: "power4.out", delay: 0.4
+        });
+
+        /* Feature cards on scroll */
+        gsap.from(".wl-feat-card", {
+          scrollTrigger: { trigger: featRef.current, start: "top 75%" },
+          y: 50, opacity: 0, stagger: 0.07, duration: 0.7, ease: "power3.out"
+        });
+
+        /* Stats */
+        gsap.from(".wl-stat", {
+          scrollTrigger: { trigger: ".wl-stats", start: "top 80%" },
+          scale: 0.85, opacity: 0, stagger: 0.1, duration: 0.6, ease: "back.out(1.5)"
+        });
+
+        /* About text */
+        gsap.from([".wl-about-lead", ".wl-about-body", ".wl-mission-card"], {
+          scrollTrigger: { trigger: aboutRef.current, start: "top 80%" },
+          y: 40, opacity: 0, stagger: 0.1, duration: 0.8, ease: "power3.out"
+        });
+
+        /* CTA */
+        gsap.from([".wl-cta-h2", ".wl-cta-sub", ".wl-cta-btn"], {
+          scrollTrigger: { trigger: ctaRef.current, start: "top 80%" },
+          y: 30, opacity: 0, stagger: 0.12, duration: 0.7, ease: "power3.out"
+        });
+      });
+
+      /* Feature card radial follow */
+      document.querySelectorAll(".wl-feat-card").forEach(card => {
+        card.addEventListener("mousemove", (e) => {
+          const r = card.getBoundingClientRect();
+          card.style.setProperty("--mx", ((e.clientX - r.left) / r.width * 100) + "%");
+          card.style.setProperty("--my", ((e.clientY - r.top) / r.height * 100) + "%");
+        });
+      });
+    })();
+    return () => ctx?.revert();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !email.includes("@")) return;
     setStatus("loading");
     try {
-      const res = await fetch("/api/waitlist", {
+      const res  = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, role }),
       });
       const data = await res.json();
-      if (res.ok) {
-        setStatus("success");
-        setMsg("You're on the list! Check your inbox.");
-        setEmail("");
-      } else {
-        setStatus("error");
-        setMsg(data.error || "Something went wrong.");
-      }
-    } catch {
-      setStatus("error");
-      setMsg("Network error. Please try again.");
-    }
+      if (res.ok) { setStatus("success"); setEmail(""); }
+      else { setStatus("error"); setMsg(data.error || "Something went wrong."); }
+    } catch { setStatus("error"); setMsg("Network error — please try again."); }
   };
 
   const scrollToForm = () => formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "var(--font)", color: "var(--text)", overflowX: "hidden" }}>
-      <style>{`
-        .wl-header { position: sticky; top: 0; z-index: 100; background: var(--orange); padding: 8px 20px; }
-        .wl-header-inner { max-width: 960px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
-        .wl-logo { color: #fff; font-weight: 800; font-size: 15px; text-decoration: none; display: flex; align-items: center; gap: 8px; }
-        .wl-logo-box { background: #fff; color: var(--orange); font-weight: 900; font-size: 12px; padding: 2px 6px; border-radius: 3px; }
-        .wl-back { font-size: 12px; color: rgba(255,255,255,0.85); text-decoration: none; font-weight: 500; display: flex; align-items: center; gap: 4px; transition: color 0.15s; }
-        .wl-back:hover { color: #fff; }
-
-        /* Ticker */
-        .wl-ticker { background: linear-gradient(90deg,#a03412,#82280c); padding: 9px 0; overflow: hidden; }
-        .wl-ticker-track { display: flex; width: max-content; animation: wl-scroll 30s linear infinite; }
-        .wl-ticker-track:hover { animation-play-state: paused; }
-        .wl-ticker-item { font-size: 9px; font-weight: 500; color: rgba(255,255,255,0.82); padding: 0 28px; letter-spacing: 0.6px; text-transform: uppercase; white-space: nowrap; }
-        .wl-ticker-item::before { content: "✦"; margin-right: 28px; color: rgba(255,255,255,0.3); font-size: 8px; }
-        @keyframes wl-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-
-        /* Hero */
-        .wl-hero { padding: 60px 20px 40px; text-align: center; background: radial-gradient(circle at 50% 0%, rgba(255,102,0,0.07) 0%, transparent 65%); }
-        .wl-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,102,0,0.1); color: var(--orange); font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; padding: 5px 14px; border-radius: 20px; margin-bottom: 24px; border: 1px solid rgba(255,102,0,0.2); }
-        .wl-badge-dot { width: 6px; height: 6px; background: var(--orange); border-radius: 50%; animation: wl-pulse 2s infinite; }
-        @keyframes wl-pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
-        .wl-h1 { font-size: clamp(30px, 7vw, 54px); font-weight: 800; line-height: 1.08; letter-spacing: -1.5px; margin-bottom: 16px; }
-        .wl-h1 span { color: var(--orange); }
-        .wl-sub { font-size: clamp(14px, 3vw, 16px); color: var(--muted); line-height: 1.55; max-width: 500px; margin: 0 auto 36px; }
-
-        /* Form card */
-        .wl-form-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px 24px; max-width: 420px; margin: 0 auto; box-shadow: 0 8px 40px rgba(0,0,0,0.06); }
-        .wl-form-label { font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; text-align: left; display: block; }
-        .wl-select, .wl-input { width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); font-family: var(--font); font-size: 13px; color: var(--text); outline: none; transition: border-color 0.15s; margin-bottom: 10px; }
-        .wl-select:focus, .wl-input:focus { border-color: var(--orange); }
-        .wl-btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-family: var(--font); font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-top: 4px; }
-        .wl-btn-primary { background: var(--orange); color: #fff; }
-        .wl-btn-primary:hover { background: var(--orange-hover); transform: translateY(-1px); }
-        .wl-btn-success { background: #10b981; color: #fff; cursor: default; }
-        .wl-btn-loading { background: var(--muted2); color: #fff; cursor: not-allowed; }
-        .wl-form-msg { font-size: 12px; text-align: center; margin-top: 10px; padding: 8px 12px; border-radius: 6px; }
-        .wl-form-msg.success { background: rgba(16,185,129,0.1); color: #10b981; }
-        .wl-form-msg.error { background: rgba(192,57,43,0.1); color: var(--red); }
-        .wl-privacy { font-size: 11px; color: var(--muted2); text-align: center; margin-top: 14px; }
-
-        /* CTA scroll hint */
-        .wl-cta-row { display: flex; justify-content: center; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
-        .wl-cta-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 8px 18px; border-radius: 20px; font-family: var(--font); font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
-        .wl-cta-btn:hover { border-color: var(--orange); color: var(--orange); background: rgba(255,102,0,0.04); }
-
-        /* About / Stats */
-        .wl-about { padding: 60px 20px; max-width: 960px; margin: 0 auto; }
-        .wl-section-label { font-size: 10px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--orange); margin-bottom: 12px; }
-        .wl-about-grid { display: grid; grid-template-columns: 1fr; gap: 32px; }
-        @media (min-width: 700px) { .wl-about-grid { grid-template-columns: 1fr 1fr; align-items: center; } }
-        .wl-about-h2 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; letter-spacing: -0.8px; line-height: 1.15; margin-bottom: 16px; }
-        .wl-about-p { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 20px; }
-        .wl-about-link { color: var(--orange); text-decoration: none; font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; }
-        .wl-about-link:hover { text-decoration: underline; }
-        .wl-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--border); }
-        .wl-stat { background: var(--surface); padding: 24px 20px; text-align: center; }
-        .wl-stat-val { font-size: 28px; font-weight: 800; color: var(--orange); letter-spacing: -1px; margin-bottom: 4px; }
-        .wl-stat-lbl { font-size: 11px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.4px; }
-
-        /* Features */
-        .wl-features { padding: 20px 20px 60px; max-width: 960px; margin: 0 auto; }
-        .wl-features-h2 { font-size: clamp(20px, 4vw, 28px); font-weight: 800; letter-spacing: -0.6px; margin-bottom: 8px; }
-        .wl-features-sub { font-size: 14px; color: var(--muted); margin-bottom: 32px; }
-        .wl-cards { display: grid; grid-template-columns: 1fr; gap: 14px; }
-        @media (min-width: 560px) { .wl-cards { grid-template-columns: 1fr 1fr; } }
-        @media (min-width: 900px) { .wl-cards { grid-template-columns: 1fr 1fr 1fr; } }
-        .wl-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 22px 20px; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; }
-        .wl-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(0,0,0,0.07); border-color: rgba(255,102,0,0.2); }
-        .wl-card-icon { font-size: 22px; margin-bottom: 12px; }
-        .wl-card-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
-        .wl-card-desc { font-size: 12px; color: var(--muted); line-height: 1.55; }
-        .wl-card-soon { display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--orange); background: rgba(255,102,0,0.08); padding: 2px 7px; border-radius: 4px; margin-top: 10px; }
-
-        /* Bottom CTA */
-        .wl-bottom-cta { background: var(--orange); padding: 50px 24px; text-align: center; }
-        .wl-bottom-h { font-size: clamp(22px, 5vw, 36px); font-weight: 800; color: #fff; letter-spacing: -0.8px; margin-bottom: 10px; }
-        .wl-bottom-p { font-size: 14px; color: rgba(255,255,255,0.78); margin-bottom: 28px; }
-        .wl-bottom-btn { background: #fff; color: var(--orange); padding: 12px 32px; border: none; border-radius: 8px; font-family: var(--font); font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
-        .wl-bottom-btn:hover { background: #fff3ee; transform: translateY(-1px); }
-
-        /* Footer */
-        .wl-footer { background: #111; padding: 40px 20px 24px; }
-        .wl-footer-inner { max-width: 960px; margin: 0 auto; }
-        .wl-footer-marquee-wrap { overflow: hidden; border-top: 1px solid rgba(255,255,255,0.07); border-bottom: 1px solid rgba(255,255,255,0.07); padding: 10px 0; margin-bottom: 36px; }
-        .wl-footer-marquee-track { display: flex; width: max-content; animation: wl-scroll 40s linear infinite; }
-        .wl-footer-marquee-item { font-size: 10px; color: rgba(255,255,255,0.35); padding: 0 24px; letter-spacing: 1px; text-transform: uppercase; font-weight: 600; white-space: nowrap; }
-        .wl-footer-marquee-item::before { content: "✦"; margin-right: 24px; color: rgba(255,102,0,0.4); }
-        .wl-footer-top { display: flex; flex-direction: column; gap: 28px; margin-bottom: 36px; }
-        @media (min-width: 640px) { .wl-footer-top { flex-direction: row; justify-content: space-between; align-items: flex-start; } }
-        .wl-footer-brand { color: #fff; }
-        .wl-footer-logo { font-size: 18px; font-weight: 900; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-        .wl-footer-logo-box { background: var(--orange); color: #fff; font-weight: 900; font-size: 12px; padding: 2px 6px; border-radius: 3px; }
-        .wl-footer-tagline { font-size: 12px; color: rgba(255,255,255,0.4); max-width: 240px; line-height: 1.5; }
-        .wl-footer-links { display: flex; flex-direction: column; gap: 8px; }
-        .wl-footer-link-group-title { font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: rgba(255,255,255,0.35); margin-bottom: 6px; }
-        .wl-footer-link { color: rgba(255,255,255,0.55); text-decoration: none; font-size: 13px; transition: color 0.15s; }
-        .wl-footer-link:hover { color: #fff; }
-        .wl-footer-bottom { display: flex; flex-direction: column; gap: 12px; align-items: center; border-top: 1px solid rgba(255,255,255,0.07); padding-top: 20px; }
-        @media (min-width: 640px) { .wl-footer-bottom { flex-direction: row; justify-content: space-between; } }
-        .wl-footer-copy { font-size: 11px; color: rgba(255,255,255,0.25); }
-        .wl-back-top { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); padding: 7px 16px; border-radius: 20px; font-family: var(--font); font-size: 11px; cursor: pointer; transition: all 0.2s; }
-        .wl-back-top:hover { background: rgba(255,255,255,0.12); color: #fff; }
-        .wl-made-with { font-size: 11px; color: rgba(255,255,255,0.25); display: flex; align-items: center; gap: 4px; }
-        .wl-heart { color: #e53e3e; }
-      `}</style>
-
+    <div className="wl-root">
       {/* ── HEADER ── */}
       <header className="wl-header">
-        <div className="wl-header-inner">
-          <a href="/" className="wl-logo">
-            <span className="wl-logo-box">M</span>
-            Miru
-            <span style={{ fontSize: 10, background: "rgba(255,255,255,0.2)", color: "#fff", padding: "1px 6px", borderRadius: 10, fontWeight: 600 }}>V2</span>
-          </a>
-          <a href="/" className="wl-back">
-            ← Back to Miru
-          </a>
-        </div>
+        <a href="/" className="wl-logo">
+          <span className="wl-logo-box">M</span>
+          <span className="wl-logo-text">Miru</span>
+          <span className="wl-logo-badge">V2</span>
+        </a>
+        <nav className="wl-nav-links">
+          <a href="/#discover" className="wl-nav-link">Explore V1</a>
+          <a href="#features" className="wl-nav-link">Features</a>
+          <button className="wl-nav-link primary" onClick={scrollToForm} style={{border:"none",cursor:"pointer",fontFamily:"inherit"}}>
+            Join Waitlist
+          </button>
+        </nav>
       </header>
 
-      {/* ── TICKER ── */}
-      <div className="wl-ticker" aria-hidden="true">
-        <div className="wl-ticker-track">
-          {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
-            <span key={i} className="wl-ticker-item">{item}</span>
-          ))}
-        </div>
-      </div>
-
       {/* ── HERO ── */}
-      <section className="wl-hero">
-        <div className="wl-badge">
-          <span className="wl-badge-dot" />
-          Early Access — Limited Spots
-        </div>
-        <h1 className="wl-h1">
-          Career Intelligence,<br />
-          <span>Finally Honest.</span>
-        </h1>
-        <p className="wl-sub">
-          Miru V2 decodes campus placements, company culture, interview realities, and salary trajectories — all in one terminal. Built for students who don't want surprises.
-        </p>
+      <section className="wl-hero" ref={heroRef}>
+        <div className="wl-hero-bg" />
+        <div className="wl-hero-grid" />
 
-        {/* ── FORM CARD ── */}
-        <div className="wl-form-card" ref={formRef}>
-          {status === "success" ? (
-            <div style={{ textAlign: "center", padding: "20px 0" }}>
-              <div style={{ fontSize: 40, marginBottom: 12 }}>🎉</div>
-              <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>You're on the list!</div>
-              <div style={{ fontSize: 13, color: "var(--muted)" }}>We sent a confirmation to your inbox. Hang tight — V2 is coming.</div>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit}>
-              <span className="wl-form-label">Reserve your early access spot</span>
-              <select
-                className="wl-select"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-              >
-                <option>Student / Professional</option>
-                <option>Recruiter / Talent Acq.</option>
-              </select>
-              <input
-                className="wl-input"
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-              <button
-                type="submit"
-                className={`wl-btn ${status === "loading" ? "wl-btn-loading" : "wl-btn-primary"}`}
-                disabled={status === "loading"}
-              >
-                {status === "loading" ? "Joining…" : "Join Waitlist →"}
-              </button>
-              {msg && (
-                <div className={`wl-form-msg ${status}`}>{msg}</div>
-              )}
-              <p className="wl-privacy">🔒 No spam. Unsubscribe any time.</p>
-            </form>
-          )}
-        </div>
-
-        <div className="wl-cta-row">
-          <button className="wl-cta-btn" onClick={() => document.getElementById("features").scrollIntoView({ behavior: "smooth" })}>
-            See what's coming ↓
-          </button>
-          <a href="/" className="wl-cta-btn" style={{ textDecoration: "none" }}>
-            Explore Miru V1
-          </a>
-        </div>
-      </section>
-
-      {/* ── ABOUT / STATS ── */}
-      <section className="wl-about">
-        <div className="wl-about-grid">
-          <div>
-            <div className="wl-section-label">About Miru</div>
-            <h2 className="wl-about-h2">Built for the student who asks the hard questions.</h2>
-            <p className="wl-about-p">
-              Miru started as a research terminal for YC and funded startups. V2 goes further — we're embedding human-collected campus placement data, verified interview intel, and an AI layer that maps your exact skill trajectory to salary potential.
-            </p>
-            <p className="wl-about-p">
-              No fluff. No generic advice. Just raw, honest intelligence for the student who wants to know what's actually happening inside companies before they join.
-            </p>
-            <a href="/" className="wl-about-link">Explore V1 now →</a>
+        {/* Left */}
+        <div className="wl-hero-left">
+          <div className="wl-eyebrow gsap-hero-line">
+            <span className="wl-eyebrow-dot" />
+            Early Access — Limited Spots
           </div>
-          <div className="wl-stats-grid">
-            {STATS.map((s) => (
-              <div key={s.label} className="wl-stat">
-                <div className="wl-stat-val">{s.value}</div>
-                <div className="wl-stat-lbl">{s.label}</div>
+          <h1 className="wl-h1 gsap-hero-line">
+            Career Intelligence,<br />
+            <em>Finally Honest.</em>
+          </h1>
+          <p className="wl-hero-sub gsap-hero-line">
+            Miru V2 decodes campus placements, company culture, and interview realities with human-verified data and AI precision.
+          </p>
+          <div className="wl-hero-bullets gsap-hero-line">
+            {BULLETS.map(b => (
+              <div key={b} className="wl-bullet">
+                <span className="wl-bullet-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </span>
+                {b}
               </div>
             ))}
           </div>
         </div>
+
+        {/* Right — Form */}
+        <div className="wl-hero-right" ref={formRef}>
+          <div className="wl-form-glass">
+            {status === "success" ? (
+              <div className="wl-success-state">
+                <div className="wl-success-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                <div className="wl-success-title">You're on the list.</div>
+                <div className="wl-success-body">
+                  We've sent a confirmation to your inbox. You'll be among the first to access Miru V2.
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="wl-form-title">Reserve Early Access</div>
+                <div className="wl-form-sub">Be the first to unlock every V2 feature — free of charge.</div>
+                <form onSubmit={handleSubmit}>
+                  <label className="wl-field-label">I am a</label>
+                  <select className="wl-select" value={role} onChange={e => setRole(e.target.value)}>
+                    <option>Student / Professional</option>
+                    <option>Recruiter / Talent Acq.</option>
+                  </select>
+                  <label className="wl-field-label">Email address</label>
+                  <input
+                    className="wl-input"
+                    type="email"
+                    placeholder="you@college.edu"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="submit"
+                    className={`wl-submit${status === "success" ? " success" : ""}`}
+                    disabled={status === "loading"}
+                  >
+                    {status === "loading" ? "Joining…" : "Claim My Spot →"}
+                  </button>
+                  {status === "error" && <div className="wl-form-msg-err">{msg}</div>}
+                </form>
+                <div className="wl-privacy-note">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                  No spam. Unsubscribe anytime.
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </section>
 
+      {/* ── TICKER ── */}
+      <div className="wl-ticker" aria-hidden="true">
+        <div className="wl-ticker-track">
+          {[...TICKERS, ...TICKERS].map((t, i) => (
+            <span key={i} className="wl-ticker-item">
+              <span className="wl-ticker-sep">✦</span>{t}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* ── STATS ── */}
+      <div className="wl-section" style={{paddingBottom:0}}>
+        <div className="wl-stats">
+          {STATS.map(s => (
+            <div key={s.lbl} className="wl-stat">
+              <div className="wl-stat-val">{s.val}</div>
+              <div className="wl-stat-lbl">{s.lbl}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="wl-divider" style={{margin:"80px 0 0"}} />
+
+      {/* ── ABOUT ── */}
+      <section className="wl-section" ref={aboutRef}>
+        <div className="wl-about-grid">
+          <div>
+            <div className="wl-section-tag">About Miru V2</div>
+            <div className="wl-about-lead">
+              Built for the student who asks<br />the uncomfortable questions.
+            </div>
+            <p className="wl-about-body">
+              Miru started as an AI research terminal for funded startups. V2 goes deeper — we're embedding human-collected campus placement data, verified interview structures, and an AI layer that maps your exact skill trajectory to real salary outcomes.
+            </p>
+            <p className="wl-about-body">
+              No filtered LinkedIn posts. No vague Glassdoor ratings. Just raw, verified intelligence for students who want the truth before they sign the offer letter.
+            </p>
+            <a href="/" className="wl-about-cta">
+              Explore Miru V1 →
+            </a>
+          </div>
+          <div>
+            <div className="wl-mission-card">
+              <h3>Our Mission</h3>
+              <p>Campus recruitment in India is opaque by design. We believe every student deserves access to the same insider information that the well-connected already have — placement timelines, real interview questions, salary benchmarks, and honest company culture data.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="wl-divider" />
+
       {/* ── FEATURES ── */}
-      <section className="wl-features" id="features">
-        <div className="wl-section-label">V2 Features</div>
-        <h2 className="wl-features-h2">Everything we're shipping in V2.</h2>
-        <p className="wl-features-sub">Joining the waitlist locks in your early access to all of these when they drop.</p>
-        <div className="wl-cards">
-          {FEATURES.map((f) => (
-            <div key={f.label} className="wl-card">
-              <div className="wl-card-icon">{f.icon}</div>
-              <div className="wl-card-title">{f.label}</div>
-              <div className="wl-card-desc">{f.desc}</div>
-              <span className="wl-card-soon">Coming in V2</span>
+      <section className="wl-section" id="features" ref={featRef}>
+        <div className="wl-section-tag">What's Coming in V2</div>
+        <h2 className="wl-section-h2">Six tools. One terminal.<br />Zero compromises.</h2>
+        <p className="wl-section-p">Joining the waitlist locks you into early access the moment any feature ships.</p>
+        <div className="wl-features-grid">
+          {FEATURES.map(f => (
+            <div key={f.title} className="wl-feat-card">
+              <div className="wl-feat-icon">{f.icon}</div>
+              <div className="wl-feat-title">{f.title}</div>
+              <div className="wl-feat-desc">{f.desc}</div>
+              <span className="wl-feat-badge">V2 Feature</span>
             </div>
           ))}
         </div>
       </section>
 
       {/* ── BOTTOM CTA ── */}
-      <section className="wl-bottom-cta">
-        <h2 className="wl-bottom-h">Secure your spot now.</h2>
-        <p className="wl-bottom-p">Early access users will be the first to unlock every V2 feature — for free.</p>
-        <button className="wl-bottom-btn" onClick={scrollToForm}>
+      <section className="wl-cta-section" ref={ctaRef}>
+        <div className="wl-cta-bg" />
+        <div className="wl-section-tag">Don't Wait</div>
+        <h2 className="wl-cta-h2">Your next offer letter<br />starts here.</h2>
+        <p className="wl-cta-sub">Early access is free, always. Get in before the queue closes.</p>
+        <button className="wl-cta-btn" onClick={scrollToForm}>
           Join the Waitlist
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
         </button>
       </section>
 
       {/* ── FOOTER ── */}
       <footer className="wl-footer">
-        <div className="wl-footer-inner">
-          {/* Marquee */}
-          <div className="wl-footer-marquee-wrap" aria-hidden="true">
-            <div className="wl-footer-marquee-track">
-              {[...TICKER_ITEMS, ...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
-                <span key={i} className="wl-footer-marquee-item">{item}</span>
-              ))}
+        <div className="wl-footer-marquee-wrap" aria-hidden="true">
+          <div className="wl-footer-marquee-track">
+            {[...TICKERS, ...TICKERS, ...TICKERS].map((t, i) => (
+              <span key={i} className="wl-footer-marquee-item">{t}</span>
+            ))}
+          </div>
+        </div>
+
+        <div className="wl-footer-body">
+          <div>
+            <div className="wl-footer-brand-logo">
+              <span className="wl-logo-box" style={{fontSize:14,padding:"3px 8px"}}>M</span>
+              <span className="wl-footer-brand-name">Miru</span>
+            </div>
+            <p className="wl-footer-brand-tag">
+              The intelligence terminal for the next generation of career-focused students and job seekers.
+            </p>
+          </div>
+          <div>
+            <div className="wl-footer-col-title">Product</div>
+            <div className="wl-footer-links">
+              <a href="/" className="wl-footer-link">Miru V1</a>
+              <a href="/waitlist" className="wl-footer-link">V2 Waitlist</a>
+              <a href="/#discover" className="wl-footer-link">Discover Startups</a>
             </div>
           </div>
-
-          {/* Top links row */}
-          <div className="wl-footer-top">
-            <div className="wl-footer-brand">
-              <div className="wl-footer-logo">
-                <span className="wl-footer-logo-box">M</span>
-                Miru
-              </div>
-              <p className="wl-footer-tagline">
-                The intelligence terminal for the next generation of job seekers.
-              </p>
-            </div>
-
-            <div>
-              <div className="wl-footer-link-group-title">Product</div>
-              <div className="wl-footer-links">
-                <a href="/" className="wl-footer-link">Miru V1</a>
-                <a href="/waitlist" className="wl-footer-link">V2 Waitlist</a>
-                <a href="/#discover" className="wl-footer-link">Discover Startups</a>
-              </div>
-            </div>
-
-            <div>
-              <div className="wl-footer-link-group-title">Legal</div>
-              <div className="wl-footer-links">
-                <a href="#" className="wl-footer-link">Privacy Policy</a>
-                <a href="#" className="wl-footer-link">Terms of Service</a>
-              </div>
+          <div>
+            <div className="wl-footer-col-title">Legal</div>
+            <div className="wl-footer-links">
+              <a href="#" className="wl-footer-link">Privacy Policy</a>
+              <a href="#" className="wl-footer-link">Terms of Service</a>
             </div>
           </div>
+        </div>
 
-          {/* Bottom bar */}
-          <div className="wl-footer-bottom">
-            <span className="wl-footer-copy">© 2026 Miru Intelligence. All rights reserved.</span>
-            <span className="wl-made-with">Made with <span className="wl-heart">♥</span> in India</span>
-            <button className="wl-back-top" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-              ↑ Back to top
-            </button>
-          </div>
+        <div className="wl-footer-bottom">
+          <span className="wl-footer-copy">© 2026 Miru Intelligence. All rights reserved.</span>
+          <span className="wl-footer-made">
+            Made with <span className="wl-footer-heart">♥</span> in India
+          </span>
+          <button className="wl-back-top" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M5 15l7-7 7 7"/>
+            </svg>
+            Back to top
+          </button>
         </div>
       </footer>
     </div>
