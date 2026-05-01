@@ -17,6 +17,13 @@ const nextConfig = {
       },
     ];
   },
+  webpack(config, { dev }) {
+    if (dev) {
+      // Use memory cache in dev to prevent .pack.gz ENOENT race conditions
+      config.cache = { type: "memory" };
+    }
+    return config;
+  },
 };
 
 module.exports = nextConfig;
