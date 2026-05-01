@@ -2045,7 +2045,7 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   bottom: 74px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 90;
+  z-index: 350;
   transition: all 0.4s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
