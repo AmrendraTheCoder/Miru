@@ -8,6 +8,7 @@ import { SearchEngine, getMemoryStats } from "@/lib/searchEngine";
 import BlogTicker from "./BlogTicker";
 import BlogDrawer from "./BlogDrawer";
 import FloatingBlogNav from "./FloatingBlogNav";
+import SalariesTab from "./SalariesTab"; // V0 — Salaries Hub
 
 /* ── Fallback static list ── */
 const STATIC_STARTUPS = [
@@ -726,11 +727,12 @@ export default function MiruApp({ initialTab = "feed" }) {
             Miru
           </a>
           <nav className="header-nav">
-            {[["/feed","feed","Feed"],["/discover","discover","Discover"],["/jobs","jobs","Jobs"]].map(([href, id, label]) => (
+            {[["/feed","feed","Feed"],["/discover","discover","Discover"],["/salaries","salaries","Salaries"]].map(([href, id, label]) => (
               <button key={id} className={`nav-tab ${tab === id ? "active" : ""}`} onClick={() => { setTab(id); router.push(href); }}>
                 {label}{id === "discover" && discoverTotal > 0 && <span style={{ fontSize: 10, opacity: 0.7, marginLeft: 4 }}>({discoverTotal})</span>}
               </button>
             ))}
+            {/* Jobs tab — reserved for V1: [["/jobs","jobs","Jobs"]] */}
           </nav>
           <div className="header-actions">
             <button className="settings-btn" onClick={() => setSettingsOpen(true)}>
@@ -1157,7 +1159,10 @@ export default function MiruApp({ initialTab = "feed" }) {
           </div>
         )}
 
-        {/* ── JOBS TAB ── */}
+        {/* ── SALARIES TAB ── */}
+        {tab === "salaries" && <SalariesTab />}
+
+        {/* ── JOBS TAB (Reserved for V1) ── */}
         {tab === "jobs" && (
           <div className="jobs-wrap">
 
@@ -1393,15 +1398,15 @@ export default function MiruApp({ initialTab = "feed" }) {
           <span className="mbn-label">Discover</span>
         </button>
         <button
-          className={`mbn-tab ${tab === "jobs" ? "active" : ""}`}
-          onClick={() => { setTab("jobs"); router.push("/jobs"); }}
-          aria-label="Jobs"
+          className={`mbn-tab ${tab === "salaries" ? "active" : ""}`}
+          onClick={() => { setTab("salaries"); router.push("/salaries"); }}
+          aria-label="Salaries"
         >
           <svg className="mbn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="2" y="7" width="20" height="14" rx="2"/>
-            <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+            <line x1="12" y1="1" x2="12" y2="23"/>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
           </svg>
-          <span className="mbn-label">Jobs</span>
+          <span className="mbn-label">Salaries</span>
         </button>
       </nav>
       <BlogDrawer 
