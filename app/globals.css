@@ -143,20 +143,17 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   border: none;
   border-bottom: 6px solid var(--bg);
   background: var(--surface);
-  box-shadow: none;
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
-/* Clipping wrapper — prevents slides bleeding out */
 .nc-clip {
   overflow: hidden;
   width: 100%;
   flex: 1;
 }
 
-/* Horizontal strip of 3 slides — transforms on swipe */
 .nc-strip {
   display: flex;
   flex-direction: row;
@@ -165,28 +162,28 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   will-change: transform;
 }
 
-/* Every slide = exactly 100% of card width, never shrinks */
+/* Every slide = exactly 100% width, never shrinks */
 .nc-slide {
   width: 100%;
   flex: 0 0 100%;
   min-width: 0;
   box-sizing: border-box;
+  position: relative;
+  height: 210px;    /* ALL 3 SLIDES SAME HEIGHT */
 }
 
-/* ─── SLIDE 1 ─── */
+/* ─── SLIDE 1 — Hook ─── */
 .nc-s1 {
   display: flex;
   flex-direction: row;
   align-items: stretch;
-  height: 148px;
 }
 
-/* Rank badge — styled pill */
 .nc-rank {
   position: absolute;
   top: 12px;
   left: 14px;
-  z-index: 5;
+  z-index: 10;
   min-width: 24px;
   height: 24px;
   padding: 0 7px;
@@ -202,23 +199,24 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   letter-spacing: 0.3px;
 }
 
-/* LEFT: headline text — 70% */
+/* LEFT 70% */
 .nc-s1-left {
   width: 70%;
   flex: 0 0 70%;
   min-width: 0;
-  padding: 24px 12px 14px 18px;
+  padding: 28px 12px 14px 18px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 8px;
   overflow: hidden;
+  z-index: 1;
 }
 
 .nc-h2 {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 800;
-  line-height: 1.3;
+  line-height: 1.28;
   margin: 0;
   letter-spacing: -0.3px;
   word-break: break-word;
@@ -235,7 +233,7 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   margin: 0;
 }
 
-/* RIGHT: image block — 30% */
+/* RIGHT 30% — image */
 .nc-s1-right {
   width: 30%;
   flex: 0 0 30%;
@@ -244,7 +242,6 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   overflow: hidden;
 }
 
-/* Actual image — fills the right block */
 .nc-img {
   position: absolute;
   top: 0; left: 0;
@@ -254,7 +251,6 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   z-index: 2;
 }
 
-/* Fallback shown when no image / image fails */
 .nc-img-fallback {
   position: absolute;
   top: 0; left: 0;
@@ -267,16 +263,15 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
 }
 
 .nc-img-letter {
-  font-size: 48px;
+  font-size: 52px;
   font-weight: 900;
   font-style: italic;
-  color: rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.22);
   line-height: 1;
   position: relative;
   z-index: 2;
 }
 
-/* crosshatch SVG fills the fallback */
 .nc-hatch {
   position: absolute;
   top: 0; left: 0;
@@ -284,77 +279,167 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   z-index: 1;
 }
 
-/* ─── SLIDES 2 & 3 ─── */
+/* ─── SLIDES 2 & 3 — same size, gradient bg ─── */
 .nc-s2,
 .nc-s3 {
   display: flex;
   flex-direction: column;
-  padding: 16px 16px 4px;
-  background: var(--surface);
-  min-height: 148px;
-  gap: 6px;
+  position: relative;
 }
 
-.nc-slide-tag {
+.nc-s2-inner {
+  flex: 1;
+  padding: 28px 48px 12px 18px; /* right pad leaves room for arrow */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+
+/* Chip label */
+.nc-slide-chip {
+  display: inline-flex;
+  align-self: flex-start;
   font-size: 9px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.7px;
+  letter-spacing: 0.6px;
+  color: rgba(255,255,255,0.9);
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 4px;
+  padding: 2px 8px;
   margin: 0;
-  padding-bottom: 6px;
-  border-bottom: 1.5px solid currentColor;
-  opacity: 0.9;
 }
 
-.nc-slide-counter {
-  font-weight: 500;
-  opacity: 0.6;
-  font-size: 9px;
-  float: right;
-}
-
-.nc-body {
-  font-size: 13px;
-  line-height: 1.65;
-  color: var(--text);
+/* Colored segment paragraph */
+.nc-seg-para {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.45;
   margin: 0;
   flex: 1;
+  word-break: break-word;
+}
+
+/* Loading shimmer */
+.nc-loading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0;
+}
+
+.nc-pulse {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.5);
+  animation: ncPulse 1.2s ease-in-out infinite;
+}
+.nc-pulse:nth-child(2) { animation-delay: 0.2s; }
+.nc-pulse:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes ncPulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50%       { transform: scale(1.4); opacity: 1; }
 }
 
 /* Actions on slide 3 */
-.nc-actions {
+.nc-s3-actions {
   display: flex;
   gap: 8px;
   align-items: center;
-  padding-top: 6px;
+  padding: 0 48px 14px 18px;
   flex-shrink: 0;
 }
 
 .nc-cta {
   font-size: 11px;
   font-weight: 700;
-  color: #fff;
   border: none;
   border-radius: 20px;
-  padding: 5px 14px;
+  padding: 6px 16px;
   cursor: pointer;
   font-family: var(--font);
   transition: opacity 0.15s;
+  backdrop-filter: blur(8px);
 }
 .nc-cta:hover { opacity: 0.85; }
 
-.nc-ghost {
+.nc-ghost-light {
   font-size: 11px;
   font-weight: 600;
-  color: var(--muted);
+  color: rgba(255,255,255,0.75);
   background: none;
   border: none;
   cursor: pointer;
   font-family: var(--font);
   padding: 0;
-  transition: color 0.15s;
 }
-.nc-ghost:hover { color: var(--text); }
+.nc-ghost-light:hover { color: #fff; }
+
+/* ─── NAV ARROWS ─── */
+.nc-nav-arrow-wrap {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 10;
+}
+
+.nc-nav-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid;
+  background: rgba(0,0,0,0.2);
+  backdrop-filter: blur(8px);
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s, opacity 0.15s;
+  font-family: var(--font);
+  padding: 0;
+}
+
+.nc-nav-next {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.nc-nav-btn:hover { transform: scale(1.12); }
+
+/* ─── BYLINE ─── */
+.nc-byline {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  border-top: 1px solid;
+  padding-top: 7px;
+  margin-top: auto;
+}
+
+.nc-byline-author {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.85);
+}
+
+.nc-byline-sep { font-size: 10px; color: rgba(255,255,255,0.4); }
+
+.nc-byline-date,
+.nc-byline-read {
+  font-size: 10px;
+  color: rgba(255,255,255,0.6);
+}
 
 /* ─── Dots ─── */
 .nc-dots {
@@ -364,8 +449,8 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   gap: 5px;
   padding: 8px 0 10px;
   background: var(--surface);
-  flex-shrink: 0;
   border-top: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
 .nc-dot {
@@ -386,7 +471,6 @@ html, body { background: var(--bg); color: var(--text); font-family: var(--font)
   width: 18px;
   border-radius: 3px;
 }
-
 
 
 

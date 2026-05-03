@@ -830,6 +830,7 @@ export default function MiruApp({ initialTab = "feed" }) {
                         item={item}
                         rank={offset + i + 1}
                         accentIdx={offset + i}
+                        geminiKey={geminiKey}
                         onResearch={(q) => research(q)}
                         onViewPage={() => { window.location.href = `/startup/${companySlug}`; }}
                       />
