@@ -9,6 +9,7 @@ import BlogTicker from "./BlogTicker";
 import BlogDrawer from "./BlogDrawer";
 import FloatingBlogNav from "./FloatingBlogNav";
 import SalariesTab from "./SalariesTab"; // V0 — Salaries Hub
+import NewsCard from "./NewsCard";
 
 /* ── Fallback static list ── */
 const STATIC_STARTUPS = [
@@ -824,38 +825,14 @@ export default function MiruApp({ initialTab = "feed" }) {
                     const companyName = item.startup || item.researchQuery || "";
                     const companySlug = toSlug(companyName || item.title || "startup");
                     return (
-                      <div className="news-item" key={`${offset}-${i}`}>
-                        <div style={{ display: "flex", gap: 8 }}>
-                          <span className="news-rank">{offset + i + 1}.</span>
-                          <div className="news-main">
-                            {/* Headline → inline research */}
-                            <div
-                              className="news-headline"
-                              onClick={() => research(item.researchQuery || item.startup)}
-                            >
-                              {item.headline || item.title}
-                            </div>
-                            <div className="news-meta">
-                              {item.stage && <span className={`news-stage ${item.stage?.toLowerCase().includes("seed") ? "stage-seed" : item.stage?.toLowerCase().includes("series") ? "stage-series" : item.stage?.toLowerCase().includes("acquired") ? "stage-acquired" : "stage-ipo"}`}>{item.stage}</span>}
-                              {item.amount && <span style={{ color: "var(--green)", fontWeight: 600 }}>{item.amount}</span>}
-                              {item.source && <span>{item.source}</span>}
-                              {(item.date || item.publishedDate) && <span style={{ color: "var(--muted2)" }}>{formatDate(item.date || item.publishedDate)}</span>}
-                            </div>
-                            {item.summary && <div className="news-summary">{item.summary}</div>}
-
-                          </div>
-                        </div>
-                        <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 6 }}>
-                          <button className="btn-research" onClick={() => research(item.researchQuery || item.startup || item.title)}>Research →</button>
-                          <span
-                            className="btn-view-page"
-                            onClick={(e) => { e.stopPropagation(); window.location.href = `/startup/${companySlug}`; }}
-                            role="link"
-                            style={{ cursor: "pointer" }}
-                          >View page ↗</span>
-
-                        </div>
-                      </div>
+                      <NewsCard
+                        key={`${offset}-${i}`}
+                        item={item}
+                        rank={offset + i + 1}
+                        accentIdx={offset + i}
+                        onResearch={(q) => research(q)}
+                        onViewPage={() => { window.location.href = `/startup/${companySlug}`; }}
+                      />
                     );
                   });
 
