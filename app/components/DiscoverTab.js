@@ -17,6 +17,16 @@ const TYPE_META = {
 
 const BATCH_OPTIONS = ["All","P26","W25","S24","W24","S23","W23","S22","W22"];
 
+/* Category tabs with emojis — replaces plain chip buttons */
+const CATEGORY_TABS = [
+  { id: "yc",         label: "YC Startups",   sub: "" },
+  { id: "unicorn",    label: "Unicorns",       sub: "$1B+" },
+  { id: "fortune500", label: "Fortune 500",    sub: "" },
+  { id: "tech",       label: "Big Tech",       sub: "& MNCs" },
+  { id: "all",        label: "All",            sub: "Companies" },
+];
+
+
 function toSlug(name = "") {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
@@ -39,7 +49,7 @@ function StartupCard({ s, onResearch }) {
   const slug = s.slug || toSlug(s.name || "");
   const typeMeta = TYPE_META[s.company_type] || null;
   return (
-    <div className="discover-card" onClick={() => { window.location.href = `/startup/${slug}`; }} style={{ cursor: "pointer" }}>
+    <div className="discover-card" onClick={() => { window.location.href = `/startup/${slug}`; }}>
       <div className="discover-card-top">
         <CompanyLogo name={s.name} logoUrl={s.logo_url} website={s.website} />
         <div style={{ minWidth: 0 }}>
@@ -68,16 +78,16 @@ function StartupCard({ s, onResearch }) {
 }
 
 export default function DiscoverTab({ onResearch }) {
-  const [companies, setCompanies]       = useState(STATIC_STARTUPS);
-  const [loading, setLoading]           = useState(false);
-  const [total, setTotal]               = useState(0);
-  const [page, setPage]                 = useState(1);
-  const [sectorFilter, setSector]       = useState("All");
-  const [batchFilter, setBatch]         = useState("All");
-  const [search, setSearch]             = useState("");
-  const [discoverTab, setDiscoverTab]   = useState("yc");
-  const [typeFilter, setTypeFilter]     = useState("all");
-  const [allSectors, setAllSectors]     = useState([]);
+  const [companies, setCompanies]     = useState(STATIC_STARTUPS);
+  const [loading, setLoading]         = useState(false);
+  const [total, setTotal]             = useState(0);
+  const [page, setPage]               = useState(1);
+  const [sectorFilter, setSector]     = useState("All");
+  const [batchFilter, setBatch]       = useState("All");
+  const [search, setSearch]           = useState("");
+  const [discoverTab, setDiscoverTab] = useState("yc");
+  const [typeFilter, setTypeFilter]   = useState("all");
+  const [allSectors, setAllSectors]   = useState([]);
   const searchRef   = useRef(null);
   const debounceRef = useRef(null);
 
@@ -115,75 +125,114 @@ export default function DiscoverTab({ onResearch }) {
     load(1, sectorFilter, batchFilter, search, discoverTab, dtype);
   };
 
+  const activeTab = CATEGORY_TABS.find(t => t.id === discoverTab);
+
   return (
     <div className="discover-tab-wrap">
-      {/* Header */}
-      <div className="feed-header" style={{ flexWrap: "wrap", gap: 6 }}>
-        <div style={{ width: "100%", display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-          <div className="feed-title">
-            {discoverTab === "yc" && "YC Company Database"}
-            {discoverTab === "unicorn" && "Unicorn Companies ($1B+)"}
-            {discoverTab === "fortune500" && "Fortune 500 & Forbes Global"}
-            {discoverTab === "tech" && "Big Tech & MNCs"}
-            {discoverTab === "all" && "All Companies"}
+
+      {/* ── Top spacing + Title ── */}
+      <div className="dtab-header">
+        <div className="dtab-title-row">
+          <div>
+            <div className="dtab-title">
+              {activeTab?.label}{" "}
+              {activeTab?.sub && <span className="dtab-title-sub">{activeTab.sub}</span>}
+            </div>
+            {total > 0 && (
+              <div className="dtab-count">{total.toLocaleString()} companies</div>
+            )}
           </div>
-          {total > 0 && <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 400 }}>{total.toLocaleString()}</span>}
+
+
+          {/* Search input — top right */}
+          <div className="dtab-search-wrap">
+            <svg className="dtab-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input
+              ref={searchRef}
+              className="dtab-search"
+              placeholder="Search…"
+              defaultValue={search}
+              onKeyDown={e => { if (e.key === "Enter") applyFilter(sectorFilter, batchFilter, e.target.value); }}
+              onChange={e => {
+                const val = e.target.value;
+                clearTimeout(debounceRef.current);
+                debounceRef.current = setTimeout(() => applyFilter(sectorFilter, batchFilter, val), 300);
+              }}
+            />
+          </div>
         </div>
 
-        {/* Category tabs */}
-        <div style={{ width: "100%", display: "flex", gap: 5, flexWrap: "wrap" }}>
-          {[
-            { id: "yc", label: "YC Startups" }, { id: "unicorn", label: "Unicorns" },
-            { id: "fortune500", label: "Fortune 500" }, { id: "tech", label: "Big Tech & MNCs" }, { id: "all", label: "All" },
-          ].map(t => (
-            <button key={t.id} onClick={() => setDiscoverTab(t.id)} style={{
-              padding: "5px 14px", borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: "pointer",
-              border: discoverTab === t.id ? "1.5px solid var(--orange)" : "1px solid var(--border)",
-              background: discoverTab === t.id ? "var(--orange)" : "#fff",
-              color: discoverTab === t.id ? "#fff" : "var(--muted)",
-              transition: "all 0.15s", fontFamily: "var(--font)",
-            }}>{t.label}</button>
-          ))}
-        </div>
-
-        {/* Type filter */}
-        <div style={{ width: "100%", display: "flex", gap: 5, alignItems: "center", flexWrap: "wrap", marginTop: 2 }}>
-          {[{ id: "all", label: "All Types" }, { id: "product", label: "Product" }, { id: "service", label: "Service" }].map(t => (
-            <button key={t.id} onClick={() => applyType(t.id)} className={`ctype-filter-btn ${typeFilter === t.id ? `active-${t.id}` : ""}`}>
-              {t.id !== "all" && <span className={`ctype-dot ctype-dot-${t.id}`} />}
-              {t.label}
+        <div className="dtab-cat-rail">
+          {CATEGORY_TABS.map(t => (
+            <button
+              key={t.id}
+              className={`dtab-cat-pill ${discoverTab === t.id ? "dtab-cat-pill-on" : ""}`}
+              onClick={() => setDiscoverTab(t.id)}
+            >
+              <span className="dtab-cat-label">{t.label}</span>
+              {t.sub && <span className="dtab-cat-sub">{t.sub}</span>}
             </button>
           ))}
         </div>
 
-        {/* Search + dropdowns */}
-        <div style={{ width: "100%", display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginTop: 2 }}>
-          <input
-            ref={searchRef}
-            style={{ flex: 1, minWidth: 100, padding: "5px 10px", border: "1px solid var(--border)", borderRadius: 20, fontFamily: "var(--font)", fontSize: 12, background: "#fff", outline: "none" }}
-            placeholder="Search companies..."
-            defaultValue={search}
-            onKeyDown={e => { if (e.key === "Enter") applyFilter(sectorFilter, batchFilter, e.target.value); }}
-            onChange={e => {
-              const val = e.target.value;
-              clearTimeout(debounceRef.current);
-              debounceRef.current = setTimeout(() => applyFilter(sectorFilter, batchFilter, val), 300);
-            }}
-          />
+
+        {/* ── Secondary filter row: type chips + batch/sector dropdowns ── */}
+        <div className="dtab-filter-row">
+          {/* Company type segmented control */}
+          <div className="dtab-seg">
+            {[
+              { id: "all",     label: "All" },
+              { id: "product", label: "Product" },
+              { id: "service", label: "Service" },
+            ].map(t => (
+              <button
+                key={t.id}
+                className={`dtab-seg-btn ${typeFilter === t.id ? "dtab-seg-btn-on" : ""}`}
+                onClick={() => applyType(t.id)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+
+          {/* Batch dropdown — YC only */}
           {discoverTab === "yc" && (
-            <select style={{ padding: "5px 8px", border: "1px solid var(--border)", borderRadius: 20, fontFamily: "var(--font)", fontSize: 12, background: "#fff", color: "var(--text)" }}
-              value={batchFilter} onChange={e => applyFilter(sectorFilter, e.target.value, search)}>
+            <select
+              className="dtab-select"
+              value={batchFilter}
+              onChange={e => applyFilter(sectorFilter, e.target.value, search)}
+            >
               {BATCH_OPTIONS.map(b => <option key={b}>{b}</option>)}
             </select>
           )}
-          <select style={{ padding: "5px 8px", border: "1px solid var(--border)", borderRadius: 20, fontFamily: "var(--font)", fontSize: 12, background: "#fff", color: "var(--text)" }}
-            value={sectorFilter} onChange={e => applyFilter(e.target.value, batchFilter, search)}>
+
+          {/* Sector dropdown */}
+          <select
+            className="dtab-select"
+            value={sectorFilter}
+            onChange={e => applyFilter(e.target.value, batchFilter, search)}
+          >
             {["All", ...allSectors.slice(0, 30)].map(s => <option key={s}>{s}</option>)}
           </select>
         </div>
       </div>
 
-      {/* Skeleton */}
+      {/* ── Company count label ── */}
+      {companies.length > 0 && (
+        <div className="card-list-label">
+          {total > 0 ? (
+            <><strong style={{ color: "var(--text)", fontWeight: 600 }}>{companies.length}</strong>
+            <span style={{ color: "var(--muted2)" }}> of </span>
+            <strong style={{ color: "var(--text)", fontWeight: 600 }}>{total.toLocaleString()}</strong>
+            <span style={{ color: "var(--muted2)" }}> companies</span></>
+          ) : "Companies"}
+        </div>
+      )}
+
+      {/* ── Skeleton ── */}
       {loading && companies.length === 0 && (
         <div className="discover-grid">
           {[...Array(6)].map((_,i) => (
@@ -196,12 +245,7 @@ export default function DiscoverTab({ onResearch }) {
         </div>
       )}
 
-      {companies.length > 0 && (
-        <div className="card-list-label">
-          {total > 0 ? <><strong style={{ color:"var(--text)",fontWeight:500 }}>{companies.length}</strong> <span style={{ color:"var(--muted2)" }}>of</span> <strong style={{ color:"var(--text)",fontWeight:500 }}>{total.toLocaleString()}</strong> companies</> : "Companies"}
-        </div>
-      )}
-
+      {/* ── Company grid ── */}
       <div className="discover-grid">
         {companies.map((s, i) => <StartupCard key={s.slug || i} s={s} onResearch={onResearch} />)}
       </div>
@@ -214,12 +258,12 @@ export default function DiscoverTab({ onResearch }) {
       )}
 
       {companies.length > 0 && companies.length < total && (
-        <div style={{ textAlign: "center", marginTop: 20 }}>
+        <div style={{ textAlign: "center", marginTop: 20, paddingBottom: 24 }}>
           <button className="btn" disabled={loading} onClick={() => {
             const next = page + 1; setPage(next);
             load(next, sectorFilter, batchFilter, search, discoverTab);
           }}>
-            {loading ? "Loading..." : `Load more (${total - companies.length} remaining)`}
+            {loading ? "Loading…" : `Load more (${total - companies.length} remaining)`}
           </button>
         </div>
       )}

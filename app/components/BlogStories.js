@@ -1,65 +1,82 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { dummyBlogs } from "@/lib/blogs";
 
 /* ─────────────────────────────────────────────────────────
-   STORY VIEWER — full-screen Instagram Stories overlay
+   STORY VIEWER — Full-screen viewer (portal-rendered)
 ───────────────────────────────────────────────────────── */
-const STORY_DURATION = 5000; // ms per auto-advance
+const STORY_DURATION = 6000;
+
+const CATEGORY_COLORS = [
+  "#e8522a","#7c3aed","#0369a1","#059669","#d97706","#dc2626"
+];
 
 function StoryViewer({ blogs, startIndex, onClose }) {
   const [idx, setIdx]       = useState(startIndex);
   const [progress, setProg] = useState(0);
-  const timerRef            = useRef(null);
-  const progRef             = useRef(null);
+  const [mounted, setMounted] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const progRef = useRef(null);
 
-  const blog = blogs[idx];
+  const blog  = blogs[idx];
   const total = blogs.length;
 
-  // Auto-advance with progress
+  useEffect(() => {
+    setMounted(true);
+    requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)));
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  const handleClose = useCallback(() => {
+    setVisible(false);
+    setTimeout(onClose, 250);
+  }, [onClose]);
+
+  const advance = useCallback((dir) => {
+    clearInterval(progRef.current);
+    const next = idx + dir;
+    if (next < 0 || next >= total) { handleClose(); return; }
+    setIdx(next);
+  }, [idx, total, handleClose]);
+
   useEffect(() => {
     setProg(0);
-    const step  = 50;          // update every 50ms
+    const step  = 50;
     const ticks = STORY_DURATION / step;
     let   tick  = 0;
-
     progRef.current = setInterval(() => {
       tick++;
       setProg(tick / ticks);
       if (tick >= ticks) advance(1);
     }, step);
-
     return () => clearInterval(progRef.current);
   }, [idx]);
 
-  const advance = (dir) => {
-    clearInterval(progRef.current);
-    const next = idx + dir;
-    if (next < 0 || next >= total) { onClose(); return; }
-    setIdx(next);
-  };
-
-  // Keyboard navigation
   useEffect(() => {
-    const handler = (e) => {
+    const h = (e) => {
       if (e.key === "ArrowRight") advance(1);
       if (e.key === "ArrowLeft")  advance(-1);
-      if (e.key === "Escape")     onClose();
+      if (e.key === "Escape")     handleClose();
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [idx]);
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [advance, handleClose]);
 
-  if (!blog) return null;
+  if (!mounted || !blog) return null;
 
   const imgUrl = blog.image ||
-    `https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=800&h=1200&fit=crop&auto=format`;
+    "https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=800&h=1200&fit=crop&auto=format";
 
-  return (
-    <div className="sv-overlay" onClick={onClose}>
+  const frame = (
+    <div
+      className={`sv-overlay ${visible ? "sv-overlay-in" : ""}`}
+      onClick={handleClose}
+    >
       <div className="sv-frame" onClick={e => e.stopPropagation()}>
 
-        {/* ── Progress bars ── */}
+        {/* Progress bars */}
         <div className="sv-progress-row">
           {blogs.map((_, i) => (
             <div key={i} className="sv-prog-track">
@@ -73,28 +90,28 @@ function StoryViewer({ blogs, startIndex, onClose }) {
           ))}
         </div>
 
-        {/* ── Top header ── */}
+        {/* Header */}
         <div className="sv-header">
           <div className="sv-author">
             <div className="sv-avatar">M</div>
             <div>
               <div className="sv-author-name">Miru Reads</div>
-              <div className="sv-author-sub">{blog.readTime || 10} min read</div>
+              <div className="sv-author-sub">{blog.readTime || 8} min read</div>
             </div>
           </div>
-          <button className="sv-close" onClick={onClose} aria-label="Close story">✕</button>
+          <button className="sv-close" onClick={handleClose} aria-label="Close">✕</button>
         </div>
 
-        {/* ── Background image ── */}
+        {/* Background */}
         <img src={imgUrl} alt={blog.headline} className="sv-bg-img"
-          onError={e => { e.target.style.display = "none"; }} />
+          onError={e => { e.currentTarget.style.display = "none"; }} />
         <div className="sv-bg-gradient" />
 
-        {/* ── Tap zones ── */}
+        {/* Tap zones */}
         <div className="sv-tap sv-tap-left"  onClick={() => advance(-1)} />
         <div className="sv-tap sv-tap-right" onClick={() => advance(1)}  />
 
-        {/* ── Content ── */}
+        {/* Content */}
         <div className="sv-content">
           {blog.category && (
             <span className="sv-category">{blog.category}</span>
@@ -104,23 +121,19 @@ function StoryViewer({ blogs, startIndex, onClose }) {
             <p className="sv-desc">{blog.description}</p>
           )}
           {blog.id && (
-            <a
-              className="sv-read-btn"
-              href={`/blogs/${blog.id}`}
-              onClick={e => e.stopPropagation()}
-            >
+            <a className="sv-read-btn" href={`/blogs/${blog.id}`}
+              onClick={e => e.stopPropagation()}>
               Read full article →
             </a>
           )}
         </div>
 
-        {/* ── Story dot indicators ── */}
+        {/* Navigation dots */}
         <div className="sv-dots">
           {blogs.map((_, i) => (
-            <div
-              key={i}
+            <div key={i}
               className={`sv-dot ${i === idx ? "sv-dot-active" : ""}`}
-              onClick={(e) => { e.stopPropagation(); setIdx(i); }}
+              onClick={e => { e.stopPropagation(); setIdx(i); }}
             />
           ))}
         </div>
@@ -128,58 +141,78 @@ function StoryViewer({ blogs, startIndex, onClose }) {
       </div>
     </div>
   );
+
+  return createPortal(frame, document.body);
 }
 
 /* ─────────────────────────────────────────────────────────
-   STORY BUBBLE — circle avatar like Instagram
+   BLOG CARD — Magazine cover tile (replaces circles)
+   Rectangular card with image + gradient + title overlay
+   80px × 118px — thumb-sized, horizontal scroll
 ───────────────────────────────────────────────────────── */
-function StoryBubble({ blog, index, hasRead, onClick }) {
-  const GRADIENTS = [
-    "linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)",
-    "linear-gradient(45deg,#4158d0,#c850c0,#ffcc70)",
-    "linear-gradient(45deg,#0093e9,#80d0c7)",
-    "linear-gradient(45deg,#8ec5fc,#e0c3fc)",
-    "linear-gradient(45deg,#f5af19,#f12711)",
-    "linear-gradient(45deg,#43e97b,#38f9d7)",
-  ];
-  const grad = GRADIENTS[index % GRADIENTS.length];
+function BlogCard({ blog, index, hasRead, onClick }) {
+  const color = CATEGORY_COLORS[index % CATEGORY_COLORS.length];
+  const imgUrl = blog.image ||
+    `https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=300&h=400&fit=crop&auto=format`;
+
+  const shortTitle = (blog.headline || "")
+    .split(" ")
+    .slice(0, 5)
+    .join(" ");
 
   return (
-    <div className="sb-wrap" onClick={onClick} role="button" tabIndex={0}
-      onKeyDown={e => e.key === "Enter" && onClick()}>
+    <div
+      className={`bk-card ${hasRead ? "bk-read" : ""}`}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => e.key === "Enter" && onClick()}
+      style={{ "--bk-color": color }}
+    >
+      {/* Unread top bar */}
+      {!hasRead && <div className="bk-unread-bar" />}
 
-      <div className={`sb-ring ${hasRead ? "sb-ring-read" : ""}`}
-        style={hasRead ? undefined : { background: grad }}>
-        <div className="sb-inner">
-          {blog.image ? (
-            <img src={blog.image} alt={blog.headline} className="sb-img"
-              onError={e => { e.target.style.display = "none"; }} />
-          ) : (
-            <div className="sb-initial" style={{ background: grad }}>
-              {(blog.headline || "B")[0].toUpperCase()}
-            </div>
-          )}
-        </div>
+      {/* Image */}
+      <img
+        src={imgUrl}
+        alt={blog.headline}
+        className="bk-img"
+        loading="lazy"
+        onError={e => { e.currentTarget.style.display = "none"; }}
+      />
+
+      {/* Gradient + text overlay */}
+      <div className="bk-gradient" />
+      <div className="bk-content">
+        <span className="bk-badge">BLOG</span>
+        <div className="bk-title">{shortTitle}</div>
+        <div className="bk-meta">{blog.readTime || 8} min</div>
       </div>
 
-      <div className="sb-label">{(blog.headline || "").split(" ").slice(0, 3).join(" ")}…</div>
-
-      {!hasRead && <div className="sb-unread-dot" />}
+      {/* Read time badge — bottom right */}
+      {!hasRead && <div className="bk-new-dot" />}
     </div>
   );
 }
 
 /* ─────────────────────────────────────────────────────────
-   BLOG STORIES — main export
+   BLOG STORIES — Main export
+   Header + horizontal card scroll + StoryViewer
 ───────────────────────────────────────────────────────── */
 export default function BlogStories({ blogs = dummyBlogs }) {
   const [viewingIdx, setViewingIdx] = useState(null);
-  const [readSet,    setReadSet]    = useState(() => {
+  // ⚠️ Always start empty — populate from localStorage in useEffect only (client-side)
+  // This prevents SSR/client hydration mismatch
+  const [readSet, setReadSet] = useState(new Set());
+
+  useEffect(() => {
     try {
       const raw = localStorage.getItem("miru_read_blogs");
-      return new Set(raw ? JSON.parse(raw) : []);
-    } catch { return new Set(); }
-  });
+      if (raw) setReadSet(new Set(JSON.parse(raw)));
+    } catch {}
+  }, []);
+
+
 
   const markRead = (id) => {
     setReadSet(prev => {
@@ -198,16 +231,10 @@ export default function BlogStories({ blogs = dummyBlogs }) {
   return (
     <>
       <div className="bs-wrap">
-        {/* Header */}
-        <div className="bs-header-center">
-          <span className="bs-title">Miru Reads</span>
-          <span className="bs-subtitle"> · Analysis, playbooks &amp; placement intel</span>
-        </div>
-
-        {/* Horizontal story bubbles */}
-        <div className="bs-bubbles-row">
+        {/* Horizontal blog card scroll — no header, edge padding via CSS */}
+        <div className="bs-cards-row">
           {blogs.map((blog, i) => (
-            <StoryBubble
+            <BlogCard
               key={blog.id || i}
               blog={blog}
               index={i}
@@ -217,6 +244,7 @@ export default function BlogStories({ blogs = dummyBlogs }) {
           ))}
         </div>
       </div>
+
 
       {viewingIdx !== null && (
         <StoryViewer
