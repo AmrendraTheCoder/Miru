@@ -2,8 +2,8 @@
 import { useState, useCallback } from "react";
 import NewsCard from "./NewsCard";
 import BlogStories from "./BlogStories";
-import BlogDrawer from "./BlogDrawer";
 import FeedAllView from "./FeedAllView";
+
 
 const FILTERS = ["All", "News", "Blogs", "Seed", "Series A", "Acquired", "IPO"];
 
@@ -41,20 +41,14 @@ export default function FeedTab({
   geminiKey = "",
   onResearch,
 }) {
-  const [filter, setFilter]         = useState("All");
+  const [filter, setFilter]           = useState("All");
   const [showAllView, setShowAllView] = useState(false);
-  const [selectedBlog, setSelectedBlog] = useState(null);
-  const [isBlogDrawerOpen, setIsBlogDrawerOpen] = useState(false);
-
-  const handleStoryClick = (blog) => {
-    setSelectedBlog(blog);
-    setIsBlogDrawerOpen(true);
-  };
 
   const handleSelectFolder = (folderId) => {
     if (folderId === "Blogs") setFilter("Blogs");
     else setFilter(folderId);
   };
+
 
   // Filter logic
   const filteredNews = useCallback(() => {
@@ -97,8 +91,9 @@ export default function FeedTab({
 
       {/* ── Blog Stories Row ── */}
       {(filter === "All" || filter === "Blogs") && (
-        <BlogStories onStoryClick={handleStoryClick} />
+        <BlogStories />
       )}
+
 
       {/* ── Feed Header ── */}
       <div className="feed-tab-header">
@@ -185,13 +180,6 @@ export default function FeedTab({
           onClose={() => setShowAllView(false)}
         />
       )}
-
-      {/* ── Blog Drawer ── */}
-      <BlogDrawer
-        isOpen={isBlogDrawerOpen}
-        onClose={() => setIsBlogDrawerOpen(false)}
-        blog={selectedBlog}
-      />
 
     </div>
   );

@@ -1,7 +1,8 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 
-/* ── Topic Image Map ── */
+/* ── Topic fallbacks ── */
 const TOPIC_IMAGES = {
   ai:         "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=800&h=400&fit=crop&auto=format",
   robot:      "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&h=400&fit=crop&auto=format",
@@ -15,9 +16,6 @@ const TOPIC_IMAGES = {
   climate:    "https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=800&h=400&fit=crop&auto=format",
   energy:     "https://images.unsplash.com/photo-1509391366360-2e959784a276?w=800&h=400&fit=crop&auto=format",
   space:      "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=800&h=400&fit=crop&auto=format",
-  logistics:  "https://images.unsplash.com/photo-1553413077-190dd305871c?w=800&h=400&fit=crop&auto=format",
-  ecommerce:  "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&h=400&fit=crop&auto=format",
-  edtech:     "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800&h=400&fit=crop&auto=format",
   food:       "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&h=400&fit=crop&auto=format",
   startup:    "https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=800&h=400&fit=crop&auto=format",
 };
@@ -35,9 +33,6 @@ const KEYWORD_MAP = [
   [["climate","carbon","emission","cleantech","esg"], "climate"],
   [["solar","wind","battery","renewable","energy","nuclear"], "energy"],
   [["space","satellite","rocket","launch","orbit","nasa"], "space"],
-  [["logistics","supply chain","warehouse","freight"], "logistics"],
-  [["ecommerce","marketplace","shopping"], "ecommerce"],
-  [["edtech","education","learning","school"], "edtech"],
   [["food","restaurant","agriculture","farm"], "food"],
 ];
 
@@ -49,14 +44,13 @@ function detectTopicImage(text) {
   return TOPIC_IMAGES.startup;
 }
 
-/* clean [...]  and extra whitespace */
 function clean(raw = "") {
   return raw.replace(/\[…\]|\[\.\.\.\]/g, "").replace(/\s{2,}/g, " ").trim();
 }
 
 function fmtDate(d) {
   if (!d) return "";
-  try { return new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short" }); }
+  try { return new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }); }
   catch { return ""; }
 }
 
@@ -65,7 +59,7 @@ function deriveStage(item) {
   if (t.includes("series c") || t.includes("series d")) return { label: "Late Stage", color: "#7c3aed" };
   if (t.includes("series b")) return { label: "Series B",   color: "#0369a1" };
   if (t.includes("series a")) return { label: "Series A",   color: "#0891b2" };
-  if (t.includes("seed") || t.includes("pre-seed")) return { label: "Seed", color: "#059669" };
+  if (t.includes("seed") || t.includes("pre-seed")) return { label: "Seed",     color: "#059669" };
   if (t.includes("acqui") || t.includes("buys"))    return { label: "Acquired", color: "#dc2626" };
   if (t.includes("ipo") || t.includes("public"))    return { label: "IPO",      color: "#d97706" };
   if (t.includes("launch"))                          return { label: "Launch",   color: "#e8522a" };
@@ -77,87 +71,172 @@ function extractAmount(text = "") {
   return m ? m[0] : null;
 }
 
-/* Split summary into up to 3 clean sentences for slides */
 function deriveSlides(item) {
   const title   = clean(item.title || item.headline || "");
   const rawText = clean(`${item.summary || ""} ${item.text || ""}`);
   const stage   = deriveStage(item);
   const amount  = extractAmount(`${title} ${rawText}`);
 
-  // Sentence split — filter noise
   const sentences = rawText
     .split(/(?<=[.!?])\s+/)
     .map(s => s.trim())
     .filter(s => s.length > 40 && !s.toLowerCase().includes("cookie") && !s.includes("©"));
 
   const slides = [];
-
-  // Slide 0 — "What happened" (headline + stage/amount)
   slides.push({
-    icon: "📰",
-    label: "What happened",
-    text:  title,
-    sub:   [stage?.label, amount].filter(Boolean).join(" · ") || null,
+    icon: "📰", label: "What happened", text: title,
+    sub: [stage?.label, amount].filter(Boolean).join(" · ") || null,
     color: stage?.color || "#e8522a",
   });
-
-  // Slides 1–2 — key facts from sentences
   const labels = ["Key detail", "Context"];
   const icons  = ["💡", "🔍"];
   sentences.slice(0, 2).forEach((s, i) => {
     slides.push({ icon: icons[i], label: labels[i], text: s, sub: null, color: "#374151" });
   });
-
-  return slides.slice(0, 3); // max 3 slides
+  return slides.slice(0, 3);
 }
 
-/* ─────────────────────────────────────────
-   NEWS DRAWER — Inshort bottom sheet
-───────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════
+   NEWS DRAWER — Production-grade bottom sheet
+   Uses React portal → renders at document.body level
+   so stacking context issues are impossible.
+═══════════════════════════════════════════════════════ */
 function NewsDrawer({ item, onClose, onResearch }) {
-  if (!item) return null;
+  const [mounted, setMounted] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const sheetRef = useRef(null);
+
+  /* Mount → next tick → add visible class for animation */
+  useEffect(() => {
+    setMounted(true);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => setVisible(true));
+    });
+  }, []);
+
+  /* Lock body scroll while open */
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  /* Keyboard: Escape closes */
+  useEffect(() => {
+    const handler = (e) => { if (e.key === "Escape") handleClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  const handleClose = useCallback(() => {
+    setVisible(false);
+    setTimeout(onClose, 320);
+  }, [onClose]);
+
+  if (!mounted || typeof document === "undefined") return null;
+
   const title   = item.title || item.headline || "";
-  const summary = clean(item.summary || item.text || "No summary available.");
+  const summary = clean(item.summary || item.text || "No summary available for this article.");
   const source  = item.source || "";
+  const dateStr = fmtDate(item.date || item.publishedDate);
   const amount  = extractAmount(`${title} ${summary}`);
   const stage   = deriveStage(item);
   const imgUrl  = item.image || detectTopicImage(`${title} ${summary}`);
 
-  return (
-    <div className="nd-overlay" onClick={onClose}>
-      <div className="nd-panel" onClick={e => e.stopPropagation()}>
-        <div className="nd-handle" />
+  const sheet = (
+    <div
+      className={`ndr-backdrop ${visible ? "ndr-backdrop-in" : ""}`}
+      onClick={handleClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Article detail"
+    >
+      <div
+        ref={sheetRef}
+        className={`ndr-sheet ${visible ? "ndr-sheet-in" : ""}`}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* ── Drag handle ── */}
+        <div className="ndr-handle-wrap" onClick={handleClose}>
+          <div className="ndr-handle" />
+        </div>
 
-        {/* Article image inside drawer */}
-        {imgUrl && (
-          <div className="nd-img-wrap">
-            <img src={imgUrl} alt={title} className="nd-img"
-              onError={e => { e.target.style.display = "none"; }} />
+        {/* ── Hero image ── */}
+        <div className="ndr-hero">
+          <img
+            src={imgUrl}
+            alt={title}
+            className="ndr-hero-img"
+            onError={e => { e.currentTarget.style.display = "none"; }}
+          />
+          <div className="ndr-hero-gradient" />
+
+          {/* Close button on image */}
+          <button className="ndr-close" onClick={handleClose} aria-label="Close">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </button>
+
+          {/* Stage + Amount chips on image */}
+          <div className="ndr-hero-chips">
+            {stage && (
+              <span className="ndr-chip" style={{ background: stage.color }}>
+                {stage.label}
+              </span>
+            )}
+            {amount && (
+              <span className="ndr-chip ndr-chip-amount">{amount}</span>
+            )}
           </div>
-        )}
+        </div>
 
-        <div className="nd-inner">
-          {/* Meta row */}
-          <div className="nd-source-row">
-            {source && <span className="nd-source">{source}</span>}
-            <span className="nd-date">{fmtDate(item.date || item.publishedDate)}</span>
-            {stage && <span className="nd-stage-badge" style={{ background: stage.color }}>{stage.label}</span>}
-            {amount && <span className="nd-amount">{amount}</span>}
-            <button className="nd-close" onClick={onClose} aria-label="Close">✕</button>
+        {/* ── Scrollable body ── */}
+        <div className="ndr-body">
+          {/* Source + Date */}
+          <div className="ndr-byline">
+            {source && <span className="ndr-source">{source}</span>}
+            {dateStr && (
+              <>
+                <span className="ndr-dot-sep">·</span>
+                <span className="ndr-date">{dateStr}</span>
+              </>
+            )}
           </div>
 
-          <h2 className="nd-title">{title}</h2>
-          <p className="nd-body">{summary}</p>
+          {/* Headline */}
+          <h2 className="ndr-title">{title}</h2>
 
-          <div className="nd-actions">
+          {/* Divider */}
+          <div className="ndr-divider" />
+
+          {/* Summary */}
+          <p className="ndr-summary">{summary}</p>
+
+          {/* CTA buttons */}
+          <div className="ndr-actions">
             {item.url && (
-              <a className="nd-btn nd-btn-primary" href={item.url} target="_blank" rel="noopener noreferrer">
-                Read full article ↗
+              <a
+                className="ndr-btn ndr-btn-primary"
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handleClose}
+              >
+                Read full article
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M7 17L17 7M7 7h10v10"/>
+                </svg>
               </a>
             )}
             {onResearch && (
-              <button className="nd-btn nd-btn-ghost"
-                onClick={() => { onClose(); onResearch(item.researchQuery || title.split(" ")[0]); }}>
+              <button
+                className="ndr-btn ndr-btn-secondary"
+                onClick={() => {
+                  handleClose();
+                  onResearch(item.researchQuery || title.split(" ")[0]);
+                }}
+              >
                 Research company
               </button>
             )}
@@ -166,26 +245,26 @@ function NewsDrawer({ item, onClose, onResearch }) {
       </div>
     </div>
   );
+
+  return createPortal(sheet, document.body);
 }
 
-/* ─────────────────────────────────────────
-   NEWS CARD — Instagram post style
-   Image header → swipeable insight slides → dots + read more
-───────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════
+   NEWS CARD — Instagram POST style
+═══════════════════════════════════════════════════════ */
 export default function NewsCard({ item, rank, onResearch }) {
   const slides     = deriveSlides(item);
   const [active, setActive] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const touchX = useRef(null);
 
-  const imgUrl = item.image || detectTopicImage(`${item.title || ""} ${item.summary || ""}`);
-  const stage  = deriveStage(item);
-  const source = item.source || "";
+  const imgUrl  = item.image || detectTopicImage(`${item.title || ""} ${item.summary || ""}`);
+  const stage   = deriveStage(item);
+  const source  = item.source || "";
   const dateStr = fmtDate(item.date || item.publishedDate);
 
   const goTo = (i) => setActive(Math.max(0, Math.min(slides.length - 1, i)));
 
-  /* touch swipe */
   const onTouchStart = (e) => { touchX.current = e.touches[0].clientX; };
   const onTouchEnd   = (e) => {
     if (touchX.current === null) return;
@@ -199,7 +278,14 @@ export default function NewsCard({ item, rank, onResearch }) {
       <div className="np-card">
 
         {/* ── IMAGE HEADER ── */}
-        <div className="np-img-wrap" onClick={() => setDrawerOpen(true)}>
+        <div
+          className="np-img-wrap"
+          onClick={() => setDrawerOpen(true)}
+          role="button"
+          tabIndex={0}
+          aria-label={`Read more: ${item.title}`}
+          onKeyDown={e => e.key === "Enter" && setDrawerOpen(true)}
+        >
           <img
             src={imgUrl}
             alt={item.title}
@@ -207,10 +293,8 @@ export default function NewsCard({ item, rank, onResearch }) {
             loading="lazy"
             onError={e => { e.target.src = TOPIC_IMAGES.startup; }}
           />
-          {/* gradient overlay for text on top of image */}
           <div className="np-img-gradient" />
 
-          {/* Top row: rank + stage */}
           <div className="np-img-top">
             <span className="np-rank">#{rank}</span>
             <div className="np-img-meta">
@@ -222,8 +306,6 @@ export default function NewsCard({ item, rank, onResearch }) {
               )}
             </div>
           </div>
-
-          {/* Bottom: date */}
           {dateStr && <span className="np-date-badge">{dateStr}</span>}
         </div>
 
@@ -254,25 +336,24 @@ export default function NewsCard({ item, rank, onResearch }) {
           </div>
         </div>
 
-        {/* ── DOTS + READ MORE ── */}
+        {/* ── DOTS + NAV ── */}
         <div className="np-footer">
           <div className="np-dots">
             {slides.map((_, i) => (
               <button
                 key={i}
-                className={`np-dot ${i === active ? "np-dot-on" : ""}`}
+                className={`np-dot${i === active ? " np-dot-on" : ""}`}
                 onClick={() => goTo(i)}
                 aria-label={`Slide ${i + 1}`}
               />
             ))}
           </div>
-
           <div className="np-nav-btns">
             {active > 0 && (
-              <button className="np-nav-arrow" onClick={() => goTo(active - 1)}>‹</button>
+              <button className="np-nav-arrow" onClick={() => goTo(active - 1)} aria-label="Previous">‹</button>
             )}
             {active < slides.length - 1 ? (
-              <button className="np-nav-arrow np-nav-next" onClick={() => goTo(active + 1)}>›</button>
+              <button className="np-nav-arrow np-nav-next" onClick={() => goTo(active + 1)} aria-label="Next">›</button>
             ) : (
               <button className="np-read-btn" onClick={() => setDrawerOpen(true)}>
                 Read full ↗
