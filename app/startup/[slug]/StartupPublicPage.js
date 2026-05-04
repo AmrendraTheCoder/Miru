@@ -697,9 +697,21 @@ export default function StartupPublicPage({ data, slug }) {
     }
   };
 
-  // Auto-trigger research for any page without deep AI data
+  // Auto-trigger research for any page without deep AI data.
+  // LOOP GUARD: sessionStorage prevents infinite reload cycle.
   useEffect(() => {
     if (!isStub) return;
+
+    // If we already reloaded once for this slug, stop — don't loop.
+    const guardKey = `miru_reloaded_${slug}`;
+    try {
+      if (sessionStorage.getItem(guardKey)) {
+        sessionStorage.removeItem(guardKey);
+        setResearchState("done");
+        return;
+      }
+    } catch {}
+
     let cancelled = false;
 
     const runResearch = async () => {
@@ -751,14 +763,16 @@ export default function StartupPublicPage({ data, slug }) {
         const source = json?.report?._source;
         setReportSource(source);
 
-        if (source === "report") {
-          // Full Gemini analysis — reload to show rich data
+        if (source === "report" && !json?.cached) {
+          // Fresh AI analysis — set guard BEFORE reload to break the loop
+          try { sessionStorage.setItem(guardKey, "1"); } catch {}
           setResearchState("success");
           setTimeout(() => window.location.reload(), 1200);
         } else if (source === "exa_fallback") {
           // Gemini quota exhausted — partial data from Exa only
           setResearchState("partial");
         } else {
+          // cached hit or unknown source — stop, no reload
           setResearchState("done");
         }
       } catch (e) {
@@ -772,7 +786,7 @@ export default function StartupPublicPage({ data, slug }) {
 
     runResearch();
     return () => { cancelled = true; };
-  }, [isStub, name]);
+  }, [isStub, name, slug]);
 
   // Track page view with company context
   useEffect(() => {
